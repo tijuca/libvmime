@@ -1,0 +1,6 @@
+libvmime (0.8.0-1) unstable; urgency=low
+
+  * Initial release (closes: #341388)
+
+ -- Mattias Nordstrom <nordstrom@realnode.com>  Wed, 30 Nov 2005 22:37:56 +0200
+
