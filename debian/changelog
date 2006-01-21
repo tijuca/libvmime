@@ -1,3 +1,10 @@
+libvmime (0.8.0-2) unstable; urgency=low
+
+  * Added dependency on libgnutls-dev and libgsasl7-dev for libvmime-dev
+    (closes: #348879)
+
+ -- Mattias Nordstrom <nordstrom@realnode.com>  Sat, 21 Jan 2006 15:25:10 +0200
+
 libvmime (0.8.0-1) unstable; urgency=low
 
   * Initial release (closes: #341388)
