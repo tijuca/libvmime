@@ -1,3 +1,13 @@
+libvmime (0.8.0-3) unstable; urgency=low
+
+  * Removed post* and pre* files as they didn't do anything.
+  * Updated to Debian Policy v3.7.2, no changes needed.
+  * Updated to debhelper version 5.
+  * Updated copyright file to include proper license information.
+  * Removed old /usr/share/pkgconfig line from libvmime-dev.install.
+
+ -- Mattias Nordstrom <nordstrom@realnode.com>  Sat, 13 May 2006 23:34:05 +0300
+
 libvmime (0.8.0-2) unstable; urgency=low
 
   * Added dependency on libgnutls-dev and libgsasl7-dev for libvmime-dev

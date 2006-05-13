@@ -1,8 +1,8 @@
 Source: libvmime
 Priority: optional
 Maintainer: Mattias Nordstrom <nordstrom@realnode.com>
-Build-Depends: debhelper (>= 4.0.0), autotools-dev, libgnutls-dev (>= 1.2.0-1), libgsasl7-dev
-Standards-Version: 3.6.2.1
+Build-Depends: debhelper (>= 5.0.0), autotools-dev, libgnutls-dev (>= 1.2.0-1), libgsasl7-dev
+Standards-Version: 3.7.2
 Section: libs
 
 Package: libvmime-dev
