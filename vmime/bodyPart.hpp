@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -75,7 +75,14 @@ public:
 	  *
 	  * @return parent part or NULL if not known
 	  */
-	weak_ref <bodyPart> getParentPart() const;
+	ref <bodyPart> getParentPart();
+
+	/** Return the parent part of this part (const version).
+	  *
+	  * @return parent part or NULL if not known
+	  */
+	ref <const bodyPart> getParentPart() const;
+
 
 	ref <component> clone() const;
 	void copyFrom(const component& other);

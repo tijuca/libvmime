@@ -1,3 +1,9 @@
+libvmime (0.8.0+cvs20061009-1) unstable; urgency=low
+
+  * New upstream CVS checkout.
+
+ -- Mattias Nordstrom <nordstrom@realnode.com>  Mon,  9 Oct 2006 19:53:39 +0300
+
 libvmime (0.8.0-3) unstable; urgency=low
 
   * Removed post* and pre* files as they didn't do anything.

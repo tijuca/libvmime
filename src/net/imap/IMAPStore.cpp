@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -33,7 +33,7 @@ namespace imap {
 
 
 IMAPStore::IMAPStore(ref <session> sess, ref <security::authenticator> auth, const bool secured)
-	: store(sess, getInfosInstance(), auth), m_connection(NULL), m_secured(secured)
+	: store(sess, getInfosInstance(), auth), m_connection(NULL), m_isIMAPS(secured)
 {
 }
 
@@ -63,7 +63,8 @@ ref <folder> IMAPStore::getRootFolder()
 	if (!isConnected())
 		throw exceptions::illegal_state("Not connected");
 
-	return vmime::create <IMAPFolder>(folder::path(), this);
+	return vmime::create <IMAPFolder>(folder::path(),
+		thisRef().dynamicCast <IMAPStore>());
 }
 
 
@@ -72,7 +73,8 @@ ref <folder> IMAPStore::getDefaultFolder()
 	if (!isConnected())
 		throw exceptions::illegal_state("Not connected");
 
-	return vmime::create <IMAPFolder>(folder::path::component("INBOX"), this);
+	return vmime::create <IMAPFolder>(folder::path::component("INBOX"),
+		thisRef().dynamicCast <IMAPStore>());
 }
 
 
@@ -81,7 +83,7 @@ ref <folder> IMAPStore::getFolder(const folder::path& path)
 	if (!isConnected())
 		throw exceptions::illegal_state("Not connected");
 
-	return vmime::create <IMAPFolder>(path, this);
+	return vmime::create <IMAPFolder>(path, thisRef().dynamicCast <IMAPStore>());
 }
 
 
@@ -91,19 +93,13 @@ const bool IMAPStore::isValidFolderName(const folder::path::component& /* name *
 }
 
 
-const bool IMAPStore::isSecuredConnection() const
-{
-	return m_secured;
-}
-
-
 void IMAPStore::connect()
 {
 	if (isConnected())
 		throw exceptions::already_connected();
 
 	m_connection = vmime::create <IMAPConnection>
-		(thisWeakRef().dynamicCast <IMAPStore>(), getAuthenticator());
+		(thisRef().dynamicCast <IMAPStore>(), getAuthenticator());
 
 	try
 	{
@@ -120,6 +116,30 @@ void IMAPStore::connect()
 const bool IMAPStore::isConnected() const
 {
 	return (m_connection && m_connection->isConnected());
+}
+
+
+const bool IMAPStore::isIMAPS() const
+{
+	return m_isIMAPS;
+}
+
+
+const bool IMAPStore::isSecuredConnection() const
+{
+	if (m_connection == NULL)
+		return false;
+
+	return m_connection->isSecuredConnection();
+}
+
+
+ref <connectionInfos> IMAPStore::getConnectionInfos() const
+{
+	if (m_connection == NULL)
+		return NULL;
+
+	return m_connection->getConnectionInfos();
 }
 
 

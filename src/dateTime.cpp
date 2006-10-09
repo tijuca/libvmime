@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -648,7 +648,18 @@ datetime::datetime(const datetime& d)
 
 datetime::datetime(const time_t t, const int zone)
 {
-#ifdef _REENTRANT
+#if defined(_MSC_VER) || defined(__MINGW32__)
+	// These functions are reentrant in MS C runtime library
+	struct tm* gtm = gmtime(&t);
+	struct tm* ltm = localtime(&t);
+
+	struct tm tms;
+
+	if (gtm)
+		tms = *gtm;
+	else if (ltm)
+		tms = *ltm;
+#elif defined(_REENTRANT)
 	struct tm tms;
 
 	if (!gmtime_r(&t, &tms))
@@ -783,6 +794,7 @@ const int datetime::getMinute() const { return (m_minute); }
 const int datetime::getSecond() const { return (m_second); }
 const int datetime::getZone() const { return (m_zone); }
 const int datetime::getWeekDay() const { return (utility::datetimeUtils::getDayOfWeek(m_year, m_month, m_day)); }
+const int datetime::getWeek() const { return utility::datetimeUtils::getWeekOfYear(m_year, m_month, m_day); }
 
 void datetime::setYear(const int year) { m_year = year; }
 void datetime::setMonth(const int month) { m_month = std::min(std::max(month, 1), 12); }
@@ -795,8 +807,8 @@ void datetime::setZone(const int zone) { m_zone = zone; }
 
 const bool datetime::operator==(const datetime& other) const
 {
-	const datetime ut1 = utility::datetimeUtils::localTimeToUniversalTime(*this);
-	const datetime ut2 = utility::datetimeUtils::localTimeToUniversalTime(other);
+	const datetime ut1 = utility::datetimeUtils::toUniversalTime(*this);
+	const datetime ut2 = utility::datetimeUtils::toUniversalTime(other);
 
 	return (ut1.m_year   == ut2.m_year   &&
 	        ut1.m_month  == ut2.m_month  &&
@@ -809,8 +821,8 @@ const bool datetime::operator==(const datetime& other) const
 
 const bool datetime::operator!=(const datetime& other) const
 {
-	const datetime ut1 = utility::datetimeUtils::localTimeToUniversalTime(*this);
-	const datetime ut2 = utility::datetimeUtils::localTimeToUniversalTime(other);
+	const datetime ut1 = utility::datetimeUtils::toUniversalTime(*this);
+	const datetime ut2 = utility::datetimeUtils::toUniversalTime(other);
 
 	return (ut1.m_year   != ut2.m_year   ||
 	        ut1.m_month  != ut2.m_month  ||
@@ -823,8 +835,8 @@ const bool datetime::operator!=(const datetime& other) const
 
 const bool datetime::operator<(const datetime& other) const
 {
-	const datetime ut1 = utility::datetimeUtils::localTimeToUniversalTime(*this);
-	const datetime ut2 = utility::datetimeUtils::localTimeToUniversalTime(other);
+	const datetime ut1 = utility::datetimeUtils::toUniversalTime(*this);
+	const datetime ut2 = utility::datetimeUtils::toUniversalTime(other);
 
 	return ((ut1.m_year    <  ut2.m_year) ||
 	        ((ut1.m_year   == ut2.m_year)   && ((ut1.m_month  < ut2.m_month)  ||
@@ -837,8 +849,8 @@ const bool datetime::operator<(const datetime& other) const
 
 const bool datetime::operator<=(const datetime& other) const
 {
-	const datetime ut1 = utility::datetimeUtils::localTimeToUniversalTime(*this);
-	const datetime ut2 = utility::datetimeUtils::localTimeToUniversalTime(other);
+	const datetime ut1 = utility::datetimeUtils::toUniversalTime(*this);
+	const datetime ut2 = utility::datetimeUtils::toUniversalTime(other);
 
 	return ((ut1.m_year    <  ut2.m_year) ||
 	        ((ut1.m_year   == ut2.m_year)   && ((ut1.m_month  <  ut2.m_month)  ||
@@ -851,8 +863,8 @@ const bool datetime::operator<=(const datetime& other) const
 
 const bool datetime::operator>(const datetime& other) const
 {
-	const datetime ut1 = utility::datetimeUtils::localTimeToUniversalTime(*this);
-	const datetime ut2 = utility::datetimeUtils::localTimeToUniversalTime(other);
+	const datetime ut1 = utility::datetimeUtils::toUniversalTime(*this);
+	const datetime ut2 = utility::datetimeUtils::toUniversalTime(other);
 
 	return ((ut1.m_year    >  ut2.m_year) ||
 	        ((ut1.m_year   == ut2.m_year)   && ((ut1.m_month  > ut2.m_month)  ||
@@ -865,8 +877,8 @@ const bool datetime::operator>(const datetime& other) const
 
 const bool datetime::operator>=(const datetime& other) const
 {
-	const datetime ut1 = utility::datetimeUtils::localTimeToUniversalTime(*this);
-	const datetime ut2 = utility::datetimeUtils::localTimeToUniversalTime(other);
+	const datetime ut1 = utility::datetimeUtils::toUniversalTime(*this);
+	const datetime ut2 = utility::datetimeUtils::toUniversalTime(other);
 
 	return ((ut1.m_year    >  ut2.m_year) ||
 	        ((ut1.m_year   == ut2.m_year)   && ((ut1.m_month  >  ut2.m_month)  ||

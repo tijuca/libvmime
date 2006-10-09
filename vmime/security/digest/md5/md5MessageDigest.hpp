@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -40,18 +40,18 @@ public:
 
 	md5MessageDigest();
 
-	void update(const byte b);
+	void update(const byte_t b);
 	void update(const string& s);
-	void update(const byte* buffer, const unsigned long len);
-	void update(const byte* buffer, const unsigned long offset, const unsigned long len);
+	void update(const byte_t* buffer, const unsigned long len);
+	void update(const byte_t* buffer, const unsigned long offset, const unsigned long len);
 
 	void finalize();
 	void finalize(const string& s);
-	void finalize(const byte* buffer, const unsigned long len);
-	void finalize(const byte* buffer, const unsigned long offset, const unsigned long len);
+	void finalize(const byte_t* buffer, const unsigned long len);
+	void finalize(const byte_t* buffer, const unsigned long offset, const unsigned long len);
 
 	const int getDigestLength() const;
-	const byte* getDigest() const;
+	const byte_t* getDigest() const;
 
 	void reset();
 

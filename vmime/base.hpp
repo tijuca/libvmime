@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -232,7 +232,7 @@ namespace vmime
 	  * Use "vmime::clone(obj)" instead of "obj->clone().cast <objtype>()".
 	  */
 	template <class T>
-	ref <T> clone(ref <T> x)
+	ref <T> clone(ref <const T> x)
 	{
 		return x->clone().template dynamicCast <T>();
 	}
@@ -241,7 +241,7 @@ namespace vmime
 	  * Use "vmime::clone(obj)" instead of "obj.clone().cast <objtype>()".
 	  */
 	template <class T>
-	ref <T> clone(T& x)
+	ref <T> clone(const T& x)
 	{
 		return x.clone().template dynamicCast <T>();
 	}

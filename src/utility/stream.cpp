@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -363,7 +363,7 @@ const stream::size_type inputStreamPointerAdapter::skip(const size_type count)
 
 // inputStreamByteBufferAdapter
 
-inputStreamByteBufferAdapter::inputStreamByteBufferAdapter(const byte* buffer, const size_type length)
+inputStreamByteBufferAdapter::inputStreamByteBufferAdapter(const byte_t* buffer, const size_type length)
 	: m_buffer(buffer), m_length(length), m_pos(0)
 {
 }

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -62,19 +62,70 @@ namespace imap {
 
 
 #if DEBUG_RESPONSE
-    static string DEBUG_RESPONSE_level;
-    static std::vector <string> DEBUG_RESPONSE_components;
+	static int IMAPParserDebugResponse_level = 0;
+	static std::vector <string> IMAPParserDebugResponse_stack;
 
-#   define DEBUG_ENTER_COMPONENT(x) \
-         DEBUG_RESPONSE_components.push_back(x); \
-         std::cout << DEBUG_RESPONSE_level \
-                   << "(" << DEBUG_RESPONSE_level.length() << ") " \
-			 << (x) << std::endl;
-#   define DEBUG_FOUND(x, y) \
-         std::cout << "FOUND: " << x << ": " << y << std::endl;
+	class IMAPParserDebugResponse
+	{
+	public:
+
+		IMAPParserDebugResponse(const string& name, string& line, const string::size_type currentPos)
+			: m_name(name), m_line(line), m_pos(currentPos)
+		{
+			++IMAPParserDebugResponse_level;
+			IMAPParserDebugResponse_stack.push_back(name);
+
+			for (int i = 0 ; i < IMAPParserDebugResponse_level ; ++i)
+				std::cout << "  ";
+
+			std::cout << "ENTER(" << m_name << "), pos=" << m_pos;
+			std::cout << std::endl;
+
+			for (std::vector <string>::iterator it = IMAPParserDebugResponse_stack.begin() ;
+			     it != IMAPParserDebugResponse_stack.end() ; ++it)
+			{
+				std::cout << "> " << *it << " ";
+			}
+
+			std::cout << std::endl;
+			std::cout << string(m_line.begin() + (m_pos < 30 ? 0U : m_pos - 30),
+				m_line.begin() + std::min(m_line.length(), m_pos + 30)) << std::endl;
+
+			for (string::size_type i = (m_pos < 30 ? m_pos : (m_pos - (m_pos - 30))) ; i != 0 ; --i)
+				std::cout << " ";
+
+			std::cout << "^" << std::endl;
+		}
+
+		~IMAPParserDebugResponse()
+		{
+			for (int i = 0 ; i < IMAPParserDebugResponse_level ; ++i)
+				std::cout << "  ";
+
+			std::cout << "LEAVE(" << m_name << "), result=";
+			std::cout << (std::uncaught_exception() ? "FALSE" : "TRUE") << ", pos=" << m_pos;
+			std::cout << std::endl;
+
+			--IMAPParserDebugResponse_level;
+			IMAPParserDebugResponse_stack.pop_back();
+		}
+
+	private:
+
+		const string& m_name;
+		string& m_line;
+		string::size_type m_pos;
+	};
+
+
+	#define DEBUG_ENTER_COMPONENT(x) \
+		IMAPParserDebugResponse dbg(x, line, *currentPos)
+
+	#define DEBUG_FOUND(x, y) \
+		std::cout << "FOUND: " << x << ": " << y << std::endl;
 #else
-#   define DEBUG_ENTER_COMPONENT(x)
-#   define DEBUG_FOUND(x, y)
+	#define DEBUG_ENTER_COMPONENT(x)
+	#define DEBUG_FOUND(x, y)
 #endif
 
 
@@ -83,20 +134,41 @@ class IMAPParser : public object
 public:
 
 	IMAPParser(weak_ref <IMAPTag> tag, weak_ref <socket> sok, weak_ref <timeoutHandler> _timeoutHandler)
-		: m_tag(tag), m_socket(sok), m_progress(NULL),
+		: m_tag(tag), m_socket(sok), m_progress(NULL), m_strict(false),
 		  m_literalHandler(NULL), m_timeoutHandler(_timeoutHandler)
 	{
 	}
 
 
-	weak_ref <const IMAPTag> tag() const
+	ref <const IMAPTag> getTag() const
 	{
-		return (m_tag);
+		return m_tag.acquire();
 	}
 
-	void setSocket(weak_ref <socket> sok)
+	void setSocket(ref <socket> sok)
 	{
 		m_socket = sok;
+	}
+
+	/** Set whether we operate in strict mode (this may not work
+	  * with some servers which are not fully standard-compliant).
+	  *
+	  * @param strict true to operate in strict mode, or false
+	  * to operate in default, relaxed mode
+	  */
+	void setStrict(const bool strict)
+	{
+		m_strict = strict;
+	}
+
+	/** Return true if the parser operates in strict mode, or
+	  * false otherwise.
+	  *
+	  * @return true if we are in strict mode, false otherwise
+	  */
+	const bool isStrict() const
+	{
+		return m_strict;
 	}
 
 
@@ -252,6 +324,16 @@ public:
 	};
 
 
+#define COMPONENT_ALIAS(parent, name) \
+	class name : public parent \
+	{ \
+		void go(IMAPParser& parser, string& line, string::size_type* currentPos) \
+		{ \
+			DEBUG_ENTER_COMPONENT(#name); \
+			parent::go(parser, line, currentPos); \
+		} \
+	}
+
 
 	//
 	// Parse one character
@@ -392,7 +474,7 @@ public:
 				}
 			}
 
-			if (tagString == string(*(parser.tag())))
+			if (tagString == string(*parser.getTag()))
 			{
 				*currentPos = pos;
 			}
@@ -501,14 +583,14 @@ public:
 		{
 		}
 
-		void go(IMAPParser& /* parser */, string& line, string::size_type* currentPos)
+		void go(IMAPParser& parser, string& line, string::size_type* currentPos)
 		{
 			DEBUG_ENTER_COMPONENT("text");
 
 			string::size_type pos = *currentPos;
 			string::size_type len = 0;
 
-			if (m_allow8bits)
+			if (m_allow8bits || !parser.isStrict())
 			{
 				const unsigned char except = m_except;
 
@@ -1217,7 +1299,7 @@ public:
 	public:
 
 		flag()
-			: m_flag_keyword(NULL)
+			: m_type(UNKNOWN), m_flag_keyword(NULL)
 		{
 		}
 
@@ -1263,6 +1345,7 @@ public:
 			}
 			else
 			{
+				m_type = KEYWORD_OR_EXTENSION;
 				m_flag_keyword = parser.get <atom>(line, &pos);
 			}
 
@@ -1278,6 +1361,7 @@ public:
 			DELETED,
 			SEEN,
 			DRAFT,
+			KEYWORD_OR_EXTENSION,
 			STAR       // * = custom flags allowed
 		};
 
@@ -1730,7 +1814,7 @@ public:
 				m_resp_text_code = parser.get <IMAPParser::resp_text_code>(line, &pos);
 
 				parser.check <one_char <']'> >(line, &pos);
-				parser.check <SPACE>(line, &pos);
+				parser.check <SPACE>(line, &pos, true);
 			}
 
 			text_mime2* text1 = parser.get <text_mime2>(line, &pos, true);
@@ -2282,7 +2366,10 @@ public:
 					(parser.get <body_extension>(line, &pos));
 
 				while (!parser.check <one_char <')'> >(line, &pos, true))
-					m_body_extensions.push_back(parser.get <body_extension>(line, &pos, true));
+				{
+					m_body_extensions.push_back(parser.get <body_extension>(line, &pos));
+					parser.check <SPACE>(line, &pos, true);
+				}
 			}
 			else
 			{
@@ -2586,70 +2673,70 @@ public:
 	// env_bcc         ::= "(" 1*address ")" / nil
 	//
 
-	typedef address_list env_bcc;
+	COMPONENT_ALIAS(address_list, env_bcc);
 
 
 	//
 	// env_cc          ::= "(" 1*address ")" / nil
 	//
 
-	typedef address_list env_cc;
+	COMPONENT_ALIAS(address_list, env_cc);
 
 
 	//
 	// env_date        ::= nstring
 	//
 
-	typedef nstring env_date;
+	COMPONENT_ALIAS(nstring, env_date);
 
 
 	//
 	// env_from        ::= "(" 1*address ")" / nil
 	//
 
-	typedef address_list env_from;
+	COMPONENT_ALIAS(address_list, env_from);
 
 
 	//
 	// env_in_reply_to ::= nstring
 	//
 
-	typedef nstring env_in_reply_to;
+	COMPONENT_ALIAS(nstring, env_in_reply_to);
 
 
 	//
 	// env_message_id  ::= nstring
 	//
 
-	typedef nstring env_message_id;
+	COMPONENT_ALIAS(nstring, env_message_id);
 
 
 	//
 	// env_reply_to    ::= "(" 1*address ")" / nil
 	//
 
-	typedef address_list env_reply_to;
+	COMPONENT_ALIAS(address_list, env_reply_to);
 
 
 	//
 	// env_sender      ::= "(" 1*address ")" / nil
 	//
 
-	typedef address_list env_sender;
+	COMPONENT_ALIAS(address_list, env_sender);
 
 
 	//
 	// env_subject     ::= nstring
 	//
 
-	typedef nstring env_subject;
+	COMPONENT_ALIAS(nstring, env_subject);
 
 
 	//
 	// env_to          ::= "(" 1*address ")" / nil
 	//
 
-	typedef address_list env_to;
+	COMPONENT_ALIAS(address_list, env_to);
 
 
 	//
@@ -2867,10 +2954,8 @@ public:
 
 			string::size_type pos = *currentPos;
 
-			if (!parser.check <NIL>(line, &pos, true))
+			if (parser.check <one_char <'('> >(line, &pos, true))
 			{
-				parser.check <one_char <'('> >(line, &pos);
-
 				m_items.push_back(parser.get <body_fld_param_item>(line, &pos));
 
 				while (!parser.check <one_char <')'> >(line, &pos, true))
@@ -2878,6 +2963,10 @@ public:
 					parser.check <SPACE>(line, &pos);
 					m_items.push_back(parser.get <body_fld_param_item>(line, &pos));
 				}
+			}
+			else
+			{
+				parser.check <NIL>(line, &pos);
 			}
 
 			*currentPos = pos;
@@ -2918,13 +3007,16 @@ public:
 
 			string::size_type pos = *currentPos;
 
-			if (!parser.check <NIL>(line, &pos, true))
+			if (parser.check <one_char <'('> >(line, &pos, true))
 			{
-				parser.check <one_char <'('> >(line, &pos);
 				m_string = parser.get <xstring>(line, &pos);
 				parser.check <SPACE>(line, &pos);
 				m_body_fld_param = parser.get <class body_fld_param>(line, &pos);
 				parser.check <one_char <')'> >(line, &pos);
+			}
+			else
+			{
+				parser.check <NIL>(line, &pos);
 			}
 
 			*currentPos = pos;
@@ -2970,7 +3062,10 @@ public:
 				m_strings.push_back(parser.get <class xstring>(line, &pos));
 
 				while (!parser.check <one_char <')'> >(line, &pos, true))
+				{
+					parser.check <SPACE>(line, &pos);
 					m_strings.push_back(parser.get <class xstring>(line, &pos));
+				}
 			}
 			else
 			{
@@ -3114,6 +3209,16 @@ public:
 	{
 	public:
 
+		media_message()
+			: m_media_subtype(NULL)
+		{
+		}
+
+		~media_message()
+		{
+			delete m_media_subtype;
+		}
+
 		void go(IMAPParser& parser, string& line, string::size_type* currentPos)
 		{
 			DEBUG_ENTER_COMPONENT("media_message");
@@ -3246,10 +3351,15 @@ public:
 						m_body_extensions.push_back
 							(parser.get <body_extension>(line, &pos));
 
+						parser.check <SPACE>(line, &pos, true);
+
 						body_extension* ext = NULL;
 
 						while ((ext = parser.get <body_extension>(line, &pos, true)) != NULL)
+						{
 							m_body_extensions.push_back(ext);
+							parser.check <SPACE>(line, &pos, true);
+						}
 					}
 				}
 			}
@@ -3325,10 +3435,15 @@ public:
 					m_body_extensions.push_back
 						(parser.get <body_extension>(line, &pos));
 
+					parser.check <SPACE>(line, &pos, true);
+
 					body_extension* ext = NULL;
 
 					while ((ext = parser.get <body_extension>(line, &pos, true)) != NULL)
+					{
 						m_body_extensions.push_back(ext);
+						parser.check <SPACE>(line, &pos, true);
+					}
 				}
 			}
 
@@ -3435,10 +3550,13 @@ public:
 			parser.check <SPACE>(line, &pos);
 			m_body_fields = parser.get <IMAPParser::body_fields>(line, &pos);
 			parser.check <SPACE>(line, &pos);
+
+			// BUGFIX: made SPACE optional. This is not standard, but some servers
+			// seem to return responses like that...
 			m_envelope = parser.get <IMAPParser::envelope>(line, &pos);
-			parser.check <SPACE>(line, &pos);
+			parser.check <SPACE>(line, &pos, true);
 			m_body = parser.get <IMAPParser::xbody>(line, &pos);
-			parser.check <SPACE>(line, &pos);
+			parser.check <SPACE>(line, &pos, true);
 			m_body_fld_lines = parser.get <IMAPParser::body_fld_lines>(line, &pos);
 
 			*currentPos = pos;
@@ -3547,7 +3665,12 @@ public:
 					m_body_type_basic = parser.get <IMAPParser::body_type_basic>(line, &pos);
 
 			if (parser.check <SPACE>(line, &pos, true))
-				m_body_ext_1part = parser.get <IMAPParser::body_ext_1part>(line, &pos);
+			{
+				m_body_ext_1part = parser.get <IMAPParser::body_ext_1part>(line, &pos, true);
+
+				if (!m_body_ext_1part)
+					--pos;
+			}
 
 			*currentPos = pos;
 		}
@@ -3660,8 +3783,8 @@ public:
 
 			parser.check <one_char <'('> >(line, &pos);
 
-			if (!(m_body_type_1part = parser.get <IMAPParser::body_type_1part>(line, &pos, true)))
-				m_body_type_mpart = parser.get <IMAPParser::body_type_mpart>(line, &pos);
+			if (!(m_body_type_mpart = parser.get <IMAPParser::body_type_mpart>(line, &pos, true)))
+				m_body_type_1part = parser.get <IMAPParser::body_type_1part>(line, &pos);
 
 			parser.check <one_char <')'> >(line, &pos);
 
@@ -4246,6 +4369,12 @@ public:
 			{
 				delete (*it);
 			}
+
+			for (std::vector <status_info*>::iterator it = m_status_info_list.begin() ;
+			     it != m_status_info_list.end() ; ++it)
+			{
+				delete (*it);
+			}
 		}
 
 		void go(IMAPParser& parser, string& line, string::size_type* currentPos)
@@ -4815,29 +4944,15 @@ private:
 	TYPE* internalGet(component* resp, string& line, string::size_type* currentPos,
 	                  const bool noThrow = false)
 	{
-#if DEBUG_RESPONSE
-		DEBUG_RESPONSE_level += " ";
-#endif
+		const string::size_type oldPos = *currentPos;
 
 		try
 		{
 			resp->go(*this, line, currentPos);
-
-#if DEBUG_RESPONSE
-			std::cout << DEBUG_RESPONSE_level << "SUCCESS! (" << DEBUG_RESPONSE_components.back() << ")" << std::endl;
-
-			DEBUG_RESPONSE_level.erase(DEBUG_RESPONSE_level.begin() + DEBUG_RESPONSE_level.length() - 1);
-			DEBUG_RESPONSE_components.pop_back();
-#endif
 		}
 		catch (...)
 		{
-#if DEBUG_RESPONSE
-			std::cout << DEBUG_RESPONSE_level << "FAILED! (" << DEBUG_RESPONSE_components.back() << ")" << std::endl;
-
-			DEBUG_RESPONSE_level.erase(DEBUG_RESPONSE_level.begin() + DEBUG_RESPONSE_level.length() - 1);
-			DEBUG_RESPONSE_components.pop_back();
-#endif
+			*currentPos = oldPos;
 
 			delete (resp);
 			if (!noThrow) throw;
@@ -4858,22 +4973,16 @@ public:
 	const bool check(string& line, string::size_type* currentPos,
 	                 const bool noThrow = false)
 	{
+		const string::size_type oldPos = *currentPos;
+
 		try
 		{
 			TYPE term;
 			term.go(*this, line, currentPos);
-
-#if DEBUG_RESPONSE
-			std::cout << DEBUG_RESPONSE_level << "SUCCESS! (" << DEBUG_RESPONSE_components.back() << ")" << std::endl;
-			DEBUG_RESPONSE_components.pop_back();
-#endif
 		}
 		catch (...)
 		{
-#if DEBUG_RESPONSE
-			std::cout << DEBUG_RESPONSE_level << "FAILED! (" << DEBUG_RESPONSE_components.back() << ")" << std::endl;
-			DEBUG_RESPONSE_components.pop_back();
-#endif
+			*currentPos = oldPos;
 
 			if (!noThrow) throw;
 			return false;
@@ -4886,22 +4995,16 @@ public:
 	const bool checkWithArg(string& line, string::size_type* currentPos,
 	                        const ARG_TYPE arg, const bool noThrow = false)
 	{
+		const string::size_type oldPos = *currentPos;
+
 		try
 		{
 			TYPE term(arg);
 			term.go(*this, line, currentPos);
-
-#if DEBUG_RESPONSE
-			std::cout << DEBUG_RESPONSE_level << "SUCCESS! (" << DEBUG_RESPONSE_components.back() << ")" << std::endl;
-			DEBUG_RESPONSE_components.pop_back();
-#endif
 		}
 		catch (...)
 		{
-#if DEBUG_RESPONSE
-			std::cout << DEBUG_RESPONSE_level << "FAILED! (" << DEBUG_RESPONSE_components.back() << ")" << std::endl;
-			DEBUG_RESPONSE_components.pop_back();
-#endif
+			*currentPos = oldPos;
 
 			if (!noThrow) throw;
 			return false;
@@ -4917,6 +5020,8 @@ private:
 	weak_ref <socket> m_socket;
 
 	utility::progressListener* m_progress;
+
+	bool m_strict;
 
 	literalHandler* m_literalHandler;
 
@@ -4967,17 +5072,23 @@ public:
 	{
 		string receiveBuffer;
 
+		ref <timeoutHandler> toh = m_timeoutHandler.acquire();
+		ref <socket> sok = m_socket.acquire();
+
+		if (toh)
+			toh->resetTimeOut();
+
 		while (receiveBuffer.empty())
 		{
 			// Check whether the time-out delay is elapsed
-			if (m_timeoutHandler && m_timeoutHandler->isTimeOut())
+			if (toh && toh->isTimeOut())
 			{
-				if (!m_timeoutHandler->handleTimeOut())
+				if (!toh->handleTimeOut())
 					throw exceptions::operation_timed_out();
 			}
 
 			// We have received data: reset the time-out counter
-			m_socket->receive(receiveBuffer);
+			sok->receive(receiveBuffer);
 
 			if (receiveBuffer.empty())   // buffer is empty
 			{
@@ -4986,8 +5097,8 @@ public:
 			}
 
 			// We have received data ...
-			if (m_timeoutHandler)
-				m_timeoutHandler->resetTimeOut();
+			if (toh)
+				toh->resetTimeOut();
 		}
 
 		m_buffer += receiveBuffer;
@@ -4999,11 +5110,14 @@ public:
 		string::size_type len = 0;
 		string receiveBuffer;
 
+		ref <timeoutHandler> toh = m_timeoutHandler.acquire();
+		ref <socket> sok = m_socket.acquire();
+
 		if (m_progress)
 			m_progress->start(count);
 
-		if (m_timeoutHandler)
-			m_timeoutHandler->resetTimeOut();
+		if (toh)
+			toh->resetTimeOut();
 
 		if (!m_buffer.empty())
 		{
@@ -5024,16 +5138,16 @@ public:
 		while (len < count)
 		{
 			// Check whether the time-out delay is elapsed
-			if (m_timeoutHandler && m_timeoutHandler->isTimeOut())
+			if (toh && toh->isTimeOut())
 			{
-				if (!m_timeoutHandler->handleTimeOut())
+				if (!toh->handleTimeOut())
 					throw exceptions::operation_timed_out();
 
-				m_timeoutHandler->resetTimeOut();
+				toh->resetTimeOut();
 			}
 
 			// Receive data from the socket
-			m_socket->receive(receiveBuffer);
+			sok->receive(receiveBuffer);
 
 			if (receiveBuffer.empty())   // buffer is empty
 			{
@@ -5042,8 +5156,8 @@ public:
 			}
 
 			// We have received data: reset the time-out counter
-			if (m_timeoutHandler)
-				m_timeoutHandler->resetTimeOut();
+			if (toh)
+				toh->resetTimeOut();
 
 			if (len + receiveBuffer.length() > count)
 			{

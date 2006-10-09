@@ -11,19 +11,15 @@
 #define VMIME_PACKAGE "libvmime"
 
 // Version number of package
-#define VMIME_VERSION "0.8.0"
+#define VMIME_VERSION "0.8.1"
 #define VMIME_API "0:0:0"
 
 // Target OS and architecture
-#define VMIME_TARGET_ARCH "i686"
-#define VMIME_TARGET_OS "windows"
+#define VMIME_TARGET_ARCH "x86_64"
+#define VMIME_TARGET_OS "Linux"
 
 // Set to 1 if debugging should be activated
-#ifdef _DEBUG
-#    define VMIME_DEBUG 1
-#else
-#    define VMIME_DEBUG 0
-#endif
+#define VMIME_DEBUG 0
 
 // Byte order (set one or the other, but not both!)
 #define VMIME_BYTE_ORDER_BIG_ENDIAN    0
@@ -40,7 +36,6 @@ typedef unsigned short vmime_uint16;
 typedef signed int vmime_int32;
 typedef unsigned int vmime_uint32;
 
-
 // Options
 // -- Wide characters support
 #define VMIME_WIDE_CHAR_SUPPORT 0
@@ -53,19 +48,23 @@ typedef unsigned int vmime_uint32;
 // -- Messaging support
 #define VMIME_HAVE_MESSAGING_FEATURES 1
 // -- Built-in messaging protocols
-#define VMIME_BUILTIN_MESSAGING_PROTOS "pop3 smtp imap maildir"
+#define VMIME_BUILTIN_MESSAGING_PROTOS "pop3 smtp imap maildir sendmail"
 #define VMIME_BUILTIN_MESSAGING_PROTO_POP3 1
 #define VMIME_BUILTIN_MESSAGING_PROTO_SMTP 1
 #define VMIME_BUILTIN_MESSAGING_PROTO_IMAP 1
 #define VMIME_BUILTIN_MESSAGING_PROTO_MAILDIR 1
+#define VMIME_BUILTIN_MESSAGING_PROTO_SENDMAIL 1
 // -- Built-in platform handlers
-#define VMIME_BUILTIN_PLATFORMS "windows"
-#define VMIME_BUILTIN_PLATFORM_WINDOWS 1
+#define VMIME_BUILTIN_PLATFORMS "posix"
+#define VMIME_BUILTIN_PLATFORM_POSIX 1
+#define VMIME_BUILTIN_PLATFORM_WINDOWS 0
 
-// Miscellaneous
-#define VMIME_INLINE_TEMPLATE_SPECIALIZATION 1
-#define VMIME_NO_MULTIPLE_INHERITANCE 1
-#define VMIME_BUILTIN_PLATFORM_POSIX 0
+// Miscellaneous flags
+#define VMIME_SENDMAIL_PATH "/usr/bin/sendmail"
+
+
+// Additional defines
+#define VMIME_HAVE_GETADDRINFO 1
 
 
 #endif // VMIME_CONFIG_HPP_INCLUDED

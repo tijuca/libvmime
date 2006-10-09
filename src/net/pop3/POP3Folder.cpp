@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -22,6 +22,8 @@
 #include "vmime/net/pop3/POP3Store.hpp"
 #include "vmime/net/pop3/POP3Message.hpp"
 
+#include "vmime/net/pop3/POP3Utils.hpp"
+
 #include "vmime/exception.hpp"
 
 
@@ -30,23 +32,25 @@ namespace net {
 namespace pop3 {
 
 
-POP3Folder::POP3Folder(const folder::path& path, POP3Store* store)
+POP3Folder::POP3Folder(const folder::path& path, ref <POP3Store> store)
 	: m_store(store), m_path(path),
 	  m_name(path.isEmpty() ? folder::path::component("") : path.getLastComponent()),
 	  m_mode(-1), m_open(false)
 {
-	m_store->registerFolder(this);
+	store->registerFolder(this);
 }
 
 
 POP3Folder::~POP3Folder()
 {
-	if (m_store)
+	ref <POP3Store> store = m_store.acquire();
+
+	if (store)
 	{
 		if (m_open)
 			close(false);
 
-		m_store->unregisterFolder(this);
+		store->unregisterFolder(this);
 	}
 	else if (m_open)
 	{
@@ -98,7 +102,9 @@ const folder::path POP3Folder::getFullPath() const
 
 void POP3Folder::open(const int mode, bool failIfModeIsNotAvailable)
 {
-	if (!m_store)
+	ref <POP3Store> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 
 	if (m_path.isEmpty())
@@ -113,15 +119,15 @@ void POP3Folder::open(const int mode, bool failIfModeIsNotAvailable)
 	}
 	else if (m_path.getSize() == 1 && m_path[0].getBuffer() == "INBOX")
 	{
-		m_store->sendRequest("STAT");
+		store->sendRequest("STAT");
 
 		string response;
-		m_store->readResponse(response, false);
+		store->readResponse(response, false);
 
-		if (!m_store->isSuccessResponse(response))
+		if (!store->isSuccessResponse(response))
 			throw exceptions::command_error("STAT", response);
 
-		m_store->stripResponseCode(response, response);
+		store->stripResponseCode(response, response);
 
 		std::istringstream iss(response);
 		iss >> m_messageCount;
@@ -140,7 +146,9 @@ void POP3Folder::open(const int mode, bool failIfModeIsNotAvailable)
 
 void POP3Folder::close(const bool expunge)
 {
-	if (!m_store)
+	ref <POP3Store> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 
 	if (!isOpen())
@@ -148,10 +156,10 @@ void POP3Folder::close(const bool expunge)
 
 	if (!expunge)
 	{
-		m_store->sendRequest("RSET");
+		store->sendRequest("RSET");
 
 		string response;
-		m_store->readResponse(response, false);
+		store->readResponse(response, false);
 	}
 
 	m_open = false;
@@ -176,9 +184,17 @@ void POP3Folder::create(const int /* type */)
 }
 
 
+void POP3Folder::destroy()
+{
+	throw exceptions::operation_not_supported();
+}
+
+
 const bool POP3Folder::exists()
 {
-	if (!m_store)
+	ref <POP3Store> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 
 	return (m_path.isEmpty() || (m_path.getSize() == 1 && m_path[0].getBuffer() == "INBOX"));
@@ -193,22 +209,26 @@ const bool POP3Folder::isOpen() const
 
 ref <message> POP3Folder::getMessage(const int num)
 {
-	if (!m_store)
+	ref <POP3Store> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
 	else if (num < 1 || num > m_messageCount)
 		throw exceptions::message_not_found();
 
-	return vmime::create <POP3Message>(this, num);
+	return vmime::create <POP3Message>(thisRef().dynamicCast <POP3Folder>(), num);
 }
 
 
 std::vector <ref <message> > POP3Folder::getMessages(const int from, const int to)
 {
+	ref <POP3Store> store = m_store.acquire();
+
 	const int to2 = (to == -1 ? m_messageCount : to);
 
-	if (!m_store)
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -216,9 +236,10 @@ std::vector <ref <message> > POP3Folder::getMessages(const int from, const int t
 		throw exceptions::message_not_found();
 
 	std::vector <ref <message> > v;
+	ref <POP3Folder> thisFolder = thisRef().dynamicCast <POP3Folder>();
 
 	for (int i = from ; i <= to2 ; ++i)
-		v.push_back(vmime::create <POP3Message>(this, i));
+		v.push_back(vmime::create <POP3Message>(thisFolder, i));
 
 	return (v);
 }
@@ -226,19 +247,22 @@ std::vector <ref <message> > POP3Folder::getMessages(const int from, const int t
 
 std::vector <ref <message> > POP3Folder::getMessages(const std::vector <int>& nums)
 {
-	if (!m_store)
+	ref <POP3Store> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
 
 	std::vector <ref <message> > v;
+	ref <POP3Folder> thisFolder = thisRef().dynamicCast <POP3Folder>();
 
 	for (std::vector <int>::const_iterator it = nums.begin() ; it != nums.end() ; ++it)
 	{
 		if (*it < 1|| *it > m_messageCount)
 			throw exceptions::message_not_found();
 
-		v.push_back(vmime::create <POP3Message>(this, *it));
+		v.push_back(vmime::create <POP3Message>(thisFolder, *it));
 	}
 
 	return (v);
@@ -247,7 +271,9 @@ std::vector <ref <message> > POP3Folder::getMessages(const std::vector <int>& nu
 
 const int POP3Folder::getMessageCount()
 {
-	if (!m_store)
+	ref <POP3Store> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -258,22 +284,26 @@ const int POP3Folder::getMessageCount()
 
 ref <folder> POP3Folder::getFolder(const folder::path::component& name)
 {
-	if (!m_store)
+	ref <POP3Store> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 
-	return vmime::create <POP3Folder>(m_path / name, m_store);
+	return vmime::create <POP3Folder>(m_path / name, store);
 }
 
 
 std::vector <ref <folder> > POP3Folder::getFolders(const bool /* recursive */)
 {
-	if (!m_store)
+	ref <POP3Store> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 
 	if (m_path.isEmpty())
 	{
 		std::vector <ref <folder> > v;
-		v.push_back(vmime::create <POP3Folder>(folder::path::component("INBOX"), m_store));
+		v.push_back(vmime::create <POP3Folder>(folder::path::component("INBOX"), store));
 		return (v);
 	}
 	else
@@ -287,7 +317,9 @@ std::vector <ref <folder> > POP3Folder::getFolders(const bool /* recursive */)
 void POP3Folder::fetchMessages(std::vector <ref <message> >& msg, const int options,
                                utility::progressListener* progress)
 {
-	if (!m_store)
+	ref <POP3Store> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -301,7 +333,8 @@ void POP3Folder::fetchMessages(std::vector <ref <message> >& msg, const int opti
 	for (std::vector <ref <message> >::iterator it = msg.begin() ;
 	     it != msg.end() ; ++it)
 	{
-		(*it).dynamicCast <POP3Message>()->fetch(this, options);
+		(*it).dynamicCast <POP3Message>()->fetch
+			(thisRef().dynamicCast <POP3Folder>(), options);
 
 		if (progress)
 			progress->progress(++current, total);
@@ -313,15 +346,15 @@ void POP3Folder::fetchMessages(std::vector <ref <message> >& msg, const int opti
 		std::ostringstream command;
 		command << "LIST";
 
-		m_store->sendRequest(command.str());
+		store->sendRequest(command.str());
 
 		// Get the response
 		string response;
-		m_store->readResponse(response, true, NULL);
+		store->readResponse(response, true, NULL);
 
-		if (m_store->isSuccessResponse(response))
+		if (store->isSuccessResponse(response))
 		{
-			m_store->stripFirstLine(response, response, NULL);
+			store->stripFirstLine(response, response, NULL);
 
 			// C: LIST
 			// S: +OK
@@ -329,7 +362,7 @@ void POP3Folder::fetchMessages(std::vector <ref <message> >& msg, const int opti
 			// S: 2 12653
 			// S: .
 			std::map <int, string> result;
-			parseMultiListOrUidlResponse(response, result);
+			POP3Utils::parseMultiListOrUidlResponse(response, result);
 
 			for (std::vector <ref <message> >::iterator it = msg.begin() ;
 			     it != msg.end() ; ++it)
@@ -358,15 +391,15 @@ void POP3Folder::fetchMessages(std::vector <ref <message> >& msg, const int opti
 		std::ostringstream command;
 		command << "UIDL";
 
-		m_store->sendRequest(command.str());
+		store->sendRequest(command.str());
 
 		// Get the response
 		string response;
-		m_store->readResponse(response, true, NULL);
+		store->readResponse(response, true, NULL);
 
-		if (m_store->isSuccessResponse(response))
+		if (store->isSuccessResponse(response))
 		{
-			m_store->stripFirstLine(response, response, NULL);
+			store->stripFirstLine(response, response, NULL);
 
 			// C: UIDL
 			// S: +OK
@@ -374,7 +407,7 @@ void POP3Folder::fetchMessages(std::vector <ref <message> >& msg, const int opti
 			// S: 2 QhdPYR:00WBw1Ph7x7
 			// S: .
 			std::map <int, string> result;
-			parseMultiListOrUidlResponse(response, result);
+			POP3Utils::parseMultiListOrUidlResponse(response, result);
 
 			for (std::vector <ref <message> >::iterator it = msg.begin() ;
 			     it != msg.end() ; ++it)
@@ -396,12 +429,15 @@ void POP3Folder::fetchMessages(std::vector <ref <message> >& msg, const int opti
 
 void POP3Folder::fetchMessage(ref <message> msg, const int options)
 {
-	if (!m_store)
+	ref <POP3Store> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
 
-	msg.dynamicCast <POP3Message>()->fetch(this, options);
+	msg.dynamicCast <POP3Message>()->fetch
+		(thisRef().dynamicCast <POP3Folder>(), options);
 
 	if (options & FETCH_SIZE)
 	{
@@ -409,15 +445,15 @@ void POP3Folder::fetchMessage(ref <message> msg, const int options)
 		std::ostringstream command;
 		command << "LIST " << msg->getNumber();
 
-		m_store->sendRequest(command.str());
+		store->sendRequest(command.str());
 
 		// Get the response
 		string response;
-		m_store->readResponse(response, false, NULL);
+		store->readResponse(response, false, NULL);
 
-		if (m_store->isSuccessResponse(response))
+		if (store->isSuccessResponse(response))
 		{
-			m_store->stripResponseCode(response, response);
+			store->stripResponseCode(response, response);
 
 			// C: LIST 2
 			// S: +OK 2 4242
@@ -445,15 +481,15 @@ void POP3Folder::fetchMessage(ref <message> msg, const int options)
 		std::ostringstream command;
 		command << "UIDL " << msg->getNumber();
 
-		m_store->sendRequest(command.str());
+		store->sendRequest(command.str());
 
 		// Get the response
 		string response;
-		m_store->readResponse(response, false, NULL);
+		store->readResponse(response, false, NULL);
 
-		if (m_store->isSuccessResponse(response))
+		if (store->isSuccessResponse(response))
 		{
-			m_store->stripResponseCode(response, response);
+			store->stripResponseCode(response, response);
 
 			// C: UIDL 2
 			// S: +OK 2 QhdPYR:00WBw1Ph7x7
@@ -486,19 +522,19 @@ ref <folder> POP3Folder::getParent()
 	if (m_path.isEmpty())
 		return NULL;
 	else
-		return vmime::create <POP3Folder>(m_path.getParent(), m_store);
+		return vmime::create <POP3Folder>(m_path.getParent(), m_store.acquire());
 }
 
 
-weak_ref <const store> POP3Folder::getStore() const
+ref <const store> POP3Folder::getStore() const
 {
-	return (m_store);
+	return m_store.acquire();
 }
 
 
-weak_ref <store> POP3Folder::getStore()
+ref <store> POP3Folder::getStore()
 {
-	return (m_store);
+	return m_store.acquire();
 }
 
 
@@ -522,7 +558,9 @@ void POP3Folder::onStoreDisconnected()
 
 void POP3Folder::deleteMessage(const int num)
 {
-	if (!m_store)
+	ref <POP3Store> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -530,12 +568,12 @@ void POP3Folder::deleteMessage(const int num)
 	std::ostringstream command;
 	command << "DELE " << num;
 
-	m_store->sendRequest(command.str());
+	store->sendRequest(command.str());
 
 	string response;
-	m_store->readResponse(response, false);
+	store->readResponse(response, false);
 
-	if (!m_store->isSuccessResponse(response))
+	if (!store->isSuccessResponse(response))
 		throw exceptions::command_error("DELE", response);
 
 	// Update local flags
@@ -562,10 +600,12 @@ void POP3Folder::deleteMessage(const int num)
 
 void POP3Folder::deleteMessages(const int from, const int to)
 {
+	ref <POP3Store> store = m_store.acquire();
+
 	if (from < 1 || (to < from && to != -1))
 		throw exceptions::invalid_argument();
 
-	if (!m_store)
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -577,12 +617,12 @@ void POP3Folder::deleteMessages(const int from, const int to)
 		std::ostringstream command;
 		command << "DELE " << i;
 
-		m_store->sendRequest(command.str());
+		store->sendRequest(command.str());
 
 		string response;
-		m_store->readResponse(response, false);
+		store->readResponse(response, false);
 
-		if (!m_store->isSuccessResponse(response))
+		if (!store->isSuccessResponse(response))
 			throw exceptions::command_error("DELE", response);
 	}
 
@@ -612,10 +652,12 @@ void POP3Folder::deleteMessages(const int from, const int to)
 
 void POP3Folder::deleteMessages(const std::vector <int>& nums)
 {
+	ref <POP3Store> store = m_store.acquire();
+
 	if (nums.empty())
 		throw exceptions::invalid_argument();
 
-	if (!m_store)
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -626,12 +668,12 @@ void POP3Folder::deleteMessages(const std::vector <int>& nums)
 		std::ostringstream command;
 		command << "DELE " << (*it);
 
-		m_store->sendRequest(command.str());
+		store->sendRequest(command.str());
 
 		string response;
-		m_store->readResponse(response, false);
+		store->readResponse(response, false);
 
-		if (!m_store->isSuccessResponse(response))
+		if (!store->isSuccessResponse(response))
 			throw exceptions::command_error("DELE", response);
 	}
 
@@ -716,20 +758,22 @@ void POP3Folder::copyMessages(const folder::path& /* dest */, const std::vector 
 
 void POP3Folder::status(int& count, int& unseen)
 {
-	if (!m_store)
+	ref <POP3Store> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
 
-	m_store->sendRequest("STAT");
+	store->sendRequest("STAT");
 
 	string response;
-	m_store->readResponse(response, false);
+	store->readResponse(response, false);
 
-	if (!m_store->isSuccessResponse(response))
+	if (!store->isSuccessResponse(response))
 		throw exceptions::command_error("STAT", response);
 
-	m_store->stripResponseCode(response, response);
+	store->stripResponseCode(response, response);
 
 	std::istringstream iss(response);
 	iss >> count;
@@ -759,8 +803,8 @@ void POP3Folder::status(int& count, int& unseen)
 			notifyMessageCount(event);
 
 			// Notify folders with the same path
-			for (std::list <POP3Folder*>::iterator it = m_store->m_folders.begin() ;
-			     it != m_store->m_folders.end() ; ++it)
+			for (std::list <POP3Folder*>::iterator it = store->m_folders.begin() ;
+			     it != store->m_folders.end() ; ++it)
 			{
 				if ((*it) != this && (*it)->getFullPath() == m_path)
 				{
@@ -782,42 +826,6 @@ void POP3Folder::expunge()
 {
 	// Not supported by POP3 protocol (deleted messages are automatically
 	// expunged at the end of the session...).
-}
-
-
-void POP3Folder::parseMultiListOrUidlResponse(const string& response, std::map <int, string>& result)
-{
-	std::istringstream iss(response);
-	std::map <int, string> ids;
-
-	string line;
-
-	while (std::getline(iss, line))
-	{
-		string::iterator it = line.begin();
-
-		while (it != line.end() && (*it == ' ' || *it == '\t'))
-			++it;
-
-		if (it != line.end())
-		{
-			int number = 0;
-
-			while (it != line.end() && (*it >= '0' && *it <= '9'))
-			{
-				number = (number * 10) + (*it - '0');
-				++it;
-			}
-
-			while (it != line.end() && !(*it == ' ' || *it == '\t')) ++it;
-			while (it != line.end() && (*it == ' ' || *it == '\t')) ++it;
-
-			if (it != line.end())
-			{
-				result.insert(std::map <int, string>::value_type(number, string(it, line.end())));
-			}
-		}
-	}
 }
 
 

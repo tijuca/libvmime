@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -58,7 +58,7 @@ public:
 	  *
 	  * @return folder in which message count changed
 	  */
-	ref <const folder> getFolder() const;
+	ref <folder> getFolder() const;
 
 	/** Return the event type.
 	  *
@@ -121,7 +121,7 @@ public:
 	  *
 	  * @return folder in which message count changed
 	  */
-	ref <const folder> getFolder() const;
+	ref <folder> getFolder() const;
 
 	/** Return the event type.
 	  *
@@ -185,7 +185,7 @@ public:
 	  *
 	  * @return folder on which the event occured
 	  */
-	ref <const folder> getFolder() const;
+	ref <folder> getFolder() const;
 
 	/** Return the event type.
 	  *

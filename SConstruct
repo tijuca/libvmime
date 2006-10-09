@@ -29,7 +29,7 @@ import string
 # Package version number
 packageVersionMajor = 0
 packageVersionMinor = 8
-packageVersionMicro = 0
+packageVersionMicro = 1
 
 # API version number (libtool)
 #
@@ -105,6 +105,7 @@ libvmime_sources = [
 	'encoding.cpp', 'encoding.hpp',
 	'exception.cpp', 'exception.hpp',
 	'fileAttachment.cpp', 'fileAttachment.hpp',
+	'generatedMessageAttachment.hpp', 'generatedMessageAttachment.cpp',
 	'header.cpp', 'header.hpp',
 	'headerFieldFactory.cpp', 'headerFieldFactory.hpp',
 	'headerField.cpp', 'headerField.hpp',
@@ -115,6 +116,7 @@ libvmime_sources = [
 	'mailboxGroup.cpp', 'mailboxGroup.hpp',
 	'mailboxList.cpp', 'mailboxList.hpp',
 	'mediaType.cpp', 'mediaType.hpp',
+	'messageAttachment.hpp',
 	'messageBuilder.cpp', 'messageBuilder.hpp',
 	'message.cpp', 'message.hpp',
 	'messageId.cpp', 'messageId.hpp',
@@ -125,6 +127,7 @@ libvmime_sources = [
 	'path.cpp', 'path.hpp',
 	'parameter.cpp', 'parameter.hpp',
 	'parameterizedHeaderField.cpp', 'parameterizedHeaderField.hpp',
+	'parsedMessageAttachment.cpp', 'parsedMessageAttachment.hpp',
 	'parserHelpers.hpp',
 	'plainTextPart.cpp', 'plainTextPart.hpp',
 	'platformDependant.cpp', 'platformDependant.hpp',
@@ -137,6 +140,7 @@ libvmime_sources = [
 	'textPart.hpp',
 	'types.hpp',
 	'word.cpp', 'word.hpp',
+	'wordEncoder.cpp', 'wordEncoder.hpp',
 	'vmime.hpp',
 	# ==============================  Utility  =============================
 	'utility/childProcess.hpp',
@@ -146,7 +150,7 @@ libvmime_sources = [
 	'utility/path.cpp', 'utility/path.hpp',
 	'utility/progressListener.cpp', 'utility/progressListener.hpp',
 	'utility/random.cpp', 'utility/random.hpp',
-	'utility/smartPtr.hpp',
+	'utility/smartPtr.cpp', 'utility/smartPtr.hpp',
 	'utility/stream.cpp', 'utility/stream.hpp',
 	'utility/stringProxy.cpp', 'utility/stringProxy.hpp',
 	'utility/stringUtils.cpp', 'utility/stringUtils.hpp',
@@ -195,9 +199,12 @@ libvmime_examples_sources = [
 
 libvmime_messaging_sources = [
 	'net/builtinServices.inl',
+	'net/connectionInfos.hpp',
+	'net/defaultConnectionInfos.cpp', 'net/defaultConnectionInfos.hpp',
 	'net/events.cpp', 'net/events.hpp',
 	'net/folder.cpp', 'net/folder.hpp',
 	'net/message.cpp', 'net/message.hpp',
+	'net/securedConnectionInfos.hpp',
 	'net/service.cpp', 'net/service.hpp',
 	'net/serviceFactory.cpp', 'net/serviceFactory.hpp',
 	'net/serviceInfos.cpp', 'net/serviceInfos.hpp',
@@ -212,6 +219,7 @@ libvmime_messaging_sources = [
 libvmime_net_tls_sources = [
 	'net/tls/TLSSession.cpp', 'net/tls/TLSSession.hpp',
 	'net/tls/TLSSocket.cpp', 'net/tls/TLSSocket.hpp',
+	'net/tls/TLSSecuredConnectionInfos.cpp', 'net/tls/TLSSecuredConnectionInfos.hpp',
 	'security/cert/certificateChain.cpp', 'security/cert/certificateChain.hpp',
 	'security/cert/certificateVerifier.hpp',
 	'security/cert/defaultCertificateVerifier.cpp', 'security/cert/defaultCertificateVerifier.hpp',
@@ -227,12 +235,14 @@ libvmime_messaging_proto_sources = [
 			'net/pop3/POP3Store.cpp',        'net/pop3/POP3Store.hpp',
 			'net/pop3/POP3SStore.cpp',       'net/pop3/POP3SStore.hpp',
 			'net/pop3/POP3Folder.cpp',       'net/pop3/POP3Folder.hpp',
-			'net/pop3/POP3Message.cpp',      'net/pop3/POP3Message.hpp'
+			'net/pop3/POP3Message.cpp',      'net/pop3/POP3Message.hpp',
+			'net/pop3/POP3Utils.cpp',        'net/pop3/POP3Utils.hpp'
 		]
 	],
 	[
 		'smtp',
 		[
+			'net/smtp/SMTPResponse.cpp',     'net/smtp/SMTPResponse.hpp',
 			'net/smtp/SMTPServiceInfos.cpp', 'net/smtp/SMTPServiceInfos.hpp',
 			'net/smtp/SMTPTransport.cpp',    'net/smtp/SMTPTransport.hpp',
 			'net/smtp/SMTPSTransport.cpp',   'net/smtp/SMTPSTransport.hpp'
@@ -324,6 +334,7 @@ libvmimetest_common = [
 
 libvmimetest_sources = [
 	'tests/testRunner.cpp',
+	'tests/testUtils.cpp',
 	# ==============================  Parser  ==============================
 	'tests/parser/attachmentHelperTest.cpp',
 	'tests/parser/bodyPartTest.cpp',
@@ -332,6 +343,7 @@ libvmimetest_sources = [
 	'tests/parser/dispositionTest.cpp',
 	'tests/parser/encoderTest.cpp',
 	'tests/parser/headerTest.cpp',
+	'tests/parser/htmlTextPartTest.cpp',
 	'tests/parser/mailboxTest.cpp',
 	'tests/parser/mediaTypeTest.cpp',
 	'tests/parser/messageIdTest.cpp',
@@ -340,6 +352,7 @@ libvmimetest_sources = [
 	'tests/parser/parameterTest.cpp',
 	'tests/parser/textTest.cpp',
 	# ==============================  Utility  =============================
+	'tests/utility/datetimeUtilsTest.cpp',
 	'tests/utility/filteredStreamTest.cpp',
 	'tests/utility/stringProxyTest.cpp',
 	'tests/utility/stringUtilsTest.cpp',
@@ -350,7 +363,10 @@ libvmimetest_sources = [
 	'tests/misc/importanceHelperTest.cpp',
 	# =============================  Security  =============================
 	'tests/security/digest/md5Test.cpp',
-	'tests/security/digest/sha1Test.cpp'
+	'tests/security/digest/sha1Test.cpp',
+	# ===============================  Net  ================================
+	'tests/net/smtp/SMTPTransportTest.cpp',
+	'tests/net/smtp/SMTPResponseTest.cpp'
 ]
 
 libvmime_autotools = [
@@ -430,7 +446,7 @@ TargetSignatures('build')
 defaultSendmailPath = WhereIs("sendmail")
 
 if defaultSendmailPath == None:
-	defaultSendmailPath = ''
+	defaultSendmailPath = '/usr/bin/sendmail'
 
 
 # Command line options
@@ -597,7 +613,11 @@ if env['with_sasl'] == 'yes':
 	env.ParseConfig('pkg-config --cflags --libs libgsasl')
 
 if env['with_tls'] == 'yes':
-	env.ParseConfig('pkg-config --cflags --libs libgnutls')
+	libgnutls_pc = string.strip(os.popen("pkg-config --list-all | grep '^libgnutls[ ]' | cut -f 1 -d ' '").read())
+	if len(libgnutls_pc) == 0:
+		libgnutls_pc = string.strip(os.popen("pkg-config --list-all | grep '^gnutls[ ]' | cut -f 1 -d ' '").read())
+
+	env.ParseConfig('pkg-config --cflags --libs ' + libgnutls_pc)
 
 # Generate help text for command line options
 Help(opts.GenerateHelpText(env))
@@ -823,6 +843,10 @@ if IsProtocolSupported(messaging_protocols, 'sendmail'):
 
 config_hpp.write("""
 
+// Additional defines
+#define VMIME_HAVE_GETADDRINFO 1
+
+
 #endif // VMIME_CONFIG_HPP_INCLUDED
 """)
 
@@ -1047,7 +1071,7 @@ def generateAutotools(target, source, env):
 	vmime_pc_in.write("Description: " + packageDescription + "\n")
 	vmime_pc_in.write("Version: @VERSION@\n")
 	vmime_pc_in.write("Requires: @GSASL_REQUIRED@\n")
-	vmime_pc_in.write("Libs: -L${libdir} -l@GENERIC_VERSIONED_LIBRARY_NAME@ @GSASL_LIBS@ @LIBGNUTLS_LIBS@\n")
+	vmime_pc_in.write("Libs: -L${libdir} -l@GENERIC_VERSIONED_LIBRARY_NAME@ @GSASL_LIBS@ @LIBGNUTLS_LIBS@ @VMIME_ADDITIONAL_PC_LIBS@\n")
 	#vmime_pc_in.write("Cflags: -I${includedir}/@GENERIC_VERSIONED_LIBRARY_NAME@\n")
 	vmime_pc_in.write("Cflags: -I${includedir}/ @LIBGNUTLS_CFLAGS@\n")
 	vmime_pc_in.close()
@@ -1250,6 +1274,7 @@ AM_CONFIG_HEADER([config.h])
 AM_MAINTAINER_MODE
 
 VMIME_ADDITIONAL_DEFINES=""
+VMIME_ADDITIONAL_PC_LIBS=""
 
 
 #
@@ -1294,16 +1319,6 @@ else
   AC_MSG_RESULT(no)
   AC_ERROR(no usable version of iconv has been found)
 fi
-
-# -- GNU SASL Library (http://www.gnu.org/software/gsasl/)
-AC_CHECK_HEADER(gsasl.h,
-	AC_CHECK_LIB(gsasl, gsasl_check_version,
-		[have_gsasl=yes AC_SUBST(GSASL_AVAIL_LIBS, -lgsasl) AC_SUBST(GSASL_AVAIL_REQUIRED, libgsasl)],
-		 have_gsasl=no),
-	have_gsasl=no)
-
-# -- GNU TLS Library (http://www.gnu.org/software/gnutls/)
-AM_PATH_LIBGNUTLS(1.2.0, have_gnutls=yes, have_gnutls=no)
 
 # -- global constructors (stolen from 'configure.in' in libsigc++)
 AC_MSG_CHECKING([if linker supports global constructors])
@@ -1543,6 +1558,13 @@ AC_ARG_ENABLE(sasl,
      [conf_sasl=yes])
 
 if test "x$conf_sasl" = "xyes"; then
+	# -- GNU SASL Library (http://www.gnu.org/software/gsasl/)
+	AC_CHECK_HEADER(gsasl.h,
+		AC_CHECK_LIB(gsasl, gsasl_check_version,
+			[have_gsasl=yes AC_SUBST(GSASL_AVAIL_LIBS, -lgsasl) AC_SUBST(GSASL_AVAIL_REQUIRED, libgsasl)],
+			 have_gsasl=no),
+		have_gsasl=no)
+
 	if test "x$have_gsasl" = "xyes"; then
 		AM_CONDITIONAL(VMIME_HAVE_SASL_SUPPORT, true)
 		VMIME_HAVE_SASL_SUPPORT=1
@@ -1575,6 +1597,9 @@ AC_ARG_ENABLE(tls,
      [conf_tls=yes])
 
 if test "x$conf_tls" = "xyes"; then
+	# -- GNU TLS Library (http://www.gnu.org/software/gnutls/)
+	AM_PATH_LIBGNUTLS(1.2.0, have_gnutls=yes, have_gnutls=no)
+
 	if test "x$have_gnutls" = "xyes"; then
 		AM_CONDITIONAL(VMIME_HAVE_TLS_SUPPORT, true)
 		VMIME_HAVE_TLS_SUPPORT=1
@@ -1657,8 +1682,20 @@ AC_PATH_PROG(SENDMAIL, sendmail, /usr/sbin/sendmail, /usr/sbin:/usr/lib)
 # Detect some platform-specific stuff
 #
 
+# -- MLang (Windows)
 if test "x$VMIME_DETECT_PLATFORM" = "xwindows"; then
 	AC_CHECK_HEADER(mlang.h, [VMIME_ADDITIONAL_DEFINES="$VMIME_ADDITIONAL_DEFINES HAVE_MLANG_H"])
+fi
+
+# -- Link with Winsock (Windows)
+if test "x$VMIME_DETECT_PLATFORM" = "xwindows"; then
+	VMIME_ADDITIONAL_PC_LIBS="$VMIME_ADDITIONAL_PC_LIBS -lwsock32"
+fi
+
+# -- getaddrinfo (POSIX)
+if test "x$VMIME_DETECT_PLATFORM" = "xposix"; then
+	AC_CHECK_HEADERS(netdb.h sys/types.h sys/socket.h,)
+	AC_CHECK_FUNC(getaddrinfo, [VMIME_ADDITIONAL_DEFINES="$VMIME_ADDITIONAL_DEFINES HAVE_GETADDRINFO"])
 fi
 
 
@@ -1748,13 +1785,13 @@ CXXFLAGS=""
 if test x$VMIME_DEBUG = x1 ; then
 	# -g
 	OLD_CXXFLAGS="$CXXFLAGS"
-	CXX_FLAGS="$CXXFLAGS -g"
+	CXXFLAGS="$CXXFLAGS -g"
 	AC_MSG_CHECKING(whether cc accepts -g)
 	AC_TRY_COMPILE(,,echo yes,echo no; CXXFLAGS="$OLD_CXXFLAGS")
 else
 	# -O2
 	OLD_CXXFLAGS="$CXXFLAGS"
-	CXX_FLAGS="$CXXFLAGS -O2"
+	CXXFLAGS="$CXXFLAGS -O2"
 	AC_MSG_CHECKING(whether cc accepts -O2)
 	AC_TRY_COMPILE(,,echo yes,echo no; CXXFLAGS="$OLD_CXXFLAGS")
 fi
@@ -1789,6 +1826,8 @@ AC_SUBST(CXXFLAGS)
 
 AC_SUBST(EXTRA_CFLAGS)
 AC_SUBST(EXTRA_LIBS)
+
+AC_SUBST(VMIME_ADDITIONAL_PC_LIBS)
 
 LIBS=`echo $LIBS | sed -e 's|^ ||g' | sed -e 's|  | |g'`
 
@@ -2238,7 +2277,6 @@ env.Alias('msvc', env.GenerateMSVC('foo_msvc', 'SConstruct'))
 def appendAdditionalDistFiles():
 	# Generate autotools-related files
 	generateAutotools([], [], env)
-
 	# Generate MSVC-related files
 	generateMSVC([], [], env)
 

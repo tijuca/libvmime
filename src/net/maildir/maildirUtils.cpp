@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -22,6 +22,9 @@
 
 #include "vmime/utility/random.hpp"
 
+#include "vmime/exception.hpp"
+#include "vmime/platformDependant.hpp"
+
 
 namespace vmime {
 namespace net {
@@ -34,7 +37,8 @@ const vmime::word maildirUtils::NEW_DIR("new", vmime::charset(vmime::charsets::U
 
 
 const utility::file::path maildirUtils::getFolderFSPath
-	(weak_ref <maildirStore> store, const utility::path& folderPath, const FolderFSPathMode mode)
+	(ref <const maildirStore> store, const utility::path& folderPath,
+	 const FolderFSPathMode mode)
 {
 	// Root path
 	utility::file::path path(store->getFileSystemPath());
@@ -102,11 +106,29 @@ const bool maildirUtils::isMessageFile(const utility::file& file)
 }
 
 
+// NOTE ABOUT ID/FLAGS SEPARATOR
+// -----------------------------
+// In the maildir specification, the character ':' is used to separate
+// the unique identifier and the message flags.
+//
+// On Windows (and particularly FAT file systems), ':' is not allowed
+// in a filename, so we use a dash ('-') instead. This is the solution
+// used by Mutt/Win32, so we also use it here.
+//
+// To be compatible between implementations, we check for both
+// characters when reading file names.
+
+
 const utility::file::path::component maildirUtils::extractId
 	(const utility::file::path::component& filename)
 {
-	string::size_type sep = filename.getBuffer().rfind(':');
-	if (sep == string::npos) return (filename);
+	string::size_type sep = filename.getBuffer().rfind(':');  // try colon
+
+	if (sep == string::npos)
+	{
+		sep = filename.getBuffer().rfind('-');  // try dash (Windows)
+		if (sep == string::npos) return (filename);
+	}
 
 	return (utility::path::component
 		(string(filename.getBuffer().begin(), filename.getBuffer().begin() + sep)));
@@ -115,8 +137,13 @@ const utility::file::path::component maildirUtils::extractId
 
 const int maildirUtils::extractFlags(const utility::file::path::component& comp)
 {
-	string::size_type sep = comp.getBuffer().rfind(':');
-	if (sep == string::npos) return (0);
+	string::size_type sep = comp.getBuffer().rfind(':');  // try colon
+
+	if (sep == string::npos)
+	{
+		sep = comp.getBuffer().rfind('-');  // try dash (Windows)
+		if (sep == string::npos) return 0;
+	}
 
 	const string flagsString(comp.getBuffer().begin() + sep + 1, comp.getBuffer().end());
 	const string::size_type count = flagsString.length();
@@ -166,7 +193,11 @@ const utility::file::path::component maildirUtils::buildFilename
 const utility::file::path::component maildirUtils::buildFilename
 	(const utility::file::path::component& id, const utility::file::path::component& flags)
 {
-	return (utility::path::component(id.getBuffer() + ":" + flags.getBuffer()));
+#if VMIME_BUILTIN_PLATFORM_WINDOWS
+	return (utility::path::component(id.getBuffer() + "-" + flags.getBuffer()));  // use dash
+#else
+	return (utility::path::component(id.getBuffer() + ":" + flags.getBuffer()));  // use colon
+#endif
 }
 
 
@@ -181,6 +212,44 @@ const utility::file::path::component maildirUtils::generateId()
 	oss << utility::random::getString(6);
 
 	return (utility::file::path::component(oss.str()));
+}
+
+
+void maildirUtils::recursiveFSDelete(ref <utility::file> dir)
+{
+	ref <utility::fileIterator> files = dir->getFiles();
+
+	// First, delete files and subdirectories in this directory
+	while (files->hasMoreElements())
+	{
+		ref <utility::file> file = files->nextElement();
+
+		if (file->isDirectory())
+		{
+			maildirUtils::recursiveFSDelete(file);
+		}
+		else
+		{
+			try
+			{
+				file->remove();
+			}
+			catch (exceptions::filesystem_exception&)
+			{
+				// Ignore
+			}
+		}
+	}
+
+	// Then, delete this (empty) directory
+	try
+	{
+		dir->remove();
+	}
+	catch (exceptions::filesystem_exception&)
+	{
+		// Ignore
+	}
 }
 
 

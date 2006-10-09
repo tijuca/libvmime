@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -25,12 +25,15 @@
 #include "vmime/exception.hpp"
 #include "vmime/platformDependant.hpp"
 
+#include "vmime/net/defaultConnectionInfos.hpp"
+
 #if VMIME_HAVE_SASL_SUPPORT
 	#include "vmime/security/sasl/SASLContext.hpp"
 #endif // VMIME_HAVE_SASL_SUPPORT
 
 #if VMIME_HAVE_TLS_SUPPORT
 	#include "vmime/net/tls/TLSSession.hpp"
+	#include "vmime/net/tls/TLSSecuredConnectionInfos.hpp"
 #endif // VMIME_HAVE_TLS_SUPPORT
 
 #include <sstream>
@@ -38,11 +41,11 @@
 
 // Helpers for service properties
 #define GET_PROPERTY(type, prop) \
-	(m_store->getInfos().getPropertyValue <type>(getSession(), \
-		dynamic_cast <const IMAPServiceInfos&>(m_store->getInfos()).getProperties().prop))
+	(m_store.acquire()->getInfos().getPropertyValue <type>(getSession(), \
+		dynamic_cast <const IMAPServiceInfos&>(m_store.acquire()->getInfos()).getProperties().prop))
 #define HAS_PROPERTY(prop) \
-	(m_store->getInfos().hasProperty(getSession(), \
-		dynamic_cast <const IMAPServiceInfos&>(m_store->getInfos()).getProperties().prop))
+	(m_store.acquire()->getInfos().hasProperty(getSession(), \
+		dynamic_cast <const IMAPServiceInfos&>(m_store.acquire()->getInfos()).getProperties().prop))
 
 
 namespace vmime {
@@ -50,9 +53,10 @@ namespace net {
 namespace imap {
 
 
-IMAPConnection::IMAPConnection(weak_ref <IMAPStore> store, ref <security::authenticator> auth)
+IMAPConnection::IMAPConnection(ref <IMAPStore> store, ref <security::authenticator> auth)
 	: m_store(store), m_auth(auth), m_socket(NULL), m_parser(NULL), m_tag(NULL),
-	  m_hierarchySeparator('\0'), m_state(STATE_NONE), m_timeoutHandler(NULL)
+	  m_hierarchySeparator('\0'), m_state(STATE_NONE), m_timeoutHandler(NULL),
+	  m_secured(false)
 {
 }
 
@@ -84,25 +88,34 @@ void IMAPConnection::connect()
 	const string address = GET_PROPERTY(string, PROPERTY_SERVER_ADDRESS);
 	const port_t port = GET_PROPERTY(port_t, PROPERTY_SERVER_PORT);
 
+	ref <IMAPStore> store = m_store.acquire();
+
 	// Create the time-out handler
-	if (m_store->getTimeoutHandlerFactory())
-		m_timeoutHandler = m_store->getTimeoutHandlerFactory()->create();
+	if (store->getTimeoutHandlerFactory())
+		m_timeoutHandler = store->getTimeoutHandlerFactory()->create();
 
 	// Create and connect the socket
-	m_socket = m_store->getSocketFactory()->create();
+	m_socket = store->getSocketFactory()->create();
 
 #if VMIME_HAVE_TLS_SUPPORT
-	if (m_store->isSecuredConnection())  // dedicated port/IMAPS
+	if (store->isIMAPS())  // dedicated port/IMAPS
 	{
 		ref <tls::TLSSession> tlsSession =
-			vmime::create <tls::TLSSession>(m_store->getCertificateVerifier());
+			vmime::create <tls::TLSSession>(store->getCertificateVerifier());
 
 		ref <tls::TLSSocket> tlsSocket =
 			tlsSession->getSocket(m_socket);
 
 		m_socket = tlsSocket;
+
+		m_secured = true;
+		m_cntInfos = vmime::create <tls::TLSSecuredConnectionInfos>(address, port, tlsSession, tlsSocket);
 	}
+	else
 #endif // VMIME_HAVE_TLS_SUPPORT
+	{
+		m_cntInfos = vmime::create <defaultConnectionInfos>(address, port);
+	}
 
 	m_socket->connect(address, port);
 
@@ -139,7 +152,7 @@ void IMAPConnection::connect()
 	const bool tlsRequired = HAS_PROPERTY(PROPERTY_CONNECTION_TLS_REQUIRED)
 		&& GET_PROPERTY(bool, PROPERTY_CONNECTION_TLS_REQUIRED);
 
-	if (!m_store->isSecuredConnection() && tls)  // only if not IMAPS
+	if (!store->isSecuredConnection() && tls)  // only if not IMAPS
 	{
 		try
 		{
@@ -191,7 +204,7 @@ void IMAPConnection::connect()
 
 void IMAPConnection::authenticate()
 {
-	getAuthenticator()->setService(thisRef().dynamicCast <service>());
+	getAuthenticator()->setService(m_store.acquire());
 
 #if VMIME_HAVE_SASL_SUPPORT
 	// First, try SASL authentication
@@ -357,10 +370,10 @@ void IMAPConnection::authenticateSASL()
 					continue;
 				}
 
-				byte* challenge = 0;
+				byte_t* challenge = 0;
 				int challengeLen = 0;
 
-				byte* resp = 0;
+				byte_t* resp = 0;
 				int respLen = 0;
 
 				try
@@ -437,7 +450,7 @@ void IMAPConnection::startTLS()
 		}
 
 		ref <tls::TLSSession> tlsSession =
-			vmime::create <tls::TLSSession>(m_store->getCertificateVerifier());
+			vmime::create <tls::TLSSession>(m_store.acquire()->getCertificateVerifier());
 
 		ref <tls::TLSSocket> tlsSocket =
 			tlsSession->getSocket(m_socket);
@@ -446,6 +459,10 @@ void IMAPConnection::startTLS()
 
 		m_socket = tlsSocket;
 		m_parser->setSocket(m_socket);
+
+		m_secured = true;
+		m_cntInfos = vmime::create <tls::TLSSecuredConnectionInfos>
+			(m_cntInfos->getHost(), m_cntInfos->getPort(), tlsSession, tlsSocket);
 	}
 	catch (exceptions::command_error&)
 	{
@@ -485,6 +502,9 @@ const std::vector <string> IMAPConnection::getCapabilities()
 			const IMAPParser::capability_data* capaData =
 				respDataList[i]->response_data()->capability_data();
 
+			if (capaData == NULL)
+				continue;
+
 			std::vector <IMAPParser::capability*> caps = capaData->capabilities();
 
 			for (unsigned int j = 0 ; j < caps.size() ; ++j)
@@ -514,6 +534,18 @@ const bool IMAPConnection::isConnected() const
 }
 
 
+const bool IMAPConnection::isSecuredConnection() const
+{
+	return m_secured;
+}
+
+
+ref <connectionInfos> IMAPConnection::getConnectionInfos() const
+{
+	return m_cntInfos;
+}
+
+
 void IMAPConnection::disconnect()
 {
 	if (!isConnected())
@@ -536,6 +568,9 @@ void IMAPConnection::internalDisconnect()
 	m_timeoutHandler = NULL;
 
 	m_state = STATE_LOGOUT;
+
+	m_secured = false;
+	m_cntInfos = NULL;
 }
 
 
@@ -555,29 +590,29 @@ void IMAPConnection::initHierarchySeparator()
 	const std::vector <IMAPParser::continue_req_or_response_data*>& respDataList =
 		resp->continue_req_or_response_data();
 
-	if (respDataList.size() < 1 || respDataList[0]->response_data() == NULL)
+	bool found = false;
+
+	for (unsigned int i = 0 ; !found && i < respDataList.size() ; ++i)
 	{
-		internalDisconnect();
-		throw exceptions::command_error("LIST", m_parser->lastLine(), "unexpected response");
+		if (respDataList[i]->response_data() == NULL)
+			continue;
+
+		const IMAPParser::mailbox_data* mailboxData =
+			static_cast <const IMAPParser::response_data*>
+				(respDataList[i]->response_data())->mailbox_data();
+
+		if (mailboxData == NULL || mailboxData->type() != IMAPParser::mailbox_data::LIST)
+			continue;
+
+		if (mailboxData->mailbox_list()->quoted_char() != '\0')
+		{
+			m_hierarchySeparator = mailboxData->mailbox_list()->quoted_char();
+			found = true;
+		}
 	}
 
-	const IMAPParser::mailbox_data* mailboxData =
-		static_cast <const IMAPParser::response_data*>(respDataList[0]->response_data())->
-			mailbox_data();
-
-	if (mailboxData == NULL || mailboxData->type() != IMAPParser::mailbox_data::LIST)
-	{
-		internalDisconnect();
-		throw exceptions::command_error("LIST", m_parser->lastLine(), "invalid type");
-	}
-
-	if (mailboxData->mailbox_list()->quoted_char() == '\0')
-	{
-		internalDisconnect();
-		throw exceptions::command_error("LIST", m_parser->lastLine(), "no hierarchy separator");
-	}
-
-	m_hierarchySeparator = mailboxData->mailbox_list()->quoted_char();
+	if (!found) // default
+		m_hierarchySeparator = '/';
 }
 
 
@@ -660,21 +695,21 @@ ref <const IMAPParser> IMAPConnection::getParser() const
 }
 
 
-weak_ref <const IMAPStore> IMAPConnection::getStore() const
+ref <const IMAPStore> IMAPConnection::getStore() const
 {
-	return (m_store);
+	return m_store.acquire();
 }
 
 
-weak_ref <IMAPStore> IMAPConnection::getStore()
+ref <IMAPStore> IMAPConnection::getStore()
 {
-	return (m_store);
+	return m_store.acquire();
 }
 
 
 ref <session> IMAPConnection::getSession()
 {
-	return (m_store->getSession());
+	return m_store.acquire()->getSession();
 }
 
 

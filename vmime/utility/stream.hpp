@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -362,7 +362,7 @@ class inputStreamByteBufferAdapter : public inputStream
 {
 public:
 
-	inputStreamByteBufferAdapter(const byte* buffer, size_type length);
+	inputStreamByteBufferAdapter(const byte_t* buffer, size_type length);
 
 	const bool eof() const;
 	void reset();
@@ -371,7 +371,7 @@ public:
 
 private:
 
-	const byte* m_buffer;
+	const byte_t* m_buffer;
 	const size_type m_length;
 
 	size_type m_pos;

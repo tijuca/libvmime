@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -53,8 +53,8 @@ encoding::encoding(const encoding& enc)
 void encoding::parse(const string& buffer, const string::size_type position,
 	const string::size_type end, string::size_type* newPosition)
 {
-	m_name = utility::stringUtils::toLower
-		(string(buffer.begin() + position, buffer.begin() + end));
+	m_name = utility::stringUtils::trim(utility::stringUtils::toLower
+		(string(buffer.begin() + position, buffer.begin() + end)));
 
 	setParsedBounds(position, end);
 

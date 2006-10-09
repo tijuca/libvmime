@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -33,7 +33,7 @@ bodyPart::bodyPart()
 	  m_body(vmime::create <body>()),
 	  m_parent(NULL)
 {
-	m_body->setParentPart(this);
+	m_body->setParentPart(thisRef().dynamicCast <bodyPart>());
 }
 
 
@@ -121,9 +121,15 @@ ref <body> bodyPart::getBody()
 }
 
 
-weak_ref <bodyPart> bodyPart::getParentPart() const
+ref <bodyPart> bodyPart::getParentPart()
 {
-	return (m_parent);
+	return m_parent.acquire();
+}
+
+
+ref <const bodyPart> bodyPart::getParentPart() const
+{
+	return m_parent.acquire();
 }
 
 

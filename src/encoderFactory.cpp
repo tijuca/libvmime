@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -77,7 +77,7 @@ const ref <const encoderFactory::registeredEncoder> encoderFactory::getEncoderBy
 			return (*it);
 	}
 
-	throw exceptions::no_encoder_available();
+	throw exceptions::no_encoder_available(name);
 }
 
 

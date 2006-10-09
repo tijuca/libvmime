@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -225,6 +225,31 @@ public:
 private:
 
 	std::vector <ref <headerField> > m_fields;
+
+
+	class fieldHasName
+	{
+	public:
+
+		fieldHasName(const string& name);
+		const bool operator() (const ref <const headerField>& field);
+
+	private:
+
+		string m_name;
+	};
+
+	class fieldHasNotName
+	{
+	public:
+
+		fieldHasNotName(const string& name);
+		const bool operator() (const ref <const headerField>& field);
+
+	private:
+
+		string m_name;
+	};
 
 public:
 

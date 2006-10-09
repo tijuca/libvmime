@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -102,8 +102,8 @@ public:
 	  * 'responseLen' are undetermined)
 	  */
 	const bool evaluateChallenge
-		(const byte* challenge, const int challengeLen,
-		 byte** response, int* responseLen);
+		(const byte_t* challenge, const int challengeLen,
+		 byte_t** response, int* responseLen);
 
 	/** Return a socket in which transmitted data is integrity
 	  * and/or privacy protected, depending on the QOP (Quality of

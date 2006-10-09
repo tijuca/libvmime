@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
 	// Run the tests
 	if (xmlOutput)
 	{
-		// Get the test suites from the registry and add them to the list of test to run
+		// Get the test suites from the registry and add them to the list of tests to run
 		CppUnit::TestRunner runner;
 
 		for (unsigned int i = 0 ; i < getTestModules().size() ; ++i)
@@ -231,7 +231,7 @@ int main(int argc, char* argv[])
 
 		xmlListener->output(std::cout);
 
-		// Return error code 1 if the one of test failed
+		// Return error code 1 if a test failed
 		return result.wasSuccessful() ? 0 : 1;
 	}
 	else

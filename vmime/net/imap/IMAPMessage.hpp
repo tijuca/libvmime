@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -28,8 +28,6 @@
 #include "vmime/net/message.hpp"
 #include "vmime/net/folder.hpp"
 
-#include "vmime/mailboxList.hpp"
-
 
 namespace vmime {
 namespace net {
@@ -49,7 +47,7 @@ private:
 	friend class IMAPFolder;
 	friend class vmime::creator;  // vmime::create <IMAPMessage>
 
-	IMAPMessage(IMAPFolder* folder, const int num);
+	IMAPMessage(ref <IMAPFolder> folder, const int num);
 	IMAPMessage(const IMAPMessage&) : message() { }
 
 	~IMAPMessage();
@@ -79,14 +77,11 @@ public:
 
 private:
 
-	void fetch(IMAPFolder* folder, const int options);
+	void fetch(ref <IMAPFolder> folder, const int options);
 
 	void processFetchResponse(const int options, const IMAPParser::msg_att* msgAtt);
 
 	void extract(ref <const part> p, utility::outputStream& os, utility::progressListener* progress, const int start, const int length, const bool headerOnly, const bool peek) const;
-
-
-	void convertAddressList(const IMAPParser::address_list& src, mailboxList& dest);
 
 
 	ref <header> getOrCreateHeader();
@@ -94,7 +89,7 @@ private:
 
 	void onFolderClosed();
 
-	IMAPFolder* m_folder;
+	weak_ref <IMAPFolder> m_folder;
 
 	int m_num;
 	int m_size;

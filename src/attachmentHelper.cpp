@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -24,7 +24,11 @@
 #include "vmime/attachmentHelper.hpp"
 
 #include "vmime/bodyPartAttachment.hpp"
+#include "vmime/parsedMessageAttachment.hpp"
+#include "vmime/generatedMessageAttachment.hpp"
+
 #include "vmime/disposition.hpp"
+#include "vmime/emptyContentHandler.hpp"
 
 
 namespace vmime
@@ -44,6 +48,14 @@ const bool attachmentHelper::isBodyPartAnAttachment(ref <const bodyPart> part)
 
 		if (disp.getName() != contentDispositionTypes::INLINE)
 			return true;
+
+		// If the Content-Disposition is 'inline' and there is no
+		// Content-Id or Content-Location field, it is an attachment
+		if (!part->getHeader()->hasField(vmime::fields::CONTENT_ID) &&
+		    !part->getHeader()->hasField(vmime::fields::CONTENT_LOCATION))
+		{
+			return true;
+		}
 	}
 	catch (exceptions::no_such_field&)
 	{
@@ -88,7 +100,31 @@ ref <const attachment>
 	if (!isBodyPartAnAttachment(part))
 		return NULL;
 
-	return vmime::create <bodyPartAttachment>(part);
+	mediaType type;
+
+	try
+	{
+		const contentTypeField& ctf = dynamic_cast<contentTypeField&>
+			(*part->getHeader()->findField(fields::CONTENT_TYPE));
+
+		type = *ctf.getValue().dynamicCast <const mediaType>();
+	}
+	catch (exceptions::no_such_field&)
+	{
+		// No "Content-type" field: assume "application/octet-stream".
+		type = mediaType(mediaTypes::APPLICATION,
+		                 mediaTypes::APPLICATION_OCTET_STREAM);
+	}
+
+	if (type.getType() == mediaTypes::MESSAGE &&
+	    type.getSubType() == mediaTypes::MESSAGE_RFC822)
+	{
+		return vmime::create <generatedMessageAttachment>(part);
+	}
+	else
+	{
+		return vmime::create <bodyPartAttachment>(part);
+	}
 }
 
 
@@ -121,7 +157,7 @@ const std::vector <ref <const attachment> >
 			std::vector <ref <const attachment> > partAtts =
 				findAttachmentsInBodyPart(bdy->getPartAt(i));
 
-			for (unsigned int j = 0 ; j < partAtts.size() ; ++i)
+			for (unsigned int j = 0 ; j < partAtts.size() ; ++j)
 				atts.push_back(partAtts[j]);
 		}
 	}
@@ -144,42 +180,78 @@ void attachmentHelper::addAttachment(ref <message> msg, ref <attachment> att)
 
 	if (part == NULL)  // create it
 	{
-		// Create a new container part for the parts that were in
-		// the root part of the message
-		ref <bodyPart> container = vmime::create <bodyPart>();
-
-		try
+		if (msg->getBody()->getPartCount() != 0)
 		{
-			container->getHeader()->ContentType()->
-				setValue(msg->getHeader()->ContentType()->getValue());
+			// Create a new container part for the parts that were in
+			// the root part of the message
+			ref <bodyPart> container = vmime::create <bodyPart>();
+
+			try
+			{
+				if (msg->getHeader()->hasField(fields::CONTENT_TYPE))
+				{
+					container->getHeader()->ContentType()->setValue
+						(msg->getHeader()->ContentType()->getValue());
+				}
+
+				if (msg->getHeader()->hasField(fields::CONTENT_TRANSFER_ENCODING))
+				{
+					container->getHeader()->ContentTransferEncoding()->setValue
+						(msg->getHeader()->ContentTransferEncoding()->getValue());
+				}
+			}
+			catch (exceptions::no_such_field&)
+			{
+				// Ignore
+			}
+
+			// Move parts from the root part to this new part
+			const std::vector <ref <bodyPart> > partList =
+				msg->getBody()->getPartList();
+
+			msg->getBody()->removeAllParts();
+
+			for (unsigned int i = 0 ; i < partList.size() ; ++i)
+				container->getBody()->appendPart(partList[i]);
+
+			msg->getBody()->appendPart(container);
 		}
-		catch (exceptions::no_such_field&)
+		else
 		{
-			// Ignore
+			// The message is a simple (RFC-822) message, and do not
+			// contains any MIME part. Move the contents from the
+			// root to a new child part.
+			ref <bodyPart> child = vmime::create <bodyPart>();
+
+			if (msg->getHeader()->hasField(fields::CONTENT_TYPE))
+			{
+				child->getHeader()->ContentType()->setValue
+					(msg->getHeader()->ContentType()->getValue());
+			}
+
+			if (msg->getHeader()->hasField(fields::CONTENT_TRANSFER_ENCODING))
+			{
+				child->getHeader()->ContentTransferEncoding()->setValue
+					(msg->getHeader()->ContentTransferEncoding()->getValue());
+			}
+
+			child->getBody()->setContents(msg->getBody()->getContents());
+			msg->getBody()->setContents(vmime::create <emptyContentHandler>());
+
+			msg->getBody()->appendPart(child);
 		}
-
-		msg->getHeader()->removeAllFields(vmime::fields::CONTENT_DISPOSITION);
-		msg->getHeader()->removeAllFields(vmime::fields::CONTENT_TRANSFER_ENCODING);
-
-		// Move parts from the root part to this new part
-		const std::vector <ref <bodyPart> > partList =
-			msg->getBody()->getPartList();
-
-		msg->getBody()->removeAllParts();
-
-		for (unsigned int i = 0 ; i < partList.size() ; ++i)
-			container->getBody()->appendPart(partList[i]);
 
 		// Set the root part to 'multipart/mixed'
 		msg->getHeader()->ContentType()->setValue(mpMixed);
 
-		msg->getBody()->appendPart(container);
+		msg->getHeader()->removeAllFields(vmime::fields::CONTENT_DISPOSITION);
+		msg->getHeader()->removeAllFields(vmime::fields::CONTENT_TRANSFER_ENCODING);
 
 		part = msg;
 	}
 
 	// Generate the attachment part
-	att->generateIn(*part);
+	att->generateIn(part);
 }
 
 
@@ -203,6 +275,14 @@ ref <bodyPart> attachmentHelper::findBodyPart
 	}
 
 	return NULL;
+}
+
+
+// static
+void attachmentHelper::addAttachment(ref <message> msg, ref <message> amsg)
+{
+	ref <attachment> att = vmime::create <parsedMessageAttachment>(amsg);
+	addAttachment(msg, att);
 }
 
 

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -74,11 +74,11 @@ protected:
 private:
 
 	// No need to override "generateIn", use "generatePart" instead (see below).
-	void generateIn(bodyPart& parent) const;
+	void generateIn(ref <bodyPart> parent) const;
 
 protected:
 
-	virtual void generatePart(bodyPart& part) const;
+	virtual void generatePart(ref <bodyPart> part) const;
 };
 
 

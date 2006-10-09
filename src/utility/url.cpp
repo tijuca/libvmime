@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -165,7 +165,7 @@ void url::parse(const string& str)
 	string::size_type slashPos = str.find('/', protoEnd + 3);
 	if (slashPos == string::npos) slashPos = str.length();
 
-	string::size_type atPos = str.find('@', protoEnd + 3);
+	string::size_type atPos = str.rfind('@', slashPos);
 	string hostPart;
 
 	string username;

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -39,23 +39,25 @@ namespace net {
 namespace imap {
 
 
-IMAPFolder::IMAPFolder(const folder::path& path, IMAPStore* store, const int type, const int flags)
-	: m_store(store), m_connection(m_store->connection()), m_path(path),
+IMAPFolder::IMAPFolder(const folder::path& path, ref <IMAPStore> store, const int type, const int flags)
+	: m_store(store), m_connection(store->connection()), m_path(path),
 	  m_name(path.isEmpty() ? folder::path::component("") : path.getLastComponent()), m_mode(-1),
 	  m_open(false), m_type(type), m_flags(flags), m_messageCount(0), m_uidValidity(0)
 {
-	m_store->registerFolder(this);
+	store->registerFolder(this);
 }
 
 
 IMAPFolder::~IMAPFolder()
 {
-	if (m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (store)
 	{
 		if (m_open)
 			close(false);
 
-		m_store->unregisterFolder(this);
+		store->unregisterFolder(this);
 	}
 	else if (m_open)
 	{
@@ -128,12 +130,14 @@ const folder::path IMAPFolder::getFullPath() const
 
 void IMAPFolder::open(const int mode, bool failIfModeIsNotAvailable)
 {
-	if (!m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 
 	// Open a connection for this folder
 	ref <IMAPConnection> connection =
-		vmime::create <IMAPConnection>(m_store, m_store->getAuthenticator());
+		vmime::create <IMAPConnection>(store, store->getAuthenticator());
 
 	try
 	{
@@ -270,7 +274,9 @@ void IMAPFolder::open(const int mode, bool failIfModeIsNotAvailable)
 
 void IMAPFolder::close(const bool expunge)
 {
-	if (!m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 
 	if (!isOpen())
@@ -292,7 +298,7 @@ void IMAPFolder::close(const bool expunge)
 	oldConnection->disconnect();
 
 	// Now use default store connection
-	m_connection = m_store->connection();
+	m_connection = m_store.acquire()->connection();
 
 	m_open = false;
 	m_mode = -1;
@@ -317,13 +323,15 @@ void IMAPFolder::onClose()
 
 void IMAPFolder::create(const int type)
 {
-	if (!m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (isOpen())
 		throw exceptions::illegal_state("Folder is open");
 	else if (exists())
 		throw exceptions::illegal_state("Folder already exists");
-	else if (!m_store->isValidFolderName(m_name))
+	else if (!store->isValidFolderName(m_name))
 		throw exceptions::invalid_folder_name();
 
 	// Emit the "CREATE" command
@@ -363,9 +371,48 @@ void IMAPFolder::create(const int type)
 }
 
 
+void IMAPFolder::destroy()
+{
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!store)
+		throw exceptions::illegal_state("Store disconnected");
+
+	if (isOpen())
+		throw exceptions::illegal_state("Folder is open");
+
+	const string mailbox = IMAPUtils::pathToString
+		(m_connection->hierarchySeparator(), getFullPath());
+
+	std::ostringstream oss;
+	oss << "DELETE " << IMAPUtils::quoteString(mailbox);
+
+	m_connection->send(true, oss.str(), true);
+
+
+	utility::auto_ptr <IMAPParser::response> resp(m_connection->readResponse());
+
+	if (resp->isBad() || resp->response_done()->response_tagged()->
+			resp_cond_state()->status() != IMAPParser::resp_cond_state::OK)
+	{
+		throw exceptions::command_error("DELETE",
+			m_connection->getParser()->lastLine(), "bad response");
+	}
+
+	// Notify folder deleted
+	events::folderEvent event
+		(thisRef().dynamicCast <folder>(),
+		 events::folderEvent::TYPE_DELETED, m_path, m_path);
+
+	notifyFolder(event);
+}
+
+
 const bool IMAPFolder::exists()
 {
-	if (!isOpen() && !m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!isOpen() && !store)
 		throw exceptions::illegal_state("Store disconnected");
 
 	return (testExistAndGetType() != TYPE_UNDEFINED);
@@ -458,7 +505,7 @@ ref <message> IMAPFolder::getMessage(const int num)
 	if (num < 1 || num > m_messageCount)
 		throw exceptions::message_not_found();
 
-	return vmime::create <IMAPMessage>(this, num);
+	return vmime::create <IMAPMessage>(thisRef().dynamicCast <IMAPFolder>(), num);
 }
 
 
@@ -473,9 +520,10 @@ std::vector <ref <message> > IMAPFolder::getMessages(const int from, const int t
 		throw exceptions::message_not_found();
 
 	std::vector <ref <message> > v;
+	ref <IMAPFolder> thisFolder = thisRef().dynamicCast <IMAPFolder>();
 
 	for (int i = from ; i <= to2 ; ++i)
-		v.push_back(vmime::create <IMAPMessage>(this, i));
+		v.push_back(vmime::create <IMAPMessage>(thisFolder, i));
 
 	return (v);
 }
@@ -487,9 +535,10 @@ std::vector <ref <message> > IMAPFolder::getMessages(const std::vector <int>& nu
 		throw exceptions::illegal_state("Folder not open");
 
 	std::vector <ref <message> > v;
+	ref <IMAPFolder> thisFolder = thisRef().dynamicCast <IMAPFolder>();
 
 	for (std::vector <int>::const_iterator it = nums.begin() ; it != nums.end() ; ++it)
-		v.push_back(vmime::create <IMAPMessage>(this, *it));
+		v.push_back(vmime::create <IMAPMessage>(thisFolder, *it));
 
 	return (v);
 }
@@ -506,16 +555,20 @@ const int IMAPFolder::getMessageCount()
 
 ref <folder> IMAPFolder::getFolder(const folder::path::component& name)
 {
-	if (!m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 
-	return vmime::create <IMAPFolder>(m_path / name, m_store);
+	return vmime::create <IMAPFolder>(m_path / name, store);
 }
 
 
 std::vector <ref <folder> > IMAPFolder::getFolders(const bool recursive)
 {
-	if (!isOpen() && !m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!isOpen() && !store)
 		throw exceptions::illegal_state("Store disconnected");
 
 	// Eg. List folders in '/foo/bar'
@@ -591,7 +644,7 @@ std::vector <ref <folder> > IMAPFolder::getFolders(const bool recursive)
 			const class IMAPParser::mailbox_flag_list* mailbox_flag_list =
 				mailboxData->mailbox_list()->mailbox_flag_list();
 
-			v.push_back(vmime::create <IMAPFolder>(path, m_store,
+			v.push_back(vmime::create <IMAPFolder>(path, store,
 				IMAPUtils::folderTypeFromFlags(mailbox_flag_list),
 				IMAPUtils::folderFlagsFromFlags(mailbox_flag_list)));
 		}
@@ -604,10 +657,41 @@ std::vector <ref <folder> > IMAPFolder::getFolders(const bool recursive)
 void IMAPFolder::fetchMessages(std::vector <ref <message> >& msg, const int options,
                                utility::progressListener* progress)
 {
-	if (!m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
+
+	// Build message numbers list
+	std::vector <int> list;
+	list.reserve(msg.size());
+
+	std::map <int, ref <IMAPMessage> > numberToMsg;
+
+	for (std::vector <ref <message> >::iterator it = msg.begin() ; it != msg.end() ; ++it)
+	{
+		list.push_back((*it)->getNumber());
+		numberToMsg[(*it)->getNumber()] = (*it).dynamicCast <IMAPMessage>();
+	}
+
+	// Send the request
+	const string command = IMAPUtils::buildFetchRequest(list, options);
+	m_connection->send(true, command, true);
+
+	// Get the response
+	utility::auto_ptr <IMAPParser::response> resp(m_connection->readResponse());
+
+	if (resp->isBad() || resp->response_done()->response_tagged()->
+		resp_cond_state()->status() != IMAPParser::resp_cond_state::OK)
+	{
+		throw exceptions::command_error("FETCH",
+			m_connection->getParser()->lastLine(), "bad response");
+	}
+
+	const std::vector <IMAPParser::continue_req_or_response_data*>& respDataList =
+		resp->continue_req_or_response_data();
 
 	const int total = msg.size();
 	int current = 0;
@@ -615,13 +699,44 @@ void IMAPFolder::fetchMessages(std::vector <ref <message> >& msg, const int opti
 	if (progress)
 		progress->start(total);
 
-	for (std::vector <ref <message> >::iterator it = msg.begin() ;
-	     it != msg.end() ; ++it)
+	try
 	{
-		(*it).dynamicCast <IMAPMessage>()->fetch(this, options);
+		for (std::vector <IMAPParser::continue_req_or_response_data*>::const_iterator
+		     it = respDataList.begin() ; it != respDataList.end() ; ++it)
+		{
+			if ((*it)->response_data() == NULL)
+			{
+				throw exceptions::command_error("FETCH",
+					m_connection->getParser()->lastLine(), "invalid response");
+			}
 
+			const IMAPParser::message_data* messageData =
+				(*it)->response_data()->message_data();
+
+			// We are only interested in responses of type "FETCH"
+			if (messageData == NULL || messageData->type() != IMAPParser::message_data::FETCH)
+				continue;
+
+			// Process fetch response for this message
+			const int num = static_cast <int>(messageData->number());
+
+			std::map <int, ref <IMAPMessage> >::iterator msg = numberToMsg.find(num);
+
+			if (msg != numberToMsg.end())
+			{
+				(*msg).second->processFetchResponse(options, messageData->msg_att());
+
+				if (progress)
+					progress->progress(++current, total);
+			}
+		}
+	}
+	catch (...)
+	{
 		if (progress)
-			progress->progress(++current, total);
+			progress->stop(total);
+
+		throw;
 	}
 
 	if (progress)
@@ -631,12 +746,14 @@ void IMAPFolder::fetchMessages(std::vector <ref <message> >& msg, const int opti
 
 void IMAPFolder::fetchMessage(ref <message> msg, const int options)
 {
-	if (!m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
 
-	msg.dynamicCast <IMAPMessage>()->fetch(this, options);
+	msg.dynamicCast <IMAPMessage>()->fetch(thisRef().dynamicCast <IMAPFolder>(), options);
 }
 
 
@@ -653,19 +770,19 @@ ref <folder> IMAPFolder::getParent()
 	if (m_path.isEmpty())
 		return NULL;
 	else
-		return vmime::create <IMAPFolder>(m_path.getParent(), m_store);
+		return vmime::create <IMAPFolder>(m_path.getParent(), m_store.acquire());
 }
 
 
-weak_ref <const store> IMAPFolder::getStore() const
+ref <const store> IMAPFolder::getStore() const
 {
-	return (m_store);
+	return m_store.acquire();
 }
 
 
-weak_ref <store> IMAPFolder::getStore()
+ref <store> IMAPFolder::getStore()
 {
-	return (m_store);
+	return m_store.acquire();
 }
 
 
@@ -693,7 +810,9 @@ void IMAPFolder::onStoreDisconnected()
 
 void IMAPFolder::deleteMessage(const int num)
 {
-	if (!m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -742,10 +861,12 @@ void IMAPFolder::deleteMessage(const int num)
 
 void IMAPFolder::deleteMessages(const int from, const int to)
 {
+	ref <IMAPStore> store = m_store.acquire();
+
 	if (from < 1 || (to < from && to != -1))
 		throw exceptions::invalid_argument();
 
-	if (!m_store)
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -805,10 +926,12 @@ void IMAPFolder::deleteMessages(const int from, const int to)
 
 void IMAPFolder::deleteMessages(const std::vector <int>& nums)
 {
+	ref <IMAPStore> store = m_store.acquire();
+
 	if (nums.empty())
 		throw exceptions::invalid_argument();
 
-	if (!m_store)
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -864,10 +987,12 @@ void IMAPFolder::deleteMessages(const std::vector <int>& nums)
 
 void IMAPFolder::setMessageFlags(const int from, const int to, const int flags, const int mode)
 {
+	ref <IMAPStore> store = m_store.acquire();
+
 	if (from < 1 || (to < from && to != -1))
 		throw exceptions::invalid_argument();
 
-	if (!m_store)
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -952,7 +1077,9 @@ void IMAPFolder::setMessageFlags(const int from, const int to, const int flags, 
 
 void IMAPFolder::setMessageFlags(const std::vector <int>& nums, const int flags, const int mode)
 {
-	if (!m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -1082,7 +1209,9 @@ void IMAPFolder::addMessage(ref <vmime::message> msg, const int flags,
 void IMAPFolder::addMessage(utility::inputStream& is, const int size, const int flags,
                             vmime::datetime* date, utility::progressListener* progress)
 {
-	if (!m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -1183,8 +1312,8 @@ void IMAPFolder::addMessage(utility::inputStream& is, const int size, const int 
 	notifyMessageCount(event);
 
 	// Notify folders with the same path
-	for (std::list <IMAPFolder*>::iterator it = m_store->m_folders.begin() ;
-	     it != m_store->m_folders.end() ; ++it)
+	for (std::list <IMAPFolder*>::iterator it = store->m_folders.begin() ;
+	     it != store->m_folders.end() ; ++it)
 	{
 		if ((*it) != this && (*it)->getFullPath() == m_path)
 		{
@@ -1201,7 +1330,9 @@ void IMAPFolder::addMessage(utility::inputStream& is, const int size, const int 
 
 void IMAPFolder::expunge()
 {
-	if (!m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -1270,8 +1401,8 @@ void IMAPFolder::expunge()
 	notifyMessageCount(event);
 
 	// Notify folders with the same path
-	for (std::list <IMAPFolder*>::iterator it = m_store->m_folders.begin() ;
-	     it != m_store->m_folders.end() ; ++it)
+	for (std::list <IMAPFolder*>::iterator it = store->m_folders.begin() ;
+	     it != store->m_folders.end() ; ++it)
 	{
 		if ((*it) != this && (*it)->getFullPath() == m_path)
 		{
@@ -1289,13 +1420,15 @@ void IMAPFolder::expunge()
 
 void IMAPFolder::rename(const folder::path& newPath)
 {
-	if (!m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (m_path.isEmpty() || newPath.isEmpty())
 		throw exceptions::illegal_operation("Cannot rename root folder");
 	else if (m_path.getSize() == 1 && m_name.getBuffer() == "INBOX")
 		throw exceptions::illegal_operation("Cannot rename 'INBOX' folder");
-	else if (!m_store->isValidFolderName(newPath.getLastComponent()))
+	else if (!store->isValidFolderName(newPath.getLastComponent()))
 		throw exceptions::invalid_folder_name();
 
 	// Build the request text
@@ -1332,8 +1465,8 @@ void IMAPFolder::rename(const folder::path& newPath)
 	notifyFolder(event);
 
 	// Notify folders with the same path and sub-folders
-	for (std::list <IMAPFolder*>::iterator it = m_store->m_folders.begin() ;
-	     it != m_store->m_folders.end() ; ++it)
+	for (std::list <IMAPFolder*>::iterator it = store->m_folders.begin() ;
+	     it != store->m_folders.end() ; ++it)
 	{
 		if ((*it) != this && (*it)->getFullPath() == oldPath)
 		{
@@ -1364,7 +1497,9 @@ void IMAPFolder::rename(const folder::path& newPath)
 
 void IMAPFolder::copyMessage(const folder::path& dest, const int num)
 {
-	if (!m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -1380,8 +1515,8 @@ void IMAPFolder::copyMessage(const folder::path& dest, const int num)
 	std::vector <int> nums;
 	nums.push_back(num);
 
-	for (std::list <IMAPFolder*>::iterator it = m_store->m_folders.begin() ;
-	     it != m_store->m_folders.end() ; ++it)
+	for (std::list <IMAPFolder*>::iterator it = store->m_folders.begin() ;
+	     it != store->m_folders.end() ; ++it)
 	{
 		if ((*it)->getFullPath() == dest)
 		{
@@ -1398,7 +1533,9 @@ void IMAPFolder::copyMessage(const folder::path& dest, const int num)
 
 void IMAPFolder::copyMessages(const folder::path& dest, const int from, const int to)
 {
-	if (!m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -1426,8 +1563,8 @@ void IMAPFolder::copyMessages(const folder::path& dest, const int from, const in
 	for (int i = from, j = 0 ; i <= to2 ; ++i, ++j)
 		nums[j] = i;
 
-	for (std::list <IMAPFolder*>::iterator it = m_store->m_folders.begin() ;
-	     it != m_store->m_folders.end() ; ++it)
+	for (std::list <IMAPFolder*>::iterator it = store->m_folders.begin() ;
+	     it != store->m_folders.end() ; ++it)
 	{
 		if ((*it)->getFullPath() == dest)
 		{
@@ -1444,7 +1581,9 @@ void IMAPFolder::copyMessages(const folder::path& dest, const int from, const in
 
 void IMAPFolder::copyMessages(const folder::path& dest, const std::vector <int>& nums)
 {
-	if (!m_store)
+	ref <IMAPStore> store = m_store.acquire();
+
+	if (!store)
 		throw exceptions::illegal_state("Store disconnected");
 	else if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -1455,8 +1594,8 @@ void IMAPFolder::copyMessages(const folder::path& dest, const std::vector <int>&
 	// Notify message count changed
 	const int count = nums.size();
 
-	for (std::list <IMAPFolder*>::iterator it = m_store->m_folders.begin() ;
-		it != m_store->m_folders.end() ; ++it)
+	for (std::list <IMAPFolder*>::iterator it = store->m_folders.begin() ;
+	     it != store->m_folders.end() ; ++it)
 	{
 		if ((*it)->getFullPath() == dest)
 		{
@@ -1496,6 +1635,8 @@ void IMAPFolder::copyMessages(const string& set, const folder::path& dest)
 
 void IMAPFolder::status(int& count, int& unseen)
 {
+	ref <IMAPStore> store = m_store.acquire();
+
 	count = 0;
 	unseen = 0;
 
@@ -1507,16 +1648,16 @@ void IMAPFolder::status(int& count, int& unseen)
 	command << " (MESSAGES UNSEEN)";
 
 	// Send the request
-	m_store->m_connection->send(true, command.str(), true);
+	m_connection->send(true, command.str(), true);
 
 	// Get the response
-	utility::auto_ptr <IMAPParser::response> resp(m_store->m_connection->readResponse());
+	utility::auto_ptr <IMAPParser::response> resp(m_connection->readResponse());
 
 	if (resp->isBad() || resp->response_done()->response_tagged()->
 		resp_cond_state()->status() != IMAPParser::resp_cond_state::OK)
 	{
 		throw exceptions::command_error("STATUS",
-			m_store->m_connection->getParser()->lastLine(), "bad response");
+			m_connection->getParser()->lastLine(), "bad response");
 	}
 
 	const std::vector <IMAPParser::continue_req_or_response_data*>& respDataList =
@@ -1528,7 +1669,7 @@ void IMAPFolder::status(int& count, int& unseen)
 		if ((*it)->response_data() == NULL)
 		{
 			throw exceptions::command_error("STATUS",
-				m_store->m_connection->getParser()->lastLine(), "invalid response");
+				m_connection->getParser()->lastLine(), "invalid response");
 		}
 
 		const IMAPParser::response_data* responseData = (*it)->response_data();
@@ -1584,8 +1725,8 @@ void IMAPFolder::status(int& count, int& unseen)
 			notifyMessageCount(event);
 
 			// Notify folders with the same path
-			for (std::list <IMAPFolder*>::iterator it = m_store->m_folders.begin() ;
-			     it != m_store->m_folders.end() ; ++it)
+			for (std::list <IMAPFolder*>::iterator it = store->m_folders.begin() ;
+			     it != store->m_folders.end() ; ++it)
 			{
 				if ((*it) != this && (*it)->getFullPath() == m_path)
 				{

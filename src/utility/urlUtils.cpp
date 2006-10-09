@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -27,6 +27,10 @@ namespace utility {
 
 const string urlUtils::encode(const string& s)
 {
+	static const string RESERVED_CHARS =
+		/* reserved */ "$&+,/:;=?@"
+		/* unsafe */   "<>#%{}[]|\\^\"~`";
+
 	string result;
 	result.reserve(s.length());
 
@@ -35,8 +39,8 @@ const string urlUtils::encode(const string& s)
 		const char_t c = *it;
 
 		if (parserHelpers::isPrint(c) && !parserHelpers::isSpace(c) &&
-		    c != '%' && c != '=' && c != '?' && c != '&' &&
-		    c != '@' && c != '/' && c != ':')
+		    static_cast <unsigned char>(c) <= 127 &&
+		    RESERVED_CHARS.find(c) == string::npos)
 		{
 			result += c;
 		}

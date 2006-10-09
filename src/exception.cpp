@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -42,6 +42,12 @@ exception::exception()
 
 exception::exception(const string& what, const exception& other)
 	: m_what(what), m_other(&other != &NO_EXCEPTION ? other.clone() : NULL)
+{
+}
+
+
+exception::exception(const exception& e)
+	: std::exception(), m_what(e.what()), m_other(e.m_other == NULL ? NULL : e.m_other->clone())
 {
 }
 
@@ -117,8 +123,8 @@ const char* charset_conv_error::name() const throw() { return "charset_conv_erro
 //
 
 no_encoder_available::~no_encoder_available() throw() {}
-no_encoder_available::no_encoder_available(const exception& other)
-	: exception("No encoder available.", other) {}
+no_encoder_available::no_encoder_available(const string& name, const exception& other)
+	: exception("No encoder available: '" + name + "'.", other) {}
 
 exception* no_encoder_available::clone() const { return new no_encoder_available(*this); }
 const char* no_encoder_available::name() const throw() { return "no_encoder_available"; }

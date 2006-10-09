@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -77,6 +77,9 @@ public:
 
 	const int getCapabilities() const;
 
+	const bool isSecuredConnection() const;
+	ref <connectionInfos> getConnectionInfos() const;
+
 private:
 
 	enum ResponseCode
@@ -123,7 +126,10 @@ private:
 
 	ref <timeoutHandler> m_timeoutHandler;
 
+	const bool m_isPOP3S;
+
 	bool m_secured;
+	ref <connectionInfos> m_cntInfos;
 
 
 	// Service infos
