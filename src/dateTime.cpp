@@ -24,7 +24,7 @@
 #include <iomanip>
 
 #include "vmime/dateTime.hpp"
-#include "vmime/platformDependant.hpp"
+#include "vmime/platform.hpp"
 #include "vmime/parserHelpers.hpp"
 
 #include "vmime/utility/datetimeUtils.hpp"
@@ -600,6 +600,8 @@ void datetime::generate(utility::outputStream& os, const string::size_type /* ma
 	const int zm = z % 60;
 
 	std::ostringstream oss;
+	oss.imbue(std::locale::classic());
+
 	oss << dayNames[getWeekDay()] << ", "
 	    << m_day << " " << monthNames[m_month - 1] << " " << m_year
 	    << " " << std::setfill('0') << std::setw(2) << m_hour << ":"
@@ -770,7 +772,7 @@ void datetime::setDate(const int year, const int month, const int day)
 
 const datetime datetime::now()
 {
-	return (platformDependant::getHandler()->getCurrentLocalTime());
+	return (platform::getHandler()->getCurrentLocalTime());
 }
 
 

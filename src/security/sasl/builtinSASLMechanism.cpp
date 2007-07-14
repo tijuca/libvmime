@@ -30,6 +30,7 @@
 
 #include "vmime/exception.hpp"
 
+#include <cstdlib>
 #include <stdexcept>
 #include <new>
 

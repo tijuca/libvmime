@@ -61,7 +61,7 @@ clean:
 	dh_testroot
 
 	# Add here commands to clean up after the build process.
-	-$(MAKE) clean
+	[ ! -f Makefile ] || $(MAKE) clean
 	rm -f Makefile src/Makefile vmime/Makefile vmime/config.hpp build-stamp libtool config.guess config.log config.sub config.status config.h vmime.pc stamp-h1
 	cd src ; rm -f `find . -type l`
 

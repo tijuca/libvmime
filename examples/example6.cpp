@@ -147,7 +147,7 @@ class interactiveCertificateVerifier : public vmime::security::cert::defaultCert
 {
 public:
 
-        void verify(vmime::ref <vmime::security::cert::certificateChain> chain)
+	void verify(vmime::ref <vmime::security::cert::certificateChain> chain)
 	{
 		try
 		{
@@ -273,7 +273,7 @@ static std::ostream& operator<<(std::ostream& os, const vmime::exception& e)
 		const vmime::exceptions::filesystem_exception& fse =
 			dynamic_cast <const vmime::exceptions::filesystem_exception&>(e);
 
-		os << "    path = " << vmime::platformDependant::getHandler()->
+		os << "    path = " << vmime::platform::getHandler()->
 			getFileSystemFactory()->pathToString(fse.path()) << std::endl;
 	}
 
@@ -818,7 +818,7 @@ static const bool menu()
 int main()
 {
 	// VMime initialization
-	vmime::platformDependant::setHandler<vmime::platforms::posix::posixHandler>();
+	vmime::platform::setHandler<vmime::platforms::posix::posixHandler>();
 
 	for (bool quit = false ; !quit ; )
 	{

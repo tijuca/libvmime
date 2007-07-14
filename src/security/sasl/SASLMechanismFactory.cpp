@@ -21,6 +21,7 @@
 // the GNU General Public License cover the whole combination.
 //
 
+#include <cstdlib>
 #include <stdexcept>
 #include <new>
 

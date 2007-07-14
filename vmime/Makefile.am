@@ -59,7 +59,7 @@ nobase_libvmimeinclude_HEADERS = address.hpp \
 	parsedMessageAttachment.hpp \
 	parserHelpers.hpp \
 	plainTextPart.hpp \
-	platformDependant.hpp \
+	platform.hpp \
 	propertySet.hpp \
 	relay.hpp \
 	stringContentHandler.hpp \

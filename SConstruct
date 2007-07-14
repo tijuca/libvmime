@@ -34,7 +34,7 @@ packageVersionMicro = 1
 # API version number (libtool)
 #
 # Increment this number only immediately before a public release.
-# This is independant from package version number.
+# This is independent from package version number.
 #
 # See: http://www.gnu.org/software/libtool/manual.html#Libtool-versioning
 #
@@ -130,7 +130,7 @@ libvmime_sources = [
 	'parsedMessageAttachment.cpp', 'parsedMessageAttachment.hpp',
 	'parserHelpers.hpp',
 	'plainTextPart.cpp', 'plainTextPart.hpp',
-	'platformDependant.cpp', 'platformDependant.hpp',
+	'platform.cpp', 'platform.hpp',
 	'propertySet.cpp', 'propertySet.hpp',
 	'relay.cpp', 'relay.hpp',
 	'stringContentHandler.cpp', 'stringContentHandler.hpp',
@@ -446,7 +446,7 @@ TargetSignatures('build')
 defaultSendmailPath = WhereIs("sendmail")
 
 if defaultSendmailPath == None:
-	defaultSendmailPath = '/usr/bin/sendmail'
+	defaultSendmailPath = ''
 
 
 # Command line options
@@ -584,7 +584,7 @@ env.Append(ENV = {'PATH' : os.environ['PATH']})
 
 env.Append(CPPPATH = [ '.' ])
 
-env.Append(CPPDEFINES = { '_REENTRANT' : 1 })
+env.Append(CPPDEFINES = ['_REENTRANT=1'])
 
 env.Append(CXXFLAGS = ['-pipe'])
 env.Append(CXXFLAGS = ['-W'])
@@ -2006,6 +2006,7 @@ EndGlobal
 	# vmime.vcproj
 	vmime_vcproj = open("vmime.vcproj", 'w')
 	vmime_vcproj.write("""<?xml version="1.0" encoding="Windows-1252"?>
+<!-- This file has been automatically generated from SConstruct -->
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"

@@ -26,6 +26,7 @@
 
 
 #include "vmime/utility/stream.hpp"
+#include <algorithm>
 
 
 namespace vmime {

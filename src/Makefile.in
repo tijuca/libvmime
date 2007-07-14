@@ -145,13 +145,13 @@ am__libvmime_la_SOURCES_DIST = address.cpp addressList.cpp \
 	mediaType.cpp messageBuilder.cpp message.cpp messageId.cpp \
 	messageIdSequence.cpp messageParser.cpp object.cpp options.cpp \
 	path.cpp parameter.cpp parameterizedHeaderField.cpp \
-	parsedMessageAttachment.cpp plainTextPart.cpp \
-	platformDependant.cpp propertySet.cpp relay.cpp \
-	stringContentHandler.cpp streamContentHandler.cpp text.cpp \
-	textPartFactory.cpp word.cpp wordEncoder.cpp \
-	utility_datetimeUtils.cpp utility_filteredStream.cpp \
-	utility_path.cpp utility_progressListener.cpp \
-	utility_random.cpp utility_smartPtr.cpp utility_stream.cpp \
+	parsedMessageAttachment.cpp plainTextPart.cpp platform.cpp \
+	propertySet.cpp relay.cpp stringContentHandler.cpp \
+	streamContentHandler.cpp text.cpp textPartFactory.cpp word.cpp \
+	wordEncoder.cpp utility_datetimeUtils.cpp \
+	utility_filteredStream.cpp utility_path.cpp \
+	utility_progressListener.cpp utility_random.cpp \
+	utility_smartPtr.cpp utility_stream.cpp \
 	utility_stringProxy.cpp utility_stringUtils.cpp \
 	utility_url.cpp utility_urlUtils.cpp mdn_MDNHelper.cpp \
 	mdn_MDNInfos.cpp mdn_receivedMDNInfos.cpp \
@@ -263,12 +263,12 @@ am_libvmime_la_OBJECTS = address.lo addressList.lo attachmentHelper.lo \
 	mediaType.lo messageBuilder.lo message.lo messageId.lo \
 	messageIdSequence.lo messageParser.lo object.lo options.lo \
 	path.lo parameter.lo parameterizedHeaderField.lo \
-	parsedMessageAttachment.lo plainTextPart.lo \
-	platformDependant.lo propertySet.lo relay.lo \
-	stringContentHandler.lo streamContentHandler.lo text.lo \
-	textPartFactory.lo word.lo wordEncoder.lo \
-	utility_datetimeUtils.lo utility_filteredStream.lo \
-	utility_path.lo utility_progressListener.lo utility_random.lo \
+	parsedMessageAttachment.lo plainTextPart.lo platform.lo \
+	propertySet.lo relay.lo stringContentHandler.lo \
+	streamContentHandler.lo text.lo textPartFactory.lo word.lo \
+	wordEncoder.lo utility_datetimeUtils.lo \
+	utility_filteredStream.lo utility_path.lo \
+	utility_progressListener.lo utility_random.lo \
 	utility_smartPtr.lo utility_stream.lo utility_stringProxy.lo \
 	utility_stringUtils.lo utility_url.lo utility_urlUtils.lo \
 	mdn_MDNHelper.lo mdn_MDNInfos.lo mdn_receivedMDNInfos.lo \
@@ -471,13 +471,13 @@ libvmime_la_SOURCES = address.cpp addressList.cpp attachmentHelper.cpp \
 	mediaType.cpp messageBuilder.cpp message.cpp messageId.cpp \
 	messageIdSequence.cpp messageParser.cpp object.cpp options.cpp \
 	path.cpp parameter.cpp parameterizedHeaderField.cpp \
-	parsedMessageAttachment.cpp plainTextPart.cpp \
-	platformDependant.cpp propertySet.cpp relay.cpp \
-	stringContentHandler.cpp streamContentHandler.cpp text.cpp \
-	textPartFactory.cpp word.cpp wordEncoder.cpp \
-	utility_datetimeUtils.cpp utility_filteredStream.cpp \
-	utility_path.cpp utility_progressListener.cpp \
-	utility_random.cpp utility_smartPtr.cpp utility_stream.cpp \
+	parsedMessageAttachment.cpp plainTextPart.cpp platform.cpp \
+	propertySet.cpp relay.cpp stringContentHandler.cpp \
+	streamContentHandler.cpp text.cpp textPartFactory.cpp word.cpp \
+	wordEncoder.cpp utility_datetimeUtils.cpp \
+	utility_filteredStream.cpp utility_path.cpp \
+	utility_progressListener.cpp utility_random.cpp \
+	utility_smartPtr.cpp utility_stream.cpp \
 	utility_stringProxy.cpp utility_stringUtils.cpp \
 	utility_url.cpp utility_urlUtils.cpp mdn_MDNHelper.cpp \
 	mdn_MDNInfos.cpp mdn_receivedMDNInfos.cpp \

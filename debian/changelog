@@ -1,3 +1,10 @@
+libvmime (0.8.1-1) unstable; urgency=low
+
+  * New upstream release
+  * Added patch by Martin Michlmayr to fix FTBFS with GCC 4.3 (closes: #421117)
+
+ -- Mattias Nordstrom <nordstrom@realnode.com>  Sat, 14 Jul 2007 17:26:32 +0300
+
 libvmime (0.8.0+cvs20061009-1) unstable; urgency=low
 
   * New upstream CVS checkout.
