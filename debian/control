@@ -1,7 +1,7 @@
 Source: libvmime
 Priority: optional
 Maintainer: Mattias Nordstrom <mnordstr@debian.org>
-Build-Depends: debhelper (>= 5.0.0), autotools-dev, libgnutls-dev (>= 1.2.0-1), libgsasl7-dev
+Build-Depends: debhelper (>= 5.0.0), autotools-dev, libgnutls-dev (>= 1.2.0), libgsasl7-dev
 Standards-Version: 3.7.3
 Section: libs
 Homepage: http://www.vmime.org/
@@ -9,7 +9,7 @@ Homepage: http://www.vmime.org/
 Package: libvmime-dev
 Section: libdevel
 Architecture: any
-Depends: libvmime0 (= ${binary:Version}), libgnutls-dev (>= 1.2.0-1), libgsasl7-dev
+Depends: libvmime0 (= ${binary:Version}), libgnutls-dev (>= 1.2.0), libgsasl7-dev
 Description: a C++ mail library (development files)
  VMime is a powerful C++ class library for parsing, generating, or editing
  Internet RFC-[2]822 and MIME messages. VMime is designed to provide a fast

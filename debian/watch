@@ -1,2 +1,2 @@
 version=3
-http://qa.debian.org/watch/sf.php?project=vmime libvmime-(.*).tar.bz2 debian uupdate
+http://qa.debian.org/watch/sf.php/vmime libvmime-(.*).tar.bz2 debian uupdate

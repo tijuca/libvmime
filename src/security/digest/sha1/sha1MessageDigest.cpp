@@ -26,6 +26,8 @@
 
 #include "vmime/security/digest/sha1/sha1MessageDigest.hpp"
 
+#include <cstring>
+
 
 namespace vmime {
 namespace security {

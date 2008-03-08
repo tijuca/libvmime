@@ -50,6 +50,8 @@
 
 #include "vmime/security/digest/md5/md5MessageDigest.hpp"
 
+#include <cstring>
+
 
 namespace vmime {
 namespace security {
