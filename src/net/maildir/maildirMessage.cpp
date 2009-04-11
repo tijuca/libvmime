@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,9 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/net/maildir/maildirMessage.hpp"
@@ -53,8 +57,8 @@ public:
 	weak_ref <const maildirPart> getParent() const { return (m_parent); }
 
 	const mediaType& getType() const { return (m_mediaType); }
-	const int getSize() const { return (m_size); }
-	const int getNumber() const { return (m_number); }
+	int getSize() const { return (m_size); }
+	int getNumber() const { return (m_number); }
 
 	ref <const header> getHeader() const
 	{
@@ -72,11 +76,11 @@ public:
 			return (*(m_header = vmime::create <header>()));
 	}
 
-	const int getHeaderParsedOffset() const { return (m_headerParsedOffset); }
-	const int getHeaderParsedLength() const { return (m_headerParsedLength); }
+	int getHeaderParsedOffset() const { return (m_headerParsedOffset); }
+	int getHeaderParsedLength() const { return (m_headerParsedLength); }
 
-	const int getBodyParsedOffset() const { return (m_bodyParsedOffset); }
-	const int getBodyParsedLength() const { return (m_bodyParsedLength); }
+	int getBodyParsedOffset() const { return (m_bodyParsedOffset); }
+	int getBodyParsedLength() const { return (m_bodyParsedLength); }
 
 	void initStructure(const bodyPart& part);
 
@@ -141,7 +145,7 @@ public:
 		return m_parts[x];
 	}
 
-	const int getPartCount() const
+	int getPartCount() const
 	{
 		return m_parts.size();
 	}
@@ -243,7 +247,7 @@ void maildirMessage::onFolderClosed()
 }
 
 
-const int maildirMessage::getNumber() const
+int maildirMessage::getNumber() const
 {
 	return (m_num);
 }
@@ -255,7 +259,7 @@ const message::uid maildirMessage::getUniqueId() const
 }
 
 
-const int maildirMessage::getSize() const
+int maildirMessage::getSize() const
 {
 	if (m_size == -1)
 		throw exceptions::unfetched_object();
@@ -264,7 +268,7 @@ const int maildirMessage::getSize() const
 }
 
 
-const bool maildirMessage::isExpunged() const
+bool maildirMessage::isExpunged() const
 {
 	return (m_expunged);
 }
@@ -297,7 +301,7 @@ ref <const header> maildirMessage::getHeader() const
 }
 
 
-const int maildirMessage::getFlags() const
+int maildirMessage::getFlags() const
 {
 	if (m_flags == FLAG_UNDEFINED)
 		throw exceptions::unfetched_object();

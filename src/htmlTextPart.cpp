@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -54,7 +54,7 @@ const mediaType htmlTextPart::getType() const
 }
 
 
-const int htmlTextPart::getPartCount() const
+int htmlTextPart::getPartCount() const
 {
 	return (m_plainText->isEmpty() ? 1 : 2);
 }
@@ -382,7 +382,7 @@ void htmlTextPart::setText(ref <contentHandler> text)
 }
 
 
-const int htmlTextPart::getObjectCount() const
+int htmlTextPart::getObjectCount() const
 {
 	return m_objects.size();
 }
@@ -409,7 +409,7 @@ const ref <const htmlTextPart::embeddedObject> htmlTextPart::findObject(const st
 }
 
 
-const bool htmlTextPart::hasObject(const string& id_) const
+bool htmlTextPart::hasObject(const string& id_) const
 {
 	const string id = cleanId(id_);
 

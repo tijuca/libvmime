@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -49,7 +49,7 @@ SMTPResponse::SMTPResponse(const SMTPResponse&)
 }
 
 
-const int SMTPResponse::getCode() const
+int SMTPResponse::getCode() const
 {
 	const int firstCode = m_lines[0].getCode();
 
@@ -179,7 +179,7 @@ const SMTPResponse::responseLine SMTPResponse::getNextResponse()
 
 
 // static
-const int SMTPResponse::extractResponseCode(const string& response)
+int SMTPResponse::extractResponseCode(const string& response)
 {
 	int code = 0;
 
@@ -200,7 +200,7 @@ const SMTPResponse::responseLine SMTPResponse::getLineAt(const unsigned int pos)
 }
 
 
-const unsigned int SMTPResponse::getLineCount() const
+unsigned int SMTPResponse::getLineCount() const
 {
 	return m_lines.size();
 }
@@ -227,7 +227,7 @@ void SMTPResponse::responseLine::setCode(const int code)
 }
 
 
-const int SMTPResponse::responseLine::getCode() const
+int SMTPResponse::responseLine::getCode() const
 {
 	return m_code;
 }

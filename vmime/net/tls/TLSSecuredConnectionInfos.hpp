@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -49,7 +49,7 @@ public:
 		ref <TLSSession> tlsSession, ref <TLSSocket> tlsSocket);
 
 	const string getHost() const;
-	const port_t getPort() const;
+	port_t getPort() const;
 
 	/** Return the peer's certificate (chain) as sent by the peer.
 	  *

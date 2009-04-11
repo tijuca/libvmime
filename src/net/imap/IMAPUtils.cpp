@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,9 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/net/imap/IMAPUtils.hpp"
@@ -86,8 +90,7 @@ const string IMAPUtils::quoteString(const string& text)
 
 		quoted += '"';
 
-		for (string::const_iterator it = text.begin() ;
-		     !needQuoting && it != text.end() ; ++it)
+		for (string::const_iterator it = text.begin() ; it != text.end() ; ++it)
 		{
 			const unsigned char c = *it;
 
@@ -164,74 +167,124 @@ const string IMAPUtils::toModifiedUTF7
 	hsUTF7[1] = base64alphabet[(hs & 0xF0) >> 4];
 	hsUTF7[2] = base64alphabet[(hs & 0x0F) << 2];
 
-	// Transcode path component to UTF-7 charset.
+	// iconv() is buggy with UTF-8 to UTF-7 conversion, so we do it "by hand".
+	// This code is largely inspired from "imap/utf7.c", in mutt 1.4.
+	// Copyright (C) 2000 Edmund Grimley Evans <edmundo@rano.org>
+
 	// WARNING: This may throw "exceptions::charset_conv_error"
-	const string cvt = text.getConvertedText(charset(charsets::UTF_7));
+	const string cvt = text.getConvertedText(charset(charsets::UTF_8));
 
-	// Transcode to modified UTF-7 (RFC-2060).
+	// In the worst case we convert 2 chars to 7 chars.
+	// For example: "\x10&\x10&..." -> "&ABA-&-&ABA-&-...".
 	string out;
-	out.reserve((cvt.length() * 3) / 2);
+	out.reserve((cvt.length() / 2) * 7 + 6);
 
-	bool inB64sequence = false;
+	int b = 0, k = 0;
+	bool base64 = false;
 
-	for (string::const_iterator it = cvt.begin() ; it != cvt.end() ; ++it)
+	string::size_type remaining = cvt.length();
+
+	for (string::size_type i = 0, len = cvt.length() ; i < len ; )
 	{
-		const unsigned char c = *it;
+		const unsigned char c = cvt[i];
 
 		// Replace hierarchy separator with an equivalent UTF-7 Base64 sequence
-		if (!inB64sequence && c == hierarchySeparator)
+		if (!base64 && c == hierarchySeparator)
 		{
 			out += "&" + hsUTF7 + "-";
+
+			++i;
+			--remaining;
 			continue;
 		}
 
-		switch (c)
+		string::size_type n = 0;
+		int ch = 0;
+
+		if (c < 0x80)
+			ch = c, n = 0;
+		else if (c < 0xc2)
+			return "";
+		else if (c < 0xe0)
+			ch = c & 0x1f, n = 1;
+		else if (c < 0xf0)
+			ch = c & 0x0f, n = 2;
+		else if (c < 0xf8)
+			ch = c & 0x07, n = 3;
+		else if (c < 0xfc)
+			ch = c & 0x03, n = 4;
+		else if (c < 0xfe)
+			ch = c & 0x01, n = 5;
+		else
+			return "";
+
+		if (n > remaining)
+			return "";  // error
+
+		++i;
+		--remaining;
+
+		for (string::size_type j = 0 ; j < n ; j++)
 		{
-		// Beginning of Base64 sequence: replace '+' with '&'
-		case '+':
+			if ((cvt[i + j] & 0xc0) != 0x80)
+				return "";  // error
+
+			ch = (ch << 6) | (cvt[i + j] & 0x3f);
+		}
+
+		if (n > 1 && !(ch >> (n * 5 + 1)))
+			return "";  // error
+
+		i += n;
+		remaining -= n;
+
+		if (ch < 0x20 || ch >= 0x7f)
 		{
-			if (!inB64sequence)
+			if (!base64)
 			{
-				inB64sequence = true;
 				out += '&';
+				base64 = true;
+				b = 0;
+				k = 10;
 			}
-			else
+
+			if (ch & ~0xffff)
+				ch = 0xfffe;
+
+			out += base64alphabet[b | ch >> k];
+
+			k -= 6;
+
+			for ( ; k >= 0 ; k -= 6)
+				out += base64alphabet[(ch >> k) & 0x3f];
+
+			b = (ch << (-k)) & 0x3f;
+			k += 16;
+		}
+		else
+		{
+			if (base64)
 			{
-				out += '+';
+				if (k > 10)
+					out += base64alphabet[b];
+
+				out += '-';
+				base64 = false;
 			}
 
-			break;
-		}
-		// End of Base64 sequence
-		case '-':
-		{
-			inB64sequence = false;
-			out += '-';
-			break;
-		}
-		// ',' is used instead of '/' in modified Base64
-		case '/':
-		{
-			out += inB64sequence ? ',' : '/';
-			break;
-		}
-		// '&' (0x26) is represented by the two-octet sequence "&-"
-		case '&':
-		{
-			if (!inB64sequence)
-				out += "&-";
-			else
-				out += '&';
+			out += static_cast <string::value_type>(ch);
 
-			break;
+			if (ch == '&')
+				out += '-';
 		}
-		default:
-		{
-			out += c;
-			break;
-		}
+	}
 
-		}
+	if (base64)
+	{
+		if (k > 10)
+			out += base64alphabet[b];
+
+		out += '-';
 	}
 
 	return (out);
@@ -305,7 +358,7 @@ const folder::path::component IMAPUtils::fromModifiedUTF7(const string& text)
 }
 
 
-const int IMAPUtils::folderTypeFromFlags(const IMAPParser::mailbox_flag_list* list)
+int IMAPUtils::folderTypeFromFlags(const IMAPParser::mailbox_flag_list* list)
 {
 	// Get folder type
 	int type = folder::TYPE_CONTAINS_MESSAGES | folder::TYPE_CONTAINS_FOLDERS;
@@ -325,7 +378,7 @@ const int IMAPUtils::folderTypeFromFlags(const IMAPParser::mailbox_flag_list* li
 }
 
 
-const int IMAPUtils::folderFlagsFromFlags(const IMAPParser::mailbox_flag_list* list)
+int IMAPUtils::folderFlagsFromFlags(const IMAPParser::mailbox_flag_list* list)
 {
 	// Get folder flags
 	int folderFlags = folder::FLAG_CHILDREN;
@@ -344,7 +397,7 @@ const int IMAPUtils::folderFlagsFromFlags(const IMAPParser::mailbox_flag_list* l
 }
 
 
-const int IMAPUtils::messageFlagsFromFlags(const IMAPParser::flag_list* list)
+int IMAPUtils::messageFlagsFromFlags(const IMAPParser::flag_list* list)
 {
 	const std::vector <IMAPParser::flag*>& flagList = list->flags();
 	int flags = 0;

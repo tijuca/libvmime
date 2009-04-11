@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,9 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/net/imap/IMAPTag.hpp"
@@ -70,7 +74,7 @@ const IMAPTag IMAPTag::operator++(int)
 }
 
 
-const int IMAPTag::number() const
+int IMAPTag::number() const
 {
 	return (m_number);
 }
@@ -88,9 +92,9 @@ void IMAPTag::generate()
 		"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 	m_tag[0] = prefixChars[m_number / 1000];
-	m_tag[1] = '0' + (m_number % 1000) / 100;
-	m_tag[2] = '0' + (m_number % 100) / 10;
-	m_tag[3] = '0' + (m_number % 10);
+	m_tag[1] = static_cast <char>('0' + (m_number % 1000) / 100);
+	m_tag[2] = static_cast <char>('0' + (m_number % 100) / 10);
+	m_tag[3] = static_cast <char>('0' + m_number % 10);
 }
 
 

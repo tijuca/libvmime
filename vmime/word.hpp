@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -82,8 +82,8 @@ public:
 	word& operator=(const word& w);
 	word& operator=(const string& s);
 
-	const bool operator==(const word& w) const;
-	const bool operator!=(const word& w) const;
+	bool operator==(const word& w) const;
+	bool operator!=(const word& w) const;
 
 #if VMIME_WIDE_CHAR_SUPPORT
 	const wstring getDecodedText() const;
@@ -109,13 +109,30 @@ public:
 	ref <component> clone() const;
 
 
+#ifndef VMIME_BUILDING_DOC
+	class generatorState
+	{
+	public:
+
+		generatorState()
+			: isFirstWord(true), prevWordIsEncoded(false), lastCharIsSpace(false)
+		{
+		}
+
+		bool isFirstWord;
+		bool prevWordIsEncoded;
+		bool lastCharIsSpace;
+	};
+#endif
+
+
 	using component::parse;
 	using component::generate;
 
 	void parse(const string& buffer, const string::size_type position, const string::size_type end, string::size_type* newPosition = NULL);
 	void generate(utility::outputStream& os, const string::size_type maxLineLength = lineLengthLimits::infinite, const string::size_type curLinePos = 0, string::size_type* newLinePos = NULL) const;
 
-	void generate(utility::outputStream& os, const string::size_type maxLineLength, const string::size_type curLinePos, string::size_type* newLinePos, const int flags, const bool isFirstWord) const;
+	void generate(utility::outputStream& os, const string::size_type maxLineLength, const string::size_type curLinePos, string::size_type* newLinePos, const int flags, generatorState* state) const;
 
 	const std::vector <ref <const component> > getChildComponents() const;
 

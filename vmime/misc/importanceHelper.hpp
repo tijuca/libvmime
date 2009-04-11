@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -72,7 +72,7 @@ public:
 	  * @return importance of the message, or default importance is no
 	  * information about importance is given in the message
 	  */
-	static const Importance getImportance(ref <const message> msg);
+	static Importance getImportance(ref <const message> msg);
 
 	/** Return the importance of a message, given its header.
 	  *
@@ -80,7 +80,7 @@ public:
 	  * @return importance of the message, or default importance is no
 	  * information about importance is given in the message
 	  */
-	static const Importance getImportanceHeader(ref <const header> hdr);
+	static Importance getImportanceHeader(ref <const header> hdr);
 
 	/** Set the importance of the specified message.
 	  *

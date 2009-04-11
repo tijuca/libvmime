@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -202,13 +202,13 @@ void addressList::removeAllAddresses()
 }
 
 
-const int addressList::getAddressCount() const
+int addressList::getAddressCount() const
 {
 	return (m_list.size());
 }
 
 
-const bool addressList::isEmpty() const
+bool addressList::isEmpty() const
 {
 	return (m_list.empty());
 }

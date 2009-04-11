@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,9 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/utility/stream.hpp"
@@ -34,7 +38,7 @@ namespace utility {
 
 // stream
 
-const stream::size_type stream::getBlockSize() const
+stream::size_type stream::getBlockSize() const
 {
 	return 32768;  // 32 KB
 }
@@ -56,13 +60,13 @@ outputStream& operator<<(outputStream& os, const string& str)
 }
 
 
-const stream::size_type bufferedStreamCopy(inputStream& is, outputStream& os)
+stream::size_type bufferedStreamCopy(inputStream& is, outputStream& os)
 {
 	return bufferedStreamCopy(is, os, 0, NULL);
 }
 
 
-const stream::size_type bufferedStreamCopy(inputStream& is, outputStream& os,
+stream::size_type bufferedStreamCopy(inputStream& is, outputStream& os,
 	const stream::size_type length, progressListener* progress)
 {
 	const stream::size_type blockSize =
@@ -78,7 +82,7 @@ const stream::size_type bufferedStreamCopy(inputStream& is, outputStream& os,
 
 	while (!is.eof())
 	{
-		const stream::size_type read = is.read(buffer, sizeof(buffer));
+		const stream::size_type read = is.read(buffer, blockSize);
 
 		if (read != 0)
 		{
@@ -109,12 +113,14 @@ outputStreamAdapter::outputStreamAdapter(std::ostream& os)
 void outputStreamAdapter::write
 	(const value_type* const data, const size_type count)
 {
+	m_stream.exceptions(std::ios_base::badbit);
 	m_stream.write(data, count);
 }
 
 
 void outputStreamAdapter::flush()
 {
+	m_stream.exceptions(std::ios_base::badbit);
 	m_stream.flush();
 }
 
@@ -170,7 +176,7 @@ inputStreamAdapter::inputStreamAdapter(std::istream& is)
 }
 
 
-const bool inputStreamAdapter::eof() const
+bool inputStreamAdapter::eof() const
 {
 	return (m_stream.eof());
 }
@@ -178,21 +184,24 @@ const bool inputStreamAdapter::eof() const
 
 void inputStreamAdapter::reset()
 {
+	m_stream.exceptions(std::ios_base::badbit);
 	m_stream.seekg(0, std::ios::beg);
 	m_stream.clear();
 }
 
 
-const stream::size_type inputStreamAdapter::read
+stream::size_type inputStreamAdapter::read
 	(value_type* const data, const size_type count)
 {
+	m_stream.exceptions(std::ios_base::badbit);
 	m_stream.read(data, count);
 	return (m_stream.gcount());
 }
 
 
-const stream::size_type inputStreamAdapter::skip(const size_type count)
+stream::size_type inputStreamAdapter::skip(const size_type count)
 {
+	m_stream.exceptions(std::ios_base::badbit);
 	m_stream.ignore(count);
 	return (m_stream.gcount());
 }
@@ -214,7 +223,7 @@ inputStreamStringAdapter::inputStreamStringAdapter(const string& buffer,
 }
 
 
-const bool inputStreamStringAdapter::eof() const
+bool inputStreamStringAdapter::eof() const
 {
 	return (m_pos >= m_end);
 }
@@ -226,7 +235,7 @@ void inputStreamStringAdapter::reset()
 }
 
 
-const stream::size_type inputStreamStringAdapter::read
+stream::size_type inputStreamStringAdapter::read
 	(value_type* const data, const size_type count)
 {
 	if (m_pos + count >= m_end)
@@ -246,7 +255,7 @@ const stream::size_type inputStreamStringAdapter::read
 }
 
 
-const stream::size_type inputStreamStringAdapter::skip(const size_type count)
+stream::size_type inputStreamStringAdapter::skip(const size_type count)
 {
 	if (m_pos + count >= m_end)
 	{
@@ -271,7 +280,7 @@ inputStreamStringProxyAdapter::inputStreamStringProxyAdapter(const stringProxy& 
 }
 
 
-const bool inputStreamStringProxyAdapter::eof() const
+bool inputStreamStringProxyAdapter::eof() const
 {
 	return (m_pos >= m_buffer.length());
 }
@@ -283,7 +292,7 @@ void inputStreamStringProxyAdapter::reset()
 }
 
 
-const stream::size_type inputStreamStringProxyAdapter::read
+stream::size_type inputStreamStringProxyAdapter::read
 	(value_type* const data, const size_type count)
 {
 	const size_type remaining = m_buffer.length() - m_pos;
@@ -303,7 +312,7 @@ const stream::size_type inputStreamStringProxyAdapter::read
 }
 
 
-const stream::size_type inputStreamStringProxyAdapter::skip(const size_type count)
+stream::size_type inputStreamStringProxyAdapter::skip(const size_type count)
 {
 	const size_type remaining = m_buffer.length() - m_pos;
 
@@ -343,7 +352,7 @@ inputStreamPointerAdapter::~inputStreamPointerAdapter()
 }
 
 
-const bool inputStreamPointerAdapter::eof() const
+bool inputStreamPointerAdapter::eof() const
 {
 	return (m_stream->eof());
 }
@@ -351,21 +360,24 @@ const bool inputStreamPointerAdapter::eof() const
 
 void inputStreamPointerAdapter::reset()
 {
+	m_stream->exceptions(std::ios_base::badbit);
 	m_stream->seekg(0, std::ios::beg);
 	m_stream->clear();
 }
 
 
-const stream::size_type inputStreamPointerAdapter::read
+stream::size_type inputStreamPointerAdapter::read
 	(value_type* const data, const size_type count)
 {
+	m_stream->exceptions(std::ios_base::badbit);
 	m_stream->read(data, count);
 	return (m_stream->gcount());
 }
 
 
-const stream::size_type inputStreamPointerAdapter::skip(const size_type count)
+stream::size_type inputStreamPointerAdapter::skip(const size_type count)
 {
+	m_stream->exceptions(std::ios_base::badbit);
 	m_stream->ignore(count);
 	return (m_stream->gcount());
 }
@@ -380,7 +392,7 @@ inputStreamByteBufferAdapter::inputStreamByteBufferAdapter(const byte_t* buffer,
 }
 
 
-const bool inputStreamByteBufferAdapter::eof() const
+bool inputStreamByteBufferAdapter::eof() const
 {
 	return m_pos >= m_length;
 }
@@ -392,7 +404,7 @@ void inputStreamByteBufferAdapter::reset()
 }
 
 
-const stream::size_type inputStreamByteBufferAdapter::read
+stream::size_type inputStreamByteBufferAdapter::read
 	(value_type* const data, const size_type count)
 {
 	const size_type remaining = m_length - m_pos;
@@ -414,7 +426,7 @@ const stream::size_type inputStreamByteBufferAdapter::read
 }
 
 
-const stream::size_type inputStreamByteBufferAdapter::skip(const size_type count)
+stream::size_type inputStreamByteBufferAdapter::skip(const size_type count)
 {
 	const size_type remaining = m_length - m_pos;
 
@@ -456,7 +468,7 @@ void outputStreamSocketAdapter::flush()
 }
 
 
-const stream::size_type outputStreamSocketAdapter::getBlockSize() const
+stream::size_type outputStreamSocketAdapter::getBlockSize() const
 {
 	return 16384;  // 16 KB
 }
@@ -471,7 +483,7 @@ inputStreamSocketAdapter::inputStreamSocketAdapter(net::socket& sok)
 }
 
 
-const bool inputStreamSocketAdapter::eof() const
+bool inputStreamSocketAdapter::eof() const
 {
 	// Can't know...
 	return false;
@@ -484,14 +496,14 @@ void inputStreamSocketAdapter::reset()
 }
 
 
-const stream::size_type inputStreamSocketAdapter::read
+stream::size_type inputStreamSocketAdapter::read
 	(value_type* const data, const size_type count)
 {
 	return m_socket.receiveRaw(data, count);
 }
 
 
-const stream::size_type inputStreamSocketAdapter::skip
+stream::size_type inputStreamSocketAdapter::skip
 	(const size_type /* count */)
 {
 	// Not supported
@@ -499,7 +511,7 @@ const stream::size_type inputStreamSocketAdapter::skip
 }
 
 
-const stream::size_type inputStreamSocketAdapter::getBlockSize() const
+stream::size_type inputStreamSocketAdapter::getBlockSize() const
 {
 	return 16384;  // 16 KB
 }

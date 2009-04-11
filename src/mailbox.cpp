@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -165,7 +165,10 @@ void mailbox::parse(const string& buffer, const string::size_type position,
 					{
 						// Erase any space between display name and <address>
 						string::iterator q = name.end();
-						for ( ; q != name.begin() && parserHelpers::isSpace(*(q - 1)) ; --q);
+
+						while (q != name.begin() && parserHelpers::isSpace(*(q - 1)))
+							--q;
+
 						name.erase(q, name.end());
 
 						break;
@@ -431,13 +434,13 @@ void mailbox::generate(utility::outputStream& os, const string::size_type maxLin
 }
 
 
-const bool mailbox::operator==(const class mailbox& mailbox) const
+bool mailbox::operator==(const class mailbox& mailbox) const
 {
 	return (m_name == mailbox.m_name && m_email == mailbox.m_email);
 }
 
 
-const bool mailbox::operator!=(const class mailbox& mailbox) const
+bool mailbox::operator!=(const class mailbox& mailbox) const
 {
 	return !(*this == mailbox);
 }
@@ -465,7 +468,7 @@ ref <component>mailbox::clone() const
 }
 
 
-const bool mailbox::isEmpty() const
+bool mailbox::isEmpty() const
 {
 	return (m_email.empty());
 }
@@ -478,7 +481,7 @@ void mailbox::clear()
 }
 
 
-const bool mailbox::isGroup() const
+bool mailbox::isGroup() const
 {
 	return (false);
 }

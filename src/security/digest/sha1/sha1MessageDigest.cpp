@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -128,7 +128,7 @@ void sha1MessageDigest::update(const byte_t* buffer, const unsigned long len)
 		i = 0;
 	}
 
-	memcpy(&m_buffer[j], &buffer[i], len - i);
+	std::memcpy(&m_buffer[j], &buffer[i], len - i);
 }
 
 
@@ -160,10 +160,10 @@ void sha1MessageDigest::finalize()
 	// Wipe variables
 	i = j = 0;
 
-	memset(m_buffer, 0, 64);
-	memset(m_state, 0, 20);
-	memset(m_count, 0, 8);
-	memset(&finalcount, 0, 8);
+	std::memset(m_buffer, 0, 64);
+	std::memset(m_state, 0, 20);
+	std::memset(m_count, 0, 8);
+	std::memset(&finalcount, 0, 8);
 }
 
 
@@ -248,7 +248,7 @@ void sha1MessageDigest::transform
 }
 
 
-const int sha1MessageDigest::getDigestLength() const
+int sha1MessageDigest::getDigestLength() const
 {
 	return 20;
 }

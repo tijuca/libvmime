@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,9 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/net/smtp/SMTPTransport.hpp"
@@ -22,7 +26,6 @@
 
 #include "vmime/exception.hpp"
 #include "vmime/platform.hpp"
-#include "vmime/encoderB64.hpp"
 #include "vmime/mailboxList.hpp"
 
 #include "vmime/utility/filteredStream.hpp"
@@ -187,7 +190,9 @@ void SMTPTransport::helo()
 	//
 	// eg:  C: EHLO thismachine.ourdomain.com
 	//      S: 250-smtp.theserver.com
-	//      S: 250 AUTH CRAM-MD5 DIGEST-MD5
+	//      S: 250-AUTH CRAM-MD5 DIGEST-MD5
+	//      S: 250-PIPELINING
+	//      S: 250 SIZE 2555555555
 
 	sendRequest("EHLO " + platform::getHandler()->getHostName());
 
@@ -209,12 +214,38 @@ void SMTPTransport::helo()
 		}
 
 		m_extendedSMTP = false;
-		m_extendedSMTPResponse.clear();
+		m_extensions.clear();
 	}
 	else
 	{
 		m_extendedSMTP = true;
-		m_extendedSMTPResponse = resp->getText();
+		m_extensions.clear();
+
+		// Get supported extensions from SMTP response
+		// One extension per line, format is: EXT PARAM1 PARAM2...
+		for (int i = 1, n = resp->getLineCount() ; i < n ; ++i)
+		{
+			const string line = resp->getLineAt(i).getText();
+			std::istringstream iss(line);
+
+			string ext;
+			iss >> ext;
+
+			std::vector <string> params;
+			string param;
+
+			// Special case: some servers send "AUTH=MECH [MECH MECH...]"
+			if (ext.length() >= 5 && utility::stringUtils::toUpper(ext.substr(0, 5)) == "AUTH=")
+			{
+				params.push_back(utility::stringUtils::toUpper(ext.substr(5)));
+				ext = "AUTH";
+			}
+
+			while (iss >> param)
+				params.push_back(utility::stringUtils::toUpper(param));
+
+			m_extensions[ext] = params;
+		}
 	}
 }
 
@@ -273,36 +304,10 @@ void SMTPTransport::authenticateSASL()
 	if (!getAuthenticator().dynamicCast <security::sasl::SASLAuthenticator>())
 		throw exceptions::authentication_error("No SASL authenticator available.");
 
-	// Obtain SASL mechanisms supported by server from EHLO response
-	std::vector <string> saslMechs;
-	std::istringstream iss(m_extendedSMTPResponse);
-
-	while (!iss.eof())
-	{
-		string line;
-		std::getline(iss, line);
-
-		std::istringstream liss(line);
-		string word;
-
-		bool inAuth = false;
-
-		while (liss >> word)
-		{
-			if (word.length() == 4 &&
-			    (word[0] == 'A' || word[0] == 'a') &&
-			    (word[1] == 'U' || word[1] == 'u') &&
-			    (word[2] == 'T' || word[2] == 't') &&
-			    (word[3] == 'H' || word[3] == 'h'))
-			{
-				inAuth = true;
-			}
-			else if (inAuth)
-			{
-				saslMechs.push_back(word);
-			}
-		}
-	}
+	// Obtain SASL mechanisms supported by server from ESMTP extensions
+	const std::vector <string> saslMechs =
+		(m_extensions.find("AUTH") != m_extensions.end())
+			? m_extensions["AUTH"] : std::vector <string>();
 
 	if (saslMechs.empty())
 		throw exceptions::authentication_error("No SASL mechanism available.");
@@ -479,13 +484,13 @@ void SMTPTransport::startTLS()
 #endif // VMIME_HAVE_TLS_SUPPORT
 
 
-const bool SMTPTransport::isConnected() const
+bool SMTPTransport::isConnected() const
 {
 	return (m_socket && m_socket->isConnected() && m_authentified);
 }
 
 
-const bool SMTPTransport::isSecuredConnection() const
+bool SMTPTransport::isSecuredConnection() const
 {
 	return m_secured;
 }

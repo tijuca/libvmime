@@ -26,15 +26,6 @@ libvmime_la_SOURCES = address.cpp \
 	defaultAttachment.cpp \
 	disposition.cpp \
 	emptyContentHandler.cpp \
-	encoder.cpp \
-	encoder7bit.cpp \
-	encoder8bit.cpp \
-	encoderB64.cpp \
-	encoderBinary.cpp \
-	encoderDefault.cpp \
-	encoderFactory.cpp \
-	encoderQP.cpp \
-	encoderUUE.cpp \
 	encoding.cpp \
 	exception.cpp \
 	fileAttachment.cpp \
@@ -75,11 +66,21 @@ libvmime_la_SOURCES = address.cpp \
 	utility_progressListener.cpp \
 	utility_random.cpp \
 	utility_smartPtr.cpp \
+	utility_smartPtrInt.cpp \
 	utility_stream.cpp \
 	utility_stringProxy.cpp \
 	utility_stringUtils.cpp \
 	utility_url.cpp \
 	utility_urlUtils.cpp \
+	utility_encoder_encoder.cpp \
+	utility_encoder_sevenBitEncoder.cpp \
+	utility_encoder_eightBitEncoder.cpp \
+	utility_encoder_b64Encoder.cpp \
+	utility_encoder_binaryEncoder.cpp \
+	utility_encoder_defaultEncoder.cpp \
+	utility_encoder_encoderFactory.cpp \
+	utility_encoder_qpEncoder.cpp \
+	utility_encoder_uuEncoder.cpp \
 	mdn_MDNHelper.cpp \
 	mdn_MDNInfos.cpp \
 	mdn_receivedMDNInfos.cpp \
@@ -137,7 +138,10 @@ libvmime_la_SOURCES += net_maildir_maildirServiceInfos.cpp \
 	net_maildir_maildirStore.cpp \
 	net_maildir_maildirFolder.cpp \
 	net_maildir_maildirMessage.cpp \
-	net_maildir_maildirUtils.cpp
+	net_maildir_maildirUtils.cpp \
+	net_maildir_maildirFormat.cpp \
+	net_maildir_format_kmailMaildirFormat.cpp \
+	net_maildir_format_courierMaildirFormat.cpp
 endif
 
 if VMIME_BUILTIN_MESSAGING_PROTO_SENDMAIL
@@ -197,6 +201,9 @@ utility_random.cpp: utility/random.cpp
 utility_smartPtr.cpp: utility/smartPtr.cpp
 	ln -sf $< $@
 
+utility_smartPtrInt.cpp: utility/smartPtrInt.cpp
+	ln -sf $< $@
+
 utility_stream.cpp: utility/stream.cpp
 	ln -sf $< $@
 
@@ -210,6 +217,33 @@ utility_url.cpp: utility/url.cpp
 	ln -sf $< $@
 
 utility_urlUtils.cpp: utility/urlUtils.cpp
+	ln -sf $< $@
+
+utility_encoder_encoder.cpp: utility/encoder/encoder.cpp
+	ln -sf $< $@
+
+utility_encoder_sevenBitEncoder.cpp: utility/encoder/sevenBitEncoder.cpp
+	ln -sf $< $@
+
+utility_encoder_eightBitEncoder.cpp: utility/encoder/eightBitEncoder.cpp
+	ln -sf $< $@
+
+utility_encoder_b64Encoder.cpp: utility/encoder/b64Encoder.cpp
+	ln -sf $< $@
+
+utility_encoder_binaryEncoder.cpp: utility/encoder/binaryEncoder.cpp
+	ln -sf $< $@
+
+utility_encoder_defaultEncoder.cpp: utility/encoder/defaultEncoder.cpp
+	ln -sf $< $@
+
+utility_encoder_encoderFactory.cpp: utility/encoder/encoderFactory.cpp
+	ln -sf $< $@
+
+utility_encoder_qpEncoder.cpp: utility/encoder/qpEncoder.cpp
+	ln -sf $< $@
+
+utility_encoder_uuEncoder.cpp: utility/encoder/uuEncoder.cpp
 	ln -sf $< $@
 
 mdn_MDNHelper.cpp: mdn/MDNHelper.cpp
@@ -342,6 +376,15 @@ net_maildir_maildirMessage.cpp: net/maildir/maildirMessage.cpp
 	ln -sf $< $@
 
 net_maildir_maildirUtils.cpp: net/maildir/maildirUtils.cpp
+	ln -sf $< $@
+
+net_maildir_maildirFormat.cpp: net/maildir/maildirFormat.cpp
+	ln -sf $< $@
+
+net_maildir_format_kmailMaildirFormat.cpp: net/maildir/format/kmailMaildirFormat.cpp
+	ln -sf $< $@
+
+net_maildir_format_courierMaildirFormat.cpp: net/maildir/format/courierMaildirFormat.cpp
 	ln -sf $< $@
 
 net_sendmail_sendmailServiceInfos.cpp: net/sendmail/sendmailServiceInfos.cpp

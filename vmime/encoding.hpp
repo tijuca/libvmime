@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -27,7 +27,8 @@
 
 #include "vmime/base.hpp"
 #include "vmime/headerFieldValue.hpp"
-#include "vmime/encoder.hpp"
+
+#include "vmime/utility/encoder/encoder.hpp"
 
 
 namespace vmime
@@ -45,7 +46,7 @@ class encoding : public headerFieldValue
 public:
 
 	encoding();
-	encoding(const string& name);
+	explicit encoding(const string& name);
 	encoding(const encoding& enc);
 
 public:
@@ -67,8 +68,8 @@ public:
 	encoding& operator=(const encoding& other);
 	encoding& operator=(const string& name);
 
-	const bool operator==(const encoding& value) const;
-	const bool operator!=(const encoding& value) const;
+	bool operator==(const encoding& value) const;
+	bool operator!=(const encoding& value) const;
 
 	const std::vector <ref <const component> > getChildComponents() const;
 
@@ -99,7 +100,7 @@ public:
 	  * is registered for the encoding
 	  * @return a new encoder object for the encoding type
 	  */
-	ref <encoder> getEncoder() const;
+	ref <utility::encoder::encoder> getEncoder() const;
 
 private:
 

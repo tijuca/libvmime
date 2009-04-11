@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -39,7 +39,8 @@ VMIME_TEST_SUITE_BEGIN
 	// Encoding helper function
 	static const vmime::string encode(const vmime::string& name, const vmime::string& in, int maxLineLength = 0)
 	{
-		vmime::ref <vmime::encoder> enc = vmime::encoderFactory::getInstance()->create(name);
+		vmime::ref <vmime::utility::encoder::encoder> enc =
+			vmime::utility::encoder::encoderFactory::getInstance()->create(name);
 
 		if (maxLineLength != 0)
 			enc->getProperties()["maxlinelength"] = maxLineLength;
@@ -57,7 +58,8 @@ VMIME_TEST_SUITE_BEGIN
 	// Decoding helper function
 	static const vmime::string decode(const vmime::string& name, const vmime::string& in, int maxLineLength = 0)
 	{
-		vmime::ref <vmime::encoder> enc = vmime::encoderFactory::getInstance()->create(name);
+		vmime::ref <vmime::utility::encoder::encoder> enc =
+			vmime::utility::encoder::encoderFactory::getInstance()->create(name);
 
 		if (maxLineLength != 0)
 			enc->getProperties()["maxlinelength"] = maxLineLength;

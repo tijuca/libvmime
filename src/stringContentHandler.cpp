@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -114,8 +114,8 @@ void stringContentHandler::generate(utility::outputStream& os,
 		// buffer, and then re-encode to output stream...
 		if (m_encoding != enc)
 		{
-			ref <encoder> theDecoder = m_encoding.getEncoder();
-			ref <encoder> theEncoder = enc.getEncoder();
+			ref <utility::encoder::encoder> theDecoder = m_encoding.getEncoder();
+			ref <utility::encoder::encoder> theEncoder = enc.getEncoder();
 
 			theEncoder->getProperties()["maxlinelength"] = maxLineLength;
 
@@ -140,7 +140,7 @@ void stringContentHandler::generate(utility::outputStream& os,
 	// Need to encode data before
 	else
 	{
-		ref <encoder> theEncoder = enc.getEncoder();
+		ref <utility::encoder::encoder> theEncoder = enc.getEncoder();
 		theEncoder->getProperties()["maxlinelength"] = maxLineLength;
 
 		utility::inputStreamStringProxyAdapter in(m_string);
@@ -161,7 +161,7 @@ void stringContentHandler::extract(utility::outputStream& os,
 	// Need to decode data
 	else
 	{
-		ref <encoder> theDecoder = m_encoding.getEncoder();
+		ref <utility::encoder::encoder> theDecoder = m_encoding.getEncoder();
 
 		utility::inputStreamStringProxyAdapter in(m_string);
 		utility::progressListenerSizeAdapter plsa(progress, getLength());
@@ -178,19 +178,19 @@ void stringContentHandler::extractRaw(utility::outputStream& os,
 }
 
 
-const string::size_type stringContentHandler::getLength() const
+string::size_type stringContentHandler::getLength() const
 {
 	return (m_string.length());
 }
 
 
-const bool stringContentHandler::isEmpty() const
+bool stringContentHandler::isEmpty() const
 {
 	return (m_string.length() == 0);
 }
 
 
-const bool stringContentHandler::isEncoded() const
+bool stringContentHandler::isEncoded() const
 {
 	return (m_encoding != NO_ENCODING);
 }

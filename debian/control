@@ -2,7 +2,7 @@ Source: libvmime
 Priority: optional
 Maintainer: Mattias Nordstrom <mnordstr@debian.org>
 Build-Depends: debhelper (>= 5.0.0), autotools-dev, libgnutls-dev (>= 1.2.0), libgsasl7-dev
-Standards-Version: 3.7.3
+Standards-Version: 3.8.1.0
 Section: libs
 Homepage: http://www.vmime.org/
 

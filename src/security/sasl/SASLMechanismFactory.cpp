@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -116,14 +116,14 @@ const std::vector <string> SASLMechanismFactory::getSupportedMechanisms() const
 			}
 		}
 
-		free(out);
+		gsasl_free(out);
 	}
 
 	return list;
 }
 
 
-const bool SASLMechanismFactory::isMechanismSupported(const string& name) const
+bool SASLMechanismFactory::isMechanismSupported(const string& name) const
 {
 	return (gsasl_client_support_p(m_gsaslContext, name.c_str()) != 0 ||
 		m_mechs.find(name) != m_mechs.end());

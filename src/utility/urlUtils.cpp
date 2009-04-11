@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,9 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/utility/urlUtils.hpp"
@@ -36,7 +40,7 @@ const string urlUtils::encode(const string& s)
 
 	for (string::const_iterator it = s.begin() ; it != s.end() ; ++it)
 	{
-		const char_t c = *it;
+		const string::value_type c = *it;
 
 		if (parserHelpers::isPrint(c) && !parserHelpers::isSpace(c) &&
 		    static_cast <unsigned char>(c) <= 127 &&
@@ -69,20 +73,22 @@ const string urlUtils::decode(const string& s)
 
 	for (string::const_iterator it = s.begin() ; it != s.end() ; )
 	{
-		const char_t c = *it;
+		const string::value_type c = *it;
 
 		switch (c)
 		{
 		case '%':
 		{
-			const char_t p = (++it != s.end() ? *it : 0);
-			const char_t q = (++it != s.end() ? *it : 0);
+			++it;  // skip '%'
 
-			unsigned char r = 0;
+			const char_t p = (it != s.end() ? *(it++) : 0);
+			const char_t q = (it != s.end() ? *(it++) : 0);
+
+			unsigned int r = 0;
 
 			switch (p)
 			{
-			case 0: r = '?'; break;
+			case 0: r = '%'; break;
 			case 'a': case 'A': r = 10; break;
 			case 'b': case 'B': r = 11; break;
 			case 'c': case 'C': r = 12; break;
@@ -92,25 +98,23 @@ const string urlUtils::decode(const string& s)
 			default: r = p - '0'; break;
 			}
 
-			r *= 16;
-
-			switch (q)
+			if (q != 0)
 			{
-			case 0: r = '?'; break;
-			case 'a': case 'A': r += 10; break;
-			case 'b': case 'B': r += 11; break;
-			case 'c': case 'C': r += 12; break;
-			case 'd': case 'D': r += 13; break;
-			case 'e': case 'E': r += 14; break;
-			case 'f': case 'F': r += 15; break;
-			default: r += q - '0'; break;
+				r *= 16;
+
+				switch (q)
+				{
+				case 'a': case 'A': r += 10; break;
+				case 'b': case 'B': r += 11; break;
+				case 'c': case 'C': r += 12; break;
+				case 'd': case 'D': r += 13; break;
+				case 'e': case 'E': r += 14; break;
+				case 'f': case 'F': r += 15; break;
+				default: r += q - '0'; break;
+				}
 			}
 
 			result += static_cast <string::value_type>(r);
-
-			if (it != s.end())
-				++it;
-
 			break;
 		}
 		default:

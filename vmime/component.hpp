@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -98,7 +98,7 @@ public:
 	  * @return start position in parsed buffer
 	  * or 0 if this component has not been parsed
 	  */
-	const string::size_type getParsedOffset() const;
+	string::size_type getParsedOffset() const;
 
 	/** Return the length of this component in the
 	  * parsed message contents.
@@ -106,7 +106,7 @@ public:
 	  * @return length of the component in parsed buffer
 	  * or 0 if this component has not been parsed
 	  */
-	const string::size_type getParsedLength() const;
+	string::size_type getParsedLength() const;
 
 	/** Return the list of children of this component.
 	  *

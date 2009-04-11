@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -354,14 +354,14 @@ parameterizedHeaderField& parameterizedHeaderField::operator=(const parameterize
 }
 
 
-const bool parameterizedHeaderField::hasParameter(const string& paramName) const
+bool parameterizedHeaderField::hasParameter(const string& paramName) const
 {
 	const string name = utility::stringUtils::toLower(paramName);
 
 	std::vector <ref <parameter> >::const_iterator pos = m_params.begin();
 	const std::vector <ref <parameter> >::const_iterator end = m_params.end();
 
-	for ( ; pos != end && utility::stringUtils::toLower((*pos)->getName()) != name ; ++pos);
+	for ( ; pos != end && utility::stringUtils::toLower((*pos)->getName()) != name ; ++pos) {}
 
 	return (pos != end);
 }
@@ -375,7 +375,7 @@ ref <parameter> parameterizedHeaderField::findParameter(const string& paramName)
 	std::vector <ref <parameter> >::const_iterator pos = m_params.begin();
 	const std::vector <ref <parameter> >::const_iterator end = m_params.end();
 
-	for ( ; pos != end && utility::stringUtils::toLower((*pos)->getName()) != name ; ++pos);
+	for ( ; pos != end && utility::stringUtils::toLower((*pos)->getName()) != name ; ++pos) {}
 
 	// No parameter with this name can be found
 	if (pos == end)
@@ -398,7 +398,7 @@ ref <parameter> parameterizedHeaderField::getParameter(const string& paramName)
 	std::vector <ref <parameter> >::const_iterator pos = m_params.begin();
 	const std::vector <ref <parameter> >::const_iterator end = m_params.end();
 
-	for ( ; pos != end && utility::stringUtils::toLower((*pos)->getName()) != name ; ++pos);
+	for ( ; pos != end && utility::stringUtils::toLower((*pos)->getName()) != name ; ++pos) {}
 
 	// If no parameter with this name can be found, create a new one
 	if (pos == end)
@@ -486,13 +486,13 @@ void parameterizedHeaderField::removeAllParameters()
 }
 
 
-const int parameterizedHeaderField::getParameterCount() const
+int parameterizedHeaderField::getParameterCount() const
 {
 	return (m_params.size());
 }
 
 
-const bool parameterizedHeaderField::isEmpty() const
+bool parameterizedHeaderField::isEmpty() const
 {
 	return (m_params.empty());
 }

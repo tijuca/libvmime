@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -55,10 +55,10 @@ VMIME_TEST_SUITE_BEGIN
 
 		void addChunk(const std::string& chunk) { m_chunks.push_back(chunk); }
 
-		const bool eof() const { return (m_index >= m_chunks.size()); }
+		bool eof() const { return (m_index >= m_chunks.size()); }
 		void reset() { m_index = 0; }
 
-		const size_type read(value_type* const data, const size_type /* count */)
+		size_type read(value_type* const data, const size_type /* count */)
 		{
 			if (eof())
 				return 0;
@@ -74,7 +74,7 @@ VMIME_TEST_SUITE_BEGIN
 			return chunk.length();
 		}
 
-		const size_type skip(const size_type /* count */)
+		size_type skip(const size_type /* count */)
 		{
 			// Not supported
 			return 0;

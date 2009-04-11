@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -41,18 +41,15 @@ VMIME_TEST_SUITE_BEGIN
 		VMIME_TEST(testWordConstructors)
 		VMIME_TEST(testWordParse)
 		VMIME_TEST(testWordGenerate)
+		VMIME_TEST(testWordGenerateSpace)
+		VMIME_TEST(testWordGenerateSpace2)
 		VMIME_TEST(testWordGenerateMultiBytes)
 	VMIME_TEST_LIST_END
 
 
 	static const vmime::string getDisplayText(const vmime::text& t)
 	{
-		vmime::string res;
-
-		for (int i = 0 ; i < t.getWordCount() ; ++i)
-			res += t.getWordAt(i)->getBuffer();
-
-		return res;
+		return t.getWholeBuffer();
 	}
 
 	static const vmime::string cleanGeneratedWords(const std::string& str)
@@ -141,11 +138,11 @@ VMIME_TEST_SUITE_BEGIN
 		t2.createFromString(s2, c2);
 
 		VASSERT_EQ("2.1", 3, t2.getWordCount());
-		VASSERT_EQ("2.2", s2_1, t2.getWordAt(0)->getBuffer());
+		VASSERT_EQ("2.2", "some ASCII characters and special chars:", t2.getWordAt(0)->getBuffer());
 		VASSERT_EQ("2.3", vmime::charset(vmime::charsets::US_ASCII), t2.getWordAt(0)->getCharset());
-		VASSERT_EQ("2.4", s2_2, t2.getWordAt(1)->getBuffer());
+		VASSERT_EQ("2.4", "\xf1\xf2\xf3\xf4", t2.getWordAt(1)->getBuffer());
 		VASSERT_EQ("2.5", c2, t2.getWordAt(1)->getCharset());
-		VASSERT_EQ("2.6", s2_3, t2.getWordAt(2)->getBuffer());
+		VASSERT_EQ("2.6", "and then more ASCII chars.", t2.getWordAt(2)->getBuffer());
 		VASSERT_EQ("2.7", vmime::charset(vmime::charsets::US_ASCII), t2.getWordAt(2)->getCharset());
 	}
 
@@ -214,6 +211,15 @@ VMIME_TEST_SUITE_BEGIN
 		VASSERT_EQ("9", "a b  ", DISPLAY_FORM(" \t  =?ISO-8859-1?Q?a?= b  "));
 		VASSERT_EQ("10", "a b", DISPLAY_FORM("  a\r\n\t  b"));
 
+		VASSERT_EQ("11", "a b c", DISPLAY_FORM("a =?ISO-8859-1?Q?b?= c"));
+		VASSERT_EQ("12", "a b c ", DISPLAY_FORM("a =?ISO-8859-1?Q?b?= c "));
+		VASSERT_EQ("13", "a b c ", DISPLAY_FORM(" a =?ISO-8859-1?Q?b?= c "));
+		VASSERT_EQ("14", "a b c d", DISPLAY_FORM("a =?ISO-8859-1?Q?b?= c =?ISO-8859-1?Q?d?= "));
+		VASSERT_EQ("15", "a b c d e", DISPLAY_FORM("a =?ISO-8859-1?Q?b?= c =?ISO-8859-1?Q?d?= e"));
+
+		// Whitespaces and multiline
+		VASSERT_EQ("16", "a b c d e", DISPLAY_FORM("=?ISO-8859-1?Q?a_b_?=c\n\t=?ISO-8859-1?Q?d_?=e"));
+
 #undef DISPLAY_FORM
 	}
 
@@ -267,6 +273,60 @@ VMIME_TEST_SUITE_BEGIN
 
 		VASSERT_EQ("2", "=?foo?B?8fLz9PU=?=",
 			vmime::word("\xf1\xf2\xf3\xf4\xf5", vmime::charset("foo")).generate());
+	}
+
+	void testWordGenerateSpace()
+	{
+		// No white-space between an unencoded word and a encoded one
+		VASSERT_EQ("1", "Bonjour =?utf-8?Q?Fran=C3=A7ois?=",
+			vmime::text::newFromString("Bonjour Fran\xc3\xa7ois",
+				vmime::charset("utf-8"))->generate());
+
+		// White-space between two encoded words
+		vmime::text txt;
+		txt.appendWord(vmime::create <vmime::word>("\xc3\x89t\xc3\xa9", "utf-8"));
+		txt.appendWord(vmime::create <vmime::word>("Fran\xc3\xa7ois", "utf-8"));
+
+		const vmime::string decoded = "\xc3\x89t\xc3\xa9""Fran\xc3\xa7ois";
+		const vmime::string encoded = "=?utf-8?B?w4l0w6k=?= =?utf-8?Q?Fran=C3=A7ois?=";
+
+		// -- test encoding
+		VASSERT_EQ("2", encoded, txt.generate());
+
+		// -- ensure no space is added when decoding
+		vmime::text txt2;
+		txt2.parse(encoded, 0, encoded.length());
+
+		VASSERT_EQ("3", decoded, txt2.getWholeBuffer());
+
+		// -- test rencoding
+		VASSERT_EQ("4", encoded, txt2.generate());
+	}
+
+	void testWordGenerateSpace2()
+	{
+		// White-space between two encoded words (#2)
+		vmime::text txt;
+		txt.appendWord(vmime::create <vmime::word>("Facture ", "utf-8"));
+		txt.appendWord(vmime::create <vmime::word>("\xc3\xa0", "utf-8"));
+		txt.appendWord(vmime::create <vmime::word>(" envoyer ", "utf-8"));
+		txt.appendWord(vmime::create <vmime::word>("\xc3\xa0", "utf-8"));
+		txt.appendWord(vmime::create <vmime::word>(" Martine", "utf-8"));
+
+		const vmime::string decoded = "Facture ""\xc3\xa0"" envoyer ""\xc3\xa0"" Martine";
+		const vmime::string encoded = "Facture =?utf-8?B?w6A=?= envoyer =?utf-8?B?w6A=?= Martine";
+
+		// -- test encoding
+		VASSERT_EQ("1", encoded, txt.generate());
+
+		// -- ensure no space is added when decoding
+		vmime::text txt2;
+		txt2.parse(encoded, 0, encoded.length());
+
+		VASSERT_EQ("2", decoded, txt2.getWholeBuffer());
+
+		// -- test rencoding
+		VASSERT_EQ("3", encoded, txt2.generate());
 	}
 
 	void testWordGenerateMultiBytes()

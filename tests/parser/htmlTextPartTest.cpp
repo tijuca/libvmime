@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -81,6 +81,10 @@ VMIME_TEST_SUITE_BEGIN
 		vmime::ref <vmime::message> msg = vmime::create <vmime::message>();
 		msg->parse(msgString);
 
+		// Sanity checks
+		VASSERT_EQ("part-count1", 2, msg->getBody()->getPartCount());
+		VASSERT_EQ("part-count2", 2, msg->getBody()->getPartAt(1)->getBody()->getPartCount());
+
 		vmime::htmlTextPart htmlPart;
 		htmlPart.parse(msg, msg->getBody()->getPartAt(1),
 			msg->getBody()->getPartAt(1)->getBody()->getPartAt(0));
@@ -131,6 +135,10 @@ VMIME_TEST_SUITE_BEGIN
 
 		vmime::ref <vmime::message> msg = vmime::create <vmime::message>();
 		msg->parse(msgString);
+
+		// Sanity checks
+		VASSERT_EQ("part-count1", 2, msg->getBody()->getPartCount());
+		VASSERT_EQ("part-count2", 3, msg->getBody()->getPartAt(1)->getBody()->getPartCount());
 
 		vmime::htmlTextPart htmlPart;
 		htmlPart.parse(msg, msg->getBody()->getPartAt(1),
@@ -197,6 +205,10 @@ VMIME_TEST_SUITE_BEGIN
 
 		vmime::ref <vmime::message> msg = vmime::create <vmime::message>();
 		msg->parse(msgString);
+
+		// Sanity checks
+		VASSERT_EQ("part-count1", 2, msg->getBody()->getPartCount());
+		VASSERT_EQ("part-count2", 2, msg->getBody()->getPartAt(1)->getBody()->getPartCount());
 
 		vmime::htmlTextPart htmlPart;
 		htmlPart.parse(msg, msg->getBody()->getPartAt(1),

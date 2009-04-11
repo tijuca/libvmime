@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -21,15 +21,16 @@
 // the GNU General Public License cover the whole combination.
 //
 
-#include "vmime/encoderUUE.hpp"
+#include "vmime/utility/encoder/uuEncoder.hpp"
 #include "vmime/parserHelpers.hpp"
 
 
-namespace vmime
-{
+namespace vmime {
+namespace utility {
+namespace encoder {
 
 
-encoderUUE::encoderUUE()
+uuEncoder::uuEncoder()
 {
 	getProperties()["mode"] = 644;
 	getProperties()["filename"] = "no_name";
@@ -37,7 +38,7 @@ encoderUUE::encoderUUE()
 }
 
 
-const std::vector <string> encoderUUE::getAvailableProperties() const
+const std::vector <string> uuEncoder::getAvailableProperties() const
 {
 	std::vector <string> list(encoder::getAvailableProperties());
 
@@ -51,19 +52,19 @@ const std::vector <string> encoderUUE::getAvailableProperties() const
 
 
 // This is the character encoding function to make a character printable
-static inline const unsigned char UUENCODE(const unsigned char c)
+static inline unsigned char UUENCODE(const unsigned char c)
 {
 	return ((c & 077) + ' ');
 }
 
 // Single character decoding
-static inline const unsigned char UUDECODE(const unsigned char c)
+static inline unsigned char UUDECODE(const unsigned char c)
 {
 	return ((c - ' ') & 077);
 }
 
 
-const utility::stream::size_type encoderUUE::encode(utility::inputStream& in,
+utility::stream::size_type uuEncoder::encode(utility::inputStream& in,
 	utility::outputStream& out, utility::progressListener* progress)
 {
 	in.reset();  // may not work...
@@ -142,7 +143,7 @@ const utility::stream::size_type encoderUUE::encode(utility::inputStream& in,
 }
 
 
-const utility::stream::size_type encoderUUE::decode(utility::inputStream& in,
+utility::stream::size_type uuEncoder::decode(utility::inputStream& in,
 	utility::outputStream& out, utility::progressListener* progress)
 {
 	in.reset();  // may not work...
@@ -325,4 +326,6 @@ const utility::stream::size_type encoderUUE::decode(utility::inputStream& in,
 }
 
 
+} // encoder
+} // utility
 } // vmime

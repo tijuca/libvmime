@@ -22,15 +22,6 @@ nobase_libvmimeinclude_HEADERS = address.hpp \
 	defaultAttachment.hpp \
 	disposition.hpp \
 	emptyContentHandler.hpp \
-	encoder.hpp \
-	encoder7bit.hpp \
-	encoder8bit.hpp \
-	encoderB64.hpp \
-	encoderBinary.hpp \
-	encoderDefault.hpp \
-	encoderFactory.hpp \
-	encoderQP.hpp \
-	encoderUUE.hpp \
 	encoding.hpp \
 	exception.hpp \
 	fileAttachment.hpp \
@@ -79,11 +70,21 @@ nobase_libvmimeinclude_HEADERS = address.hpp \
 	utility/progressListener.hpp \
 	utility/random.hpp \
 	utility/smartPtr.hpp \
+	utility/smartPtrInt.hpp \
 	utility/stream.hpp \
 	utility/stringProxy.hpp \
 	utility/stringUtils.hpp \
 	utility/url.hpp \
 	utility/urlUtils.hpp \
+	utility/encoder/encoder.hpp \
+	utility/encoder/sevenBitEncoder.hpp \
+	utility/encoder/eightBitEncoder.hpp \
+	utility/encoder/b64Encoder.hpp \
+	utility/encoder/binaryEncoder.hpp \
+	utility/encoder/defaultEncoder.hpp \
+	utility/encoder/encoderFactory.hpp \
+	utility/encoder/qpEncoder.hpp \
+	utility/encoder/uuEncoder.hpp \
 	mdn/MDNHelper.hpp \
 	mdn/MDNInfos.hpp \
 	mdn/receivedMDNInfos.hpp \
@@ -149,6 +150,9 @@ nobase_libvmimeinclude_HEADERS = address.hpp \
 	net/maildir/maildirFolder.hpp \
 	net/maildir/maildirMessage.hpp \
 	net/maildir/maildirUtils.hpp \
+	net/maildir/maildirFormat.hpp \
+	net/maildir/format/kmailMaildirFormat.hpp \
+	net/maildir/format/courierMaildirFormat.hpp \
 	net/sendmail/sendmailServiceInfos.hpp \
 	net/sendmail/sendmailTransport.hpp \
 	platforms/windows/windowsFile.hpp \

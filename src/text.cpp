@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -131,7 +131,7 @@ text& text::operator=(const text& other)
 }
 
 
-const bool text::operator==(const text& t) const
+bool text::operator==(const text& t) const
 {
 	if (getWordCount() == t.getWordCount())
 	{
@@ -150,7 +150,7 @@ const bool text::operator==(const text& t) const
 }
 
 
-const bool text::operator!=(const text& t) const
+bool text::operator!=(const text& t) const
 {
 	return !(*this == t);
 }
@@ -199,13 +199,13 @@ void text::removeAllWords()
 }
 
 
-const int text::getWordCount() const
+int text::getWordCount() const
 {
 	return (m_words.size());
 }
 
 
-const bool text::isEmpty() const
+bool text::isEmpty() const
 {
 	return (m_words.empty());
 }
@@ -269,63 +269,78 @@ void text::createFromString(const string& in, const charset& ch)
 
 	removeAllWords();
 
-	for (string::size_type end = in.size(), pos = 0, start = 0 ; ; )
+	const string::size_type asciiCount =
+		utility::stringUtils::countASCIIchars(in.begin(), in.end());
+
+	const string::size_type asciiPercent =
+		(in.length() == 0 ? 100 : (100 * asciiCount) / in.length());
+
+	// If there are "too much" non-ASCII chars, encode everything
+	if (asciiPercent < 60)  // less than 60% ASCII chars
 	{
-		if (pos == end || parserHelpers::isSpace(in[pos]))
+		appendWord(vmime::create <word>(in, ch));
+	}
+	// Else, only encode words which need it
+	else
+	{
+		for (string::size_type end = in.size(), pos = 0, start = 0 ; ; )
 		{
-			if (pos != end)
-				++pos;
-
-			const string chunk(in.begin() + start, in.begin() + pos);
-
-			if (is8bit)
+			if (pos == end || parserHelpers::isSpace(in[pos]))
 			{
-				if (count && prevIs8bit)
+				const string chunk(in.begin() + start, in.begin() + pos);
+
+				if (pos != end)
+					++pos;
+
+				if (is8bit)
 				{
-					// No need to create a new encoded word, just append
-					// the current word to the previous one.
-					ref <word> w = getWordAt(getWordCount() - 1);
-					w->getBuffer() += chunk;
+					if (count && prevIs8bit)
+					{
+						// No need to create a new encoded word, just append
+						// the current word to the previous one.
+						ref <word> w = getWordAt(getWordCount() - 1);
+						w->getBuffer() += " " + chunk;
+					}
+					else
+					{
+						appendWord(vmime::create <word>(chunk, ch));
+
+						prevIs8bit = true;
+						++count;
+					}
 				}
 				else
 				{
-					appendWord(vmime::create <word>(chunk, ch));
+					if (count && !prevIs8bit)
+					{
+						ref <word> w = getWordAt(getWordCount() - 1);
+						w->getBuffer() += " " + chunk;
+					}
+					else
+					{
+						appendWord(vmime::create <word>
+							(chunk, charset(charsets::US_ASCII)));
 
-					prevIs8bit = true;
-					++count;
+						prevIs8bit = false;
+						++count;
+					}
 				}
+
+				if (pos == end)
+					break;
+
+				is8bit = false;
+				start = pos;
+			}
+			else if (!parserHelpers::isAscii(in[pos]))
+			{
+				is8bit = true;
+				++pos;
 			}
 			else
 			{
-				if (count && !prevIs8bit)
-				{
-					ref <word> w = getWordAt(getWordCount() - 1);
-					w->getBuffer() += chunk;
-				}
-				else
-				{
-					appendWord(vmime::create <word>
-						(chunk, charset(charsets::US_ASCII)));
-
-					prevIs8bit = false;
-					++count;
-				}
+				++pos;
 			}
-
-			if (pos == end)
-				break;
-
-			is8bit = false;
-			start = pos;
-		}
-		else if (!parserHelpers::isAscii(in[pos]))
-		{
-			is8bit = true;
-			++pos;
-		}
-		else
-		{
-			++pos;
 		}
 	}
 }
@@ -335,11 +350,12 @@ void text::encodeAndFold(utility::outputStream& os, const string::size_type maxL
 	const string::size_type firstLineOffset, string::size_type* lastLineLength, const int flags) const
 {
 	string::size_type curLineLength = firstLineOffset;
+	word::generatorState state;
 
 	for (int wi = 0 ; wi < getWordCount() ; ++wi)
 	{
 		getWordAt(wi)->generate(os, maxLineLength, curLineLength,
-			&curLineLength, flags, (wi == 0));
+			&curLineLength, flags, &state);
 	}
 
 	if (lastLineLength)

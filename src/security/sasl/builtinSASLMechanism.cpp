@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -57,7 +57,7 @@ const string builtinSASLMechanism::getName() const
 }
 
 
-const bool builtinSASLMechanism::step
+bool builtinSASLMechanism::step
 	(ref <SASLSession> sess, const byte_t* challenge, const int challengeLen,
 	 byte_t** response, int* responseLen)
 {
@@ -78,7 +78,7 @@ const bool builtinSASLMechanism::step
 		*response = res;
 		*responseLen = outputLen;
 
-		free(output);
+		gsasl_free(output);
 	}
 	else
 	{
@@ -109,7 +109,7 @@ const bool builtinSASLMechanism::step
 }
 
 
-const bool builtinSASLMechanism::isComplete() const
+bool builtinSASLMechanism::isComplete() const
 {
 	return m_complete;
 }
@@ -140,11 +140,11 @@ void builtinSASLMechanism::encode
 	}
 	catch (...)
 	{
-		free(coutput);
+		gsasl_free(coutput);
 		throw;
 	}
 
-	free(coutput);
+	gsasl_free(coutput);
 }
 
 
@@ -173,11 +173,11 @@ void builtinSASLMechanism::decode
 	}
 	catch (...)
 	{
-		free(coutput);
+		gsasl_free(coutput);
 		throw;
 	}
 
-	free(coutput);
+	gsasl_free(coutput);
 }
 
 

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -42,12 +42,13 @@ VMIME_TEST_SUITE_BEGIN
 		VMIME_TEST(testGenerate)
 		VMIME_TEST(testUtilsEncode)
 		VMIME_TEST(testUtilsDecode)
+		VMIME_TEST(testUtilsDecodeSpecialCases)
 		VMIME_TEST(testUtilsEncodeReservedChars)
 		VMIME_TEST(testUtilsEncodeUnsafeChars)
 	VMIME_TEST_LIST_END
 
 
-	static const bool parseHelper(vmime::utility::url& u, const vmime::string& str)
+	static bool parseHelper(vmime::utility::url& u, const vmime::string& str)
 	{
 		try
 		{
@@ -239,7 +240,7 @@ VMIME_TEST_SUITE_BEGIN
 		{
 			std::ostringstream ossTest;
 			ossTest << "%" << "0123456789ABCDEF"[i / 16]
-				       << "0123456789ABCDEF"[i % 16];
+			               << "0123456789ABCDEF"[i % 16];
 
 			std::ostringstream ossNum;
 			ossNum << i;
@@ -251,6 +252,14 @@ VMIME_TEST_SUITE_BEGIN
 				vmime::utility::urlUtils::decode(ossTest.str()));
 		}
 
+	}
+
+	void testUtilsDecodeSpecialCases()
+	{
+		// Bug #1656547: segfault with '%' at the end of the string
+		VASSERT_EQ("1.1", "sadfsda%", vmime::utility::urlUtils::decode("sadfsda%"));
+		VASSERT_EQ("1.2", "sadfsda\x05", vmime::utility::urlUtils::decode("sadfsda%5"));
+		VASSERT_EQ("1.3", "sadfsda\x42", vmime::utility::urlUtils::decode("sadfsda%42"));
 	}
 
 	void testUtilsEncodeReservedChars()

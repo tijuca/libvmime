@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,14 +12,19 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/net/maildir/maildirStore.hpp"
 
 #include "vmime/net/maildir/maildirFolder.hpp"
+#include "vmime/net/maildir/maildirFormat.hpp"
 
 #include "vmime/utility/smartPtr.hpp"
 
@@ -99,7 +104,7 @@ ref <folder> maildirStore::getFolder(const folder::path& path)
 }
 
 
-const bool maildirStore::isValidFolderName(const folder::path::component& name) const
+bool maildirStore::isValidFolderName(const folder::path::component& name) const
 {
 	if (!platform::getHandler()->getFileSystemFactory()->isValidPathComponent(name))
 		return false;
@@ -146,17 +151,19 @@ void maildirStore::connect()
 		}
 	}
 
+	m_format = maildirFormat::detect(thisRef().dynamicCast <maildirStore>());
+
 	m_connected = true;
 }
 
 
-const bool maildirStore::isConnected() const
+bool maildirStore::isConnected() const
 {
 	return (m_connected);
 }
 
 
-const bool maildirStore::isSecuredConnection() const
+bool maildirStore::isSecuredConnection() const
 {
 	return false;
 }
@@ -164,7 +171,7 @@ const bool maildirStore::isSecuredConnection() const
 
 ref <connectionInfos> maildirStore::getConnectionInfos() const
 {
-	return vmime::create <defaultConnectionInfos>("localhost", 0);
+	return vmime::create <defaultConnectionInfos>("localhost", static_cast <port_t>(0));
 }
 
 
@@ -188,6 +195,18 @@ void maildirStore::noop()
 }
 
 
+ref <maildirFormat> maildirStore::getFormat()
+{
+	return m_format;
+}
+
+
+ref <const maildirFormat> maildirStore::getFormat() const
+{
+	return m_format;
+}
+
+
 void maildirStore::registerFolder(maildirFolder* folder)
 {
 	m_folders.push_back(folder);
@@ -207,7 +226,7 @@ const utility::path& maildirStore::getFileSystemPath() const
 }
 
 
-const int maildirStore::getCapabilities() const
+int maildirStore::getCapabilities() const
 {
 	return (CAPABILITY_CREATE_FOLDER |
 	        CAPABILITY_RENAME_FOLDER |

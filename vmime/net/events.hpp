@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -64,7 +64,7 @@ public:
 	  *
 	  * @return event type (see messageCountEvent::Types)
 	  */
-	const Types getType() const;
+	Types getType() const;
 
 	/** Return the numbers of the messages that have been added/removed.
 	  *
@@ -127,7 +127,7 @@ public:
 	  *
 	  * @return event type (see messageChangedEvent::Types)
 	  */
-	const Types getType() const;
+	Types getType() const;
 
 	/** Return the numbers of the messages that have changed.
 	  *
@@ -191,7 +191,7 @@ public:
 	  *
 	  * @return event type (see folderEvent::Types)
 	  */
-	const Types getType() const;
+	Types getType() const;
 
 	/** Dispatch the event to the specified listener.
 	  *

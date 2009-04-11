@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -118,7 +118,7 @@ void messageId::parse(const string& buffer, const string::size_type position,
 		// Extract left part
 		const string::size_type leftStart = position + (p - pstart);
 
-		while (p < pend && *p != '@') ++p;
+		while (p < pend && *p != '@' && *p != '>') ++p;
 
 		m_left = string(buffer.begin() + leftStart,
 		                buffer.begin() + position + (p - pstart));
@@ -178,6 +178,9 @@ ref <messageId> messageId::parseNext(const string& buffer, const string::size_ty
 
 const string messageId::getId() const
 {
+	if (m_right.empty())
+		return m_left;
+
 	return (m_left + '@' + m_right);
 }
 
@@ -193,7 +196,9 @@ void messageId::generate(utility::outputStream& os, const string::size_type maxL
 		pos = NEW_LINE_SEQUENCE_LENGTH;
 	}
 
-	os << '<' << m_left << '@' << m_right << '>';
+	os << '<' << m_left;
+	if (m_right != "") os << '@' << m_right;
+	os << '>';
 
 	if (newLinePos)
 		*newLinePos = pos + m_left.length() + m_right.length() + 3;
@@ -225,13 +230,13 @@ messageId messageId::generateId()
 }
 
 
-const bool messageId::operator==(const messageId& mid) const
+bool messageId::operator==(const messageId& mid) const
 {
 	return (m_left == mid.m_left && m_right == mid.m_right);
 }
 
 
-const bool messageId::operator!=(const messageId& mid) const
+bool messageId::operator!=(const messageId& mid) const
 {
 	return !(*this == mid);
 }

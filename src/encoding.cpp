@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -22,8 +22,9 @@
 //
 
 #include "vmime/encoding.hpp"
-#include "vmime/encoderFactory.hpp"
 #include "vmime/contentHandler.hpp"
+
+#include "vmime/utility/encoder/encoderFactory.hpp"
 
 #include <algorithm>
 
@@ -53,8 +54,12 @@ encoding::encoding(const encoding& enc)
 void encoding::parse(const string& buffer, const string::size_type position,
 	const string::size_type end, string::size_type* newPosition)
 {
-	m_name = utility::stringUtils::trim(utility::stringUtils::toLower
-		(string(buffer.begin() + position, buffer.begin() + end)));
+	m_name = utility::stringUtils::toLower(utility::stringUtils::trim
+		(utility::stringUtils::unquote(utility::stringUtils::trim
+			(string(buffer.begin() + position, buffer.begin() + end)))));
+
+	if (m_name.empty())
+		m_name = encodingTypes::SEVEN_BIT;   // assume default "7-bit"
 
 	setParsedBounds(position, end);
 
@@ -73,9 +78,9 @@ void encoding::generate(utility::outputStream& os, const string::size_type /* ma
 }
 
 
-ref <encoder> encoding::getEncoder() const
+ref <utility::encoder::encoder> encoding::getEncoder() const
 {
-	return (encoderFactory::getInstance()->create(generate()));
+	return (utility::encoder::encoderFactory::getInstance()->create(generate()));
 }
 
 
@@ -93,13 +98,13 @@ encoding& encoding::operator=(const string& name)
 }
 
 
-const bool encoding::operator==(const encoding& value) const
+bool encoding::operator==(const encoding& value) const
 {
 	return (utility::stringUtils::toLower(m_name) == value.m_name);
 }
 
 
-const bool encoding::operator!=(const encoding& value) const
+bool encoding::operator!=(const encoding& value) const
 {
 	return !(*this == value);
 }

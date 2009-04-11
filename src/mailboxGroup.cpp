@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -228,13 +228,13 @@ void mailboxGroup::setName(const text& name)
 }
 
 
-const bool mailboxGroup::isGroup() const
+bool mailboxGroup::isGroup() const
 {
 	return (true);
 }
 
 
-const bool mailboxGroup::isEmpty() const
+bool mailboxGroup::isEmpty() const
 {
 	return (m_list.empty());
 }
@@ -308,7 +308,7 @@ void mailboxGroup::removeAllMailboxes()
 }
 
 
-const int mailboxGroup::getMailboxCount() const
+int mailboxGroup::getMailboxCount() const
 {
 	return (m_list.size());
 }

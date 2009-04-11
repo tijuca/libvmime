@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,9 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/net/imap/IMAPFolder.hpp"
@@ -67,7 +71,7 @@ IMAPFolder::~IMAPFolder()
 }
 
 
-const int IMAPFolder::getMode() const
+int IMAPFolder::getMode() const
 {
 	if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -76,7 +80,7 @@ const int IMAPFolder::getMode() const
 }
 
 
-const int IMAPFolder::getType()
+int IMAPFolder::getType()
 {
 	if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -96,7 +100,7 @@ const int IMAPFolder::getType()
 }
 
 
-const int IMAPFolder::getFlags()
+int IMAPFolder::getFlags()
 {
 	if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -408,7 +412,7 @@ void IMAPFolder::destroy()
 }
 
 
-const bool IMAPFolder::exists()
+bool IMAPFolder::exists()
 {
 	ref <IMAPStore> store = m_store.acquire();
 
@@ -419,7 +423,7 @@ const bool IMAPFolder::exists()
 }
 
 
-const int IMAPFolder::testExistAndGetType()
+int IMAPFolder::testExistAndGetType()
 {
 	m_type = TYPE_UNDEFINED;
 
@@ -491,7 +495,7 @@ const int IMAPFolder::testExistAndGetType()
 }
 
 
-const bool IMAPFolder::isOpen() const
+bool IMAPFolder::isOpen() const
 {
 	return (m_open);
 }
@@ -544,7 +548,7 @@ std::vector <ref <message> > IMAPFolder::getMessages(const std::vector <int>& nu
 }
 
 
-const int IMAPFolder::getMessageCount()
+int IMAPFolder::getMessageCount()
 {
 	if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -757,7 +761,7 @@ void IMAPFolder::fetchMessage(ref <message> msg, const int options)
 }
 
 
-const int IMAPFolder::getFetchCapabilities() const
+int IMAPFolder::getFetchCapabilities() const
 {
 	return (FETCH_ENVELOPE | FETCH_CONTENT_INFO | FETCH_STRUCTURE |
 	        FETCH_FLAGS | FETCH_SIZE | FETCH_FULL_HEADER | FETCH_UID |

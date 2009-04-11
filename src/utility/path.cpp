@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,9 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/utility/path.hpp"
@@ -119,7 +123,7 @@ path& path::operator=(const component& c)
 }
 
 
-const bool path::operator==(const path& p) const
+bool path::operator==(const path& p) const
 {
 	if (m_list.size() != p.m_list.size())
 		return (false);
@@ -137,13 +141,19 @@ const bool path::operator==(const path& p) const
 }
 
 
-const bool path::operator!=(const path& p) const
+bool path::operator!=(const path& p) const
 {
 	return (!(*this == p));
 }
 
 
-const bool path::isEmpty() const
+bool path::isEmpty() const
+{
+	return (m_list.empty());
+}
+
+
+bool path::isRoot() const
 {
 	return (m_list.empty());
 }
@@ -161,7 +171,7 @@ path::component& path::getLastComponent()
 }
 
 
-const int path::getSize() const
+int path::getSize() const
 {
 	return (m_list.size());
 }
@@ -179,7 +189,7 @@ path::component& path::operator[](const int x)
 }
 
 
-const bool path::isDirectParentOf(const path& p) const
+bool path::isDirectParentOf(const path& p) const
 {
 	if (p.getSize() != getSize() + 1)
 		return (false);
@@ -193,7 +203,7 @@ const bool path::isDirectParentOf(const path& p) const
 }
 
 
-const bool path::isParentOf(const path& p) const
+bool path::isParentOf(const path& p) const
 {
 	if (p.getSize() < getSize() + 1)
 		return (false);

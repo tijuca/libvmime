@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -91,13 +91,13 @@ public:
 	  *
 	  * @return length of data
 	  */
-	virtual const string::size_type getLength() const = 0;
+	virtual string::size_type getLength() const = 0;
 
 	/** Returns 'true' if data managed by this object is encoded.
 	  *
 	  * @return true if data is encoded, false otherwise
 	  */
-	virtual const bool isEncoded() const = 0;
+	virtual bool isEncoded() const = 0;
 
 	/** Returns the encoding used for data (or "binary" if not encoded).
 	  *
@@ -109,7 +109,7 @@ public:
 	  *
 	  * @return true if no data is managed by this object, false otherwise
 	  */
-	virtual const bool isEmpty() const = 0;
+	virtual bool isEmpty() const = 0;
 };
 
 
