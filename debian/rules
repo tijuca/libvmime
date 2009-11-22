@@ -63,6 +63,7 @@ clean:
 	# Add here commands to clean up after the build process.
 	[ ! -f Makefile ] || $(MAKE) clean
 	rm -f Makefile src/Makefile vmime/Makefile vmime/config.hpp build-stamp libtool config.guess config.log config.sub config.status config.h vmime.pc stamp-h1
+	test -e autotools/config.rpath && chmod +x autotools/config.rpath
 	cd src ; rm -f `find . -type l`
 
 	dh_clean 
