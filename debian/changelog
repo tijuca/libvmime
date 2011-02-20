@@ -1,3 +1,11 @@
+libvmime (0.9.0-1.2) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Stop shipping libtool la files in binary packages.
+    http://wiki.debian.org/ReleaseGoals/LAFileRemoval Closes: #610151
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 20 Feb 2011 09:46:41 +0100
+
 libvmime (0.9.0-1.1) unstable; urgency=low
 
   * Non-maintainer upload.
