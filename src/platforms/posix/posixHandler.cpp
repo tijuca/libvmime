@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -36,12 +36,54 @@
 #include <netdb.h>
 
 #include <string.h>
+#include <cassert>
+
+#if VMIME_HAVE_PTHREAD
+#	include <pthread.h>
+#endif // VMIME_HAVE_PTHREAD
 
 /*
 #ifdef _POSIX_PRIORITY_SCHEDULING
 	#include <sched.h>
 #endif // _POSIX_PRIORITY_SCHEDULING
 */
+
+
+#if VMIME_HAVE_PTHREAD
+
+namespace
+{
+	// This construction ensures mutex will be initialized in compile-time
+	// and will be available any time in the runtime.
+	pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+	// Helper lock, to be exception safe all the time.
+	class PLockHelper
+	{
+	public:
+
+		PLockHelper()
+		{
+			if (pthread_mutex_lock(&g_mutex) != 0)
+				assert(!"unable to lock mutex - thread safety's void");
+		}
+
+		~PLockHelper()
+		{
+			if (pthread_mutex_unlock(&g_mutex) != 0)
+				assert(!"unable to unlock mutex - application's dead...");
+		}
+
+	private:
+
+		// Object cannot be copied
+		PLockHelper(const PLockHelper&);
+		const PLockHelper& operator=(const PLockHelper&);
+	};
+
+} // unnamed namespace
+
+#endif // VMIME_HAVE_PTHREAD
 
 
 namespace vmime {
@@ -55,18 +97,14 @@ posixHandler::posixHandler()
 	m_socketFactory = vmime::create <posixSocketFactory>();
 #endif
 #if VMIME_HAVE_FILESYSTEM_FEATURES
-	m_fileSysFactory = new posixFileSystemFactory();
-	m_childProcFactory = new posixChildProcessFactory();
+	m_fileSysFactory = vmime::create <posixFileSystemFactory>();
+	m_childProcFactory = vmime::create <posixChildProcessFactory>();
 #endif
 }
 
 
 posixHandler::~posixHandler()
 {
-#if VMIME_HAVE_FILESYSTEM_FEATURES
-	delete (m_fileSysFactory);
-	delete (m_childProcFactory);
-#endif
 }
 
 
@@ -113,6 +151,8 @@ const vmime::datetime posixHandler::getCurrentLocalTime() const
 
 const vmime::charset posixHandler::getLocaleCharset() const
 {
+	const PLockHelper lock;
+
 	const char* prevLocale = ::setlocale(LC_ALL, "");
 	vmime::charset ch(::nl_langinfo(CODESET));
 	::setlocale(LC_ALL, prevLocale);
@@ -173,9 +213,9 @@ unsigned int posixHandler::getProcessId() const
 
 #if VMIME_HAVE_MESSAGING_FEATURES
 
-ref <vmime::net::socketFactory> posixHandler::getSocketFactory() const
+ref <vmime::net::socketFactory> posixHandler::getSocketFactory()
 {
-	return m_socketFactory.dynamicCast <vmime::net::socketFactory>();
+	return m_socketFactory;
 }
 
 #endif
@@ -183,15 +223,15 @@ ref <vmime::net::socketFactory> posixHandler::getSocketFactory() const
 
 #if VMIME_HAVE_FILESYSTEM_FEATURES
 
-vmime::utility::fileSystemFactory* posixHandler::getFileSystemFactory() const
+ref <vmime::utility::fileSystemFactory> posixHandler::getFileSystemFactory()
 {
-	return (m_fileSysFactory);
+	return m_fileSysFactory;
 }
 
 
-vmime::utility::childProcessFactory* posixHandler::getChildProcessFactory() const
+ref <vmime::utility::childProcessFactory> posixHandler::getChildProcessFactory()
 {
-	return (m_childProcFactory);
+	return m_childProcFactory;
 }
 
 #endif

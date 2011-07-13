@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -61,13 +61,13 @@ public:
 	unsigned int getProcessId() const;
 
 #if VMIME_HAVE_MESSAGING_FEATURES
-	ref <vmime::net::socketFactory> getSocketFactory() const;
+	ref <vmime::net::socketFactory> getSocketFactory();
 #endif
 
 #if VMIME_HAVE_FILESYSTEM_FEATURES
-	vmime::utility::fileSystemFactory* getFileSystemFactory() const;
+	ref <vmime::utility::fileSystemFactory> getFileSystemFactory();
 
-	vmime::utility::childProcessFactory* getChildProcessFactory() const;
+	ref <vmime::utility::childProcessFactory> getChildProcessFactory();
 #endif
 
 	void wait() const;
@@ -79,8 +79,8 @@ private:
 #endif
 
 #if VMIME_HAVE_FILESYSTEM_FEATURES
-	posixFileSystemFactory* m_fileSysFactory;
-	posixChildProcessFactory* m_childProcFactory;
+	ref <posixFileSystemFactory> m_fileSysFactory;
+	ref <posixChildProcessFactory> m_childProcFactory;
 #endif
 };
 

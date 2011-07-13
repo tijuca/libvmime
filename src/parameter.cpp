@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -25,6 +25,7 @@
 #include "vmime/parserHelpers.hpp"
 
 #include "vmime/text.hpp"
+#include "vmime/encoding.hpp"
 
 
 namespace vmime
@@ -257,11 +258,23 @@ void parameter::generate(utility::outputStream& os, const string::size_type maxL
 
 	// For compatibility with implementations that do not understand RFC-2231,
 	// also generate a normal "7bit/us-ascii" parameter
+
+	// [By Eugene A. Shatokhin]
+	// Note that if both the normal "7bit/us-ascii" value and the extended
+	// value are present, the latter can be ignored by mail processing systems.
+	// This may lead to annoying problems, for example, with strange names of
+	// attachments with all but 7-bit ascii characters removed, etc. To avoid
+	// this, I would suggest not to create "7bit/us-ascii" value if the extended
+	// value is to be generated.
+
+	// A stream for a temporary storage
+	std::ostringstream sevenBitBuffer;
+
 	string::size_type pos = curLinePos;
 
 	if (pos + name.length() + 10 + value.length() > maxLineLength)
 	{
-		os << NEW_LINE_SEQUENCE;
+		sevenBitBuffer << NEW_LINE_SEQUENCE;
 		pos = NEW_LINE_SEQUENCE_LENGTH;
 	}
 
@@ -301,16 +314,22 @@ void parameter::generate(utility::outputStream& os, const string::size_type maxL
 
 	if (needQuoting)
 	{
-		os << name << "=\"";
+		sevenBitBuffer << name << "=\"";
 		pos += name.length() + 2;
 	}
 	else
 	{
-		os << name << "=";
+		sevenBitBuffer << name << "=";
 		pos += name.length() + 1;
 	}
 
-	bool extended = false;
+	// Check whether there is a recommended encoding for this charset.
+	// If so, the whole buffer will be encoded. Else, the number of
+	// 7-bit (ASCII) bytes in the input will be used to determine if
+	// we need to encode the whole buffer.
+	encoding recommendedEnc;
+	const bool alwaysEncode = m_value.getCharset().getRecommendedEncoding(recommendedEnc);
+	bool extended = alwaysEncode;
 
 	for (string::size_type i = 0 ; (i < value.length()) && (pos < maxLineLength - 4) ; ++i)
 	{
@@ -318,12 +337,12 @@ void parameter::generate(utility::outputStream& os, const string::size_type maxL
 
 		if (/* needQuoting && */ (c == '"' || c == '\\'))  // 'needQuoting' is implicit
 		{
-			os << '\\' << value[i];  // escape 'x' with '\x'
+			sevenBitBuffer << '\\' << value[i];  // escape 'x' with '\x'
 			pos += 2;
 		}
 		else if (parserHelpers::isAscii(c))
 		{
-			os << value[i];
+			sevenBitBuffer << value[i];
 			++pos;
 		}
 		else
@@ -334,16 +353,30 @@ void parameter::generate(utility::outputStream& os, const string::size_type maxL
 
 	if (needQuoting)
 	{
-		os << '"';
+		sevenBitBuffer << '"';
 		++pos;
 	}
+
+#if VMIME_ALWAYS_GENERATE_7BIT_PARAMETER
+	os << sevenBitBuffer;
+#endif // !VMIME_ALWAYS_GENERATE_7BIT_PARAMETER
 
 	// Also generate an extended parameter if the value contains 8-bit characters
 	// or is too long for a single line
 	if (extended || cutValue)
 	{
+
+#if VMIME_ALWAYS_GENERATE_7BIT_PARAMETER
+
 		os << ';';
 		++pos;
+
+#else // !VMIME_ALWAYS_GENERATE_7BIT_PARAMETER
+
+		// The data output to 'sevenBitBuffer' will be discarded in this case
+		pos = curLinePos;
+
+#endif // VMIME_ALWAYS_GENERATE_7BIT_PARAMETER
 
 		/* RFC-2231
 		 * ========
@@ -406,9 +439,21 @@ void parameter::generate(utility::outputStream& os, const string::size_type maxL
 			case '\t':
 			case '\r':
 			case '\n':
+			case '%':
 			case '"':
 			case ';':
 			case ',':
+			case '(':
+			case ')':
+			case '<':
+			case '>':
+			case '@':
+			case ':':
+			case '/':
+			case '[':
+			case ']':
+			case '?':
+			case '=':
 
 				encode = true;
 				break;
@@ -416,7 +461,8 @@ void parameter::generate(utility::outputStream& os, const string::size_type maxL
 			default:
 
 				encode = (!parserHelpers::isPrint(c) ||
-				          !parserHelpers::isAscii(c));
+				          !parserHelpers::isAscii(c) ||
+				          alwaysEncode);
 
 				break;
 			}
@@ -477,6 +523,17 @@ void parameter::generate(utility::outputStream& os, const string::size_type maxL
 			}
 		}
 	}
+#if !VMIME_ALWAYS_GENERATE_7BIT_PARAMETER
+	else
+	{
+		// The value does not contain 8-bit characters and
+		// is short enough for a single line.
+		// "7bit/us-ascii" will suffice in this case.
+
+		// Output what has been stored in temporary buffer so far
+		os << sevenBitBuffer.str();
+	}
+#endif // !VMIME_ALWAYS_GENERATE_7BIT_PARAMETER
 
 	if (newLinePos)
 		*newLinePos = pos;

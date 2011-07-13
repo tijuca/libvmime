@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -322,12 +322,28 @@ public:
 
 	void testRenameFolder_KMail()
 	{
-		testRenameFolderImpl(TEST_MAILDIR_KMAIL, TEST_MAILDIRFILES_KMAIL);
+		try
+		{
+			testRenameFolderImpl(TEST_MAILDIR_KMAIL, TEST_MAILDIRFILES_KMAIL);
+		}
+		catch (vmime::exception& e)
+		{
+			std::cerr << e;
+			throw e;
+		}
 	}
 
 	void testRenameFolder_Courier()
 	{
-		testRenameFolderImpl(TEST_MAILDIR_COURIER, TEST_MAILDIRFILES_COURIER);
+		try
+		{
+			testRenameFolderImpl(TEST_MAILDIR_COURIER, TEST_MAILDIRFILES_COURIER);
+		}
+		catch (vmime::exception& e)
+		{
+			std::cerr << e;
+			throw e;
+		}
 	}
 
 	void testRenameFolderImpl(const vmime::string* const dirs, const vmime::string* const files)
@@ -485,7 +501,7 @@ private:
 
 	const vmime::utility::url getStoreURL()
 	{
-		vmime::utility::fileSystemFactory* fsf =
+		vmime::ref <vmime::utility::fileSystemFactory> fsf =
 			vmime::platform::getHandler()->getFileSystemFactory();
 
 		vmime::utility::url url(std::string("maildir://localhost")
@@ -496,7 +512,7 @@ private:
 
 	void createMaildir(const vmime::string* const dirs, const vmime::string* const files)
 	{
-		vmime::utility::fileSystemFactory* fsf =
+		vmime::ref <vmime::utility::fileSystemFactory> fsf =
 			vmime::platform::getHandler()->getFileSystemFactory();
 
 		vmime::ref <vmime::utility::file> rootDir = fsf->create(m_tempPath);
@@ -528,7 +544,7 @@ private:
 
 	void destroyMaildir()
 	{
-		vmime::utility::fileSystemFactory* fsf =
+		vmime::ref <vmime::utility::fileSystemFactory> fsf =
 			vmime::platform::getHandler()->getFileSystemFactory();
 
 		recursiveDelete(fsf->create(m_tempPath));

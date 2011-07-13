@@ -1,10 +1,10 @@
 //
 // VMime library (http://vmime.sourceforge.net)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -38,8 +38,8 @@ namespace windows {
 // posixSocket
 //
 
-windowsSocket::windowsSocket()
-	: m_desc(-1)
+windowsSocket::windowsSocket(ref <vmime::net::timeoutHandler> th)
+	: m_timeoutHandler(th), m_desc(-1)
 {
 	WSAData wsaData;
 	WSAStartup(MAKEWORD(1, 1), &wsaData);
@@ -121,6 +121,12 @@ void windowsSocket::disconnect()
 }
 
 
+windowsSocket::size_type windowsSocket::getBlockSize() const
+{
+	return 16384;  // 16 KB
+}
+
+
 void windowsSocket::receive(vmime::string& buffer)
 {
 	int ret = ::recv(m_desc, m_buffer, sizeof(m_buffer), 0);
@@ -137,7 +143,7 @@ void windowsSocket::receive(vmime::string& buffer)
 }
 
 
-int windowsSocket::receiveRaw(char* buffer, const int count)
+windowsSocket::size_type windowsSocket::receiveRaw(char* buffer, const size_type count)
 {
 	int ret = ::recv(m_desc, buffer, count, 0);
 
@@ -159,7 +165,7 @@ void windowsSocket::send(const vmime::string& buffer)
 }
 
 
-void windowsSocket::sendRaw(const char* buffer, const int count)
+void windowsSocket::sendRaw(const char* buffer, const size_type count)
 {
 	::send(m_desc, buffer, count, 0);
 }
@@ -173,9 +179,14 @@ void windowsSocket::sendRaw(const char* buffer, const int count)
 
 ref <vmime::net::socket> windowsSocketFactory::create()
 {
-	return vmime::create <windowsSocket>();
+	ref <vmime::net::timeoutHandler> th = NULL;
+	return vmime::create <windowsSocket>(th);
 }
 
+ref <vmime::net::socket> windowsSocketFactory::create(ref <vmime::net::timeoutHandler> th)
+{
+    return vmime::create <windowsSocket>(th);
+}
 
 } // posix
 } // platforms

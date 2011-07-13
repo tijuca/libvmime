@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -25,6 +25,8 @@
 
 #include "vmime/exception.hpp"
 #include "vmime/charsetConverter.hpp"
+
+#include "vmime/encoding.hpp"
 
 #include "vmime/utility/encoder/b64Encoder.hpp"
 #include "vmime/utility/encoder/qpEncoder.hpp"
@@ -148,29 +150,9 @@ const string wordEncoder::getNextChunk(const string::size_type maxLength)
 			while ((inputCount == 0 || outputCount < maxLength) && (inputCount < remaining))
 			{
 				const unsigned char c = m_buffer[m_pos + inputCount];
-				bool encoded = true;
-
-				switch (c)
-				{
-				case ',':
-				case ';':
-				case ':':
-				case '_':
-				case '=':
-
-					encoded = true;
-					break;
-
-				default:
-
-					if (c >= 33 && c <= 126 && c != 61)
-						encoded = false;
-
-					break;
-				}
 
 				inputCount++;
-				outputCount += (encoded ? 3 : 1);
+				outputCount += utility::encoder::qpEncoder::RFC2047_getEncodedLength(c);
 			}
 
 			// Encode chunk
@@ -215,28 +197,7 @@ const string wordEncoder::getNextChunk(const string::size_type maxLength)
 				for (string::size_type i = 0, n = encodeBytes.length() ; i < n ; ++i)
 				{
 					const unsigned char c = encodeBytes[i];
-					bool encoded = true;
-
-					switch (c)
-					{
-					case ',':
-					case ';':
-					case ':':
-					case '_':
-					case '=':
-
-						encoded = true;
-						break;
-
-					default:
-
-						if (c >= 33 && c <= 126 && c != 61)
-							encoded = false;
-
-						break;
-					}
-
-					outputCount += (encoded ? 3 : 1);
+					outputCount += utility::encoder::qpEncoder::RFC2047_getEncodedLength(c);
 				}
 			}
 
@@ -261,16 +222,40 @@ wordEncoder::Encoding wordEncoder::getEncoding() const
 
 
 // static
+bool wordEncoder::isEncodingNeeded(const string& buffer, const charset& charset)
+{
+	// Charset-specific encoding
+	encoding recEncoding;
+
+	if (charset.getRecommendedEncoding(recEncoding))
+		return true;
+
+	// No encoding is needed if the buffer only contains ASCII chars
+	if (utility::stringUtils::findFirstNonASCIIchar(buffer.begin(), buffer.end()) != string::npos)
+		return true;
+
+	// Force encoding when there are only ASCII chars, but there is
+	// also at least one of '\n' or '\r' (header fields)
+	if (buffer.find_first_of("\n\r") != string::npos)
+		return true;
+
+	return false;
+}
+
+
+// static
 wordEncoder::Encoding wordEncoder::guessBestEncoding
 	(const string& buffer, const charset& charset)
 {
-	// If the charset is ISO-8859-x, set to QP encoding
-	const string cset = utility::stringUtils::toLower(charset.getName());
+	// Charset-specific encoding
+	encoding recEncoding;
 
-	if (cset.find("iso-8859") != string::npos ||
-	    cset.find("iso8859") != string::npos)
+	if (charset.getRecommendedEncoding(recEncoding))
 	{
-		return ENCODING_QP;
+		if (recEncoding == encoding(encodingTypes::QUOTED_PRINTABLE))
+			return ENCODING_QP;
+		else
+			return ENCODING_B64;
 	}
 
 	// Use Base64 if more than 40% non-ASCII, or Quoted-Printable else (default)

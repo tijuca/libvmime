@@ -11,7 +11,7 @@
 #define VMIME_PACKAGE "libvmime"
 
 // Version number of package
-#define VMIME_VERSION "0.9.0"
+#define VMIME_VERSION "0.9.1"
 #define VMIME_API "0:0:0"
 
 // Target OS and architecture
@@ -42,8 +42,6 @@ typedef unsigned int vmime_uint32;
 
 
 // Options
-// -- Wide characters support
-#define VMIME_WIDE_CHAR_SUPPORT 0
 // -- File-system support
 #define VMIME_HAVE_FILESYSTEM_FEATURES 1
 // -- SASL support

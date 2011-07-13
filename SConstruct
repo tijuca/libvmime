@@ -29,7 +29,7 @@ import string
 # Package version number
 packageVersionMajor = 0
 packageVersionMinor = 9
-packageVersionMicro = 0
+packageVersionMicro = 1
 
 # API version number (libtool)
 #
@@ -261,6 +261,9 @@ libvmime_messaging_proto_sources = [
 			'net/imap/IMAPMessage.cpp',      'net/imap/IMAPMessage.hpp',
 			'net/imap/IMAPTag.cpp',          'net/imap/IMAPTag.hpp',
 			'net/imap/IMAPUtils.cpp',        'net/imap/IMAPUtils.hpp',
+			'net/imap/IMAPMessagePartContentHandler.cpp', 'net/imap/IMAPMessagePartContentHandler.hpp',
+			'net/imap/IMAPStructure.cpp',    'net/imap/IMAPStructure.hpp',
+			'net/imap/IMAPPart.cpp',         'net/imap/IMAPPart.hpp',
 			'net/imap/IMAPParser.hpp',
 		]
 	],
@@ -376,6 +379,7 @@ libvmimetest_sources = [
 ]
 
 libvmime_autotools = [
+	'm4/acx_pthread.m4',
 	'm4/iconv.m4',
 	'm4/lib-ld.m4',
 	'm4/lib-link.m4',
@@ -435,13 +439,15 @@ libvmime_dist_files += libvmime_autotools
 #  Set options  #
 #################
 
-EnsureSConsVersion(0, 94)
+EnsureSConsVersion(0, 98, 1)
 
 SetOption('implicit_cache', 1)
 
-#SourceSignatures('timestamp')
-SourceSignatures('MD5')
-TargetSignatures('build')
+try:
+	Decider('MD5-timestamp')
+except:
+	SourceSignatures('MD5')
+	TargetSignatures('build')
 
 
 #############
@@ -456,15 +462,15 @@ if defaultSendmailPath == None:
 
 
 # Command line options
-opts = Options('options.cache')
+opts = Variables('options.cache')
 
-opts.AddOptions(
+opts.AddVariables(
 	(
 		'prefix',
 		'Installation prefix directory',
 		'/usr'
 	),
-	EnumOption(
+	EnumVariable(
 		'debug',
 		'Debug version (useful for developers only)',
 		'no',
@@ -472,7 +478,7 @@ opts.AddOptions(
 		map = { },
 		ignorecase = 1
 	),
-	EnumOption(
+	EnumVariable(
 		'with_messaging',
 		'Messaging support (connection to mail store/transport servers)',
 		'yes',
@@ -480,7 +486,7 @@ opts.AddOptions(
 		map = { },
 		ignorecase = 1
 	),
-	EnumOption(
+	EnumVariable(
 		'with_filesystem',
 		'Enable file-system support (this is needed for "maildir" messaging support)',
 		'yes',
@@ -506,7 +512,7 @@ opts.AddOptions(
 		    + 'Currently available platform handlers: posix.',
 		'"posix"'
 	),
-	EnumOption(
+	EnumVariable(
 	 	'with_sasl',
 		'Enable SASL support (requires GNU SASL library)',
 		'yes',
@@ -514,7 +520,7 @@ opts.AddOptions(
 		map = { },
 		ignorecase = 1
 	),
-	EnumOption(
+	EnumVariable(
 		'with_tls',
 		'Enable TLS support (requires GNU TLS library)',
 		'yes',
@@ -527,15 +533,7 @@ opts.AddOptions(
 		'Specifies the path to sendmail.',
 		defaultSendmailPath
 	),
-	EnumOption(
-		'with_wide_char_support',
-		'Support for wide characters (rarely used, should be set to "no")',
-		'no',
-		allowed_values = ('yes', 'no'),
-		map = { },
-		ignorecase = 1
-	),
-	EnumOption(
+	EnumVariable(
 		'byte_order',
 		'Byte order (Big Endian or Little Endian)',
 		sys.byteorder,
@@ -543,7 +541,7 @@ opts.AddOptions(
 		map = { },
 		ignorecase = 1
 	),
-	EnumOption(
+	EnumVariable(
 		'pf_8bit_type',
 		'The C-language 8-bit type for your platform',
 		'char',
@@ -551,7 +549,7 @@ opts.AddOptions(
 		map = { },
 		ignorecase = 1
 	),
-	EnumOption(
+	EnumVariable(
 		'pf_16bit_type',
 		'The C-language 16-bit type for your platform',
 		'short',
@@ -559,7 +557,7 @@ opts.AddOptions(
 		map = { },
 		ignorecase = 1
 	),
-	EnumOption(
+	EnumVariable(
 		'pf_32bit_type',
 		'The C-language 32-bit type for your platform',
 		'int',
@@ -567,7 +565,7 @@ opts.AddOptions(
 		map = { },
 		ignorecase = 1
 	),
-	EnumOption(
+	EnumVariable(
 		'build_tests',
 		'Build unit tests (run with "scons run-tests")',
 		'no',
@@ -583,7 +581,10 @@ opts.AddOptions(
 #  Configuration Environment  #
 ###############################
 
-env = Environment(options = opts)
+try:
+	env = Environment(variables = opts)
+except TypeError:
+	env = Environment(options = opts)
 
 env.Append(ENV = os.environ)
 env.Append(ENV = {'PATH' : os.environ['PATH']})
@@ -592,7 +593,6 @@ env.Append(CPPPATH = [ '.' ])
 
 env.Append(CPPDEFINES = ['_REENTRANT=1'])
 
-env.Append(CXXFLAGS = ['-pipe'])
 env.Append(CXXFLAGS = ['-W'])
 env.Append(CXXFLAGS = ['-Wall'])
 env.Append(CXXFLAGS = ['-ansi'])
@@ -801,12 +801,6 @@ config_hpp.write('\n')
 
 config_hpp.write('// Options\n')
 
-config_hpp.write('// -- Wide characters support\n')
-if env['with_wide_char_support'] == 'yes':
-	config_hpp.write('#define VMIME_WIDE_CHAR_SUPPORT 1\n')
-else:
-	config_hpp.write('#define VMIME_WIDE_CHAR_SUPPORT 0\n')
-
 config_hpp.write('// -- File-system support\n')
 if env['with_filesystem'] == 'yes':
 	config_hpp.write('#define VMIME_HAVE_FILESYSTEM_FEATURES 1\n')
@@ -965,9 +959,13 @@ Default(libVmime)
 # Tests
 if env['build_tests'] == 'yes':
 	if env['debug'] == 'yes':
-		env = env.Copy()
+		env = env.Clone()
 		env.Append(LIBS = ['cppunit', 'dl', packageVersionedGenericName + '-debug', 'pthread'])
 		env.Append(LIBPATH=['.'])
+
+		if sys.platform == "mac" or sys.platform == "darwin":
+			env.Append(LIBS = ['iconv', 'gcrypt'])
+
 		Default(
 			env.Program(
 				target = 'run-tests',
@@ -1080,7 +1078,7 @@ def generateAutotools(target, source, env):
 	# Generate pkg-config file for shared and static library
 	vmime_pc_in = open(packageVersionedGenericName + ".pc.in", 'w')
 	vmime_pc_in.write("# File automatically generated by SConstruct ('scons autotools')\n")
-	vmime_pc_in.write("# DOT NOT EDIT!\n")
+	vmime_pc_in.write("# DO NOT EDIT!\n")
 	vmime_pc_in.write("\n")
 	vmime_pc_in.write("prefix=@prefix@\n")
 	vmime_pc_in.write("exec_prefix=@exec_prefix@\n")
@@ -1100,7 +1098,7 @@ def generateAutotools(target, source, env):
 	Makefile_am = open("Makefile.am", 'w')
 	Makefile_am.write("""
 # File automatically generated by SConstruct ('scons autotools')
-# DOT NOT EDIT!
+# DO NOT EDIT!
 
 BINDING =
 INCLUDE = vmime
@@ -1132,7 +1130,7 @@ docdir = $(datadir)/doc/$(GENERIC_LIBRARY_NAME)
 	Makefile_am = open("vmime/Makefile.am", 'w')
 	Makefile_am.write("""
 # File automatically generated by SConstruct ('scons autotools')
-# DOT NOT EDIT!
+# DO NOT EDIT!
 """)
 
 	#Makefile_am.write(packageVersionedName + "includedir = $(prefix)/include/@GENERIC_VERSIONED_LIBRARY_NAME@/@GENERIC_LIBRARY_NAME@\n")
@@ -1154,7 +1152,7 @@ docdir = $(datadir)/doc/$(GENERIC_LIBRARY_NAME)
 	Makefile_am = open("src/Makefile.am", 'w')
 	Makefile_am.write("""
 # File automatically generated by SConstruct ('scons autotools')
-# DOT NOT EDIT!
+# DO NOT EDIT!
 
 AUTOMAKE_OPTIONS = no-dependencies foreign
 INTERNALS =
@@ -1244,7 +1242,7 @@ noinst_HEADERS = $(INTERNALS)
 # configure.in
 
 # File automatically generated by SConstruct ('scons autotools')
-# DOT NOT EDIT!
+# DO NOT EDIT!
 
 # Init
 """)
@@ -1376,7 +1374,7 @@ sh libtool --mode=link $CXX -o libtest.la -rpath / -version-info 0 mylib.lo  >&5
 $CXX -c $CFLAGS $CPPFLAGS mytest.$ac_ext >&5
 sh libtool --mode=link $CXX -o mytest mytest.o libtest.la >&5 2>/dev/null
 
-if test -x mytest; then
+if test -x mytest -a "$cross_compiling" != yes; then
 	myresult=`./mytest`
 	if test "X$myresult" = "XPASS"; then
 		AC_MSG_RESULT(yes)
@@ -1417,8 +1415,8 @@ AC_TRY_COMPILE(
 AC_MSG_CHECKING([if C++ compiler supports dynamic_cast<> (required)])
 AC_TRY_COMPILE(
 [
-   class foo { virtual ~foo() { } };
-   class bar : public foo { };
+   class foo { public: virtual ~foo() { } };
+   class bar : public foo { public: virtual ~bar() { } };
 ],[
    foo *c=0;
    bar *c1=dynamic_cast<bar*>(c);
@@ -1833,7 +1831,7 @@ EXTRA_CFLAGS="$EXTRA_CFLAGS $lt_prog_compiler_pic"
 
 """)
 
-	compilerFlags = [ '-pipe', '-ansi', '-pedantic', '-W', '-Wall', '-Wpointer-arith', '-Wold-style-cast', '-Wconversion' ]
+	compilerFlags = [ '-ansi', '-pedantic', '-W', '-Wall', '-Wpointer-arith', '-Wold-style-cast', '-Wconversion' ]
 
 	for f in compilerFlags:
 		configure_in.write('# ' + f + '\n')
@@ -1915,8 +1913,6 @@ typedef signed ${VMIME_TYPE_INT32} vmime_int32;
 typedef unsigned ${VMIME_TYPE_INT32} vmime_uint32;
 
 // Options
-// -- Wide characters support
-#define VMIME_WIDE_CHAR_SUPPORT 0
 // -- File-system support
 #define VMIME_HAVE_FILESYSTEM_FEATURES 1
 // -- SASL support
@@ -2260,8 +2256,6 @@ typedef unsigned int vmime_uint32;
 
 
 // Options
-// -- Wide characters support
-#define VMIME_WIDE_CHAR_SUPPORT 0
 // -- File-system support
 #define VMIME_HAVE_FILESYSTEM_FEATURES 1
 // -- SASL support

@@ -1,10 +1,10 @@
 //
 // VMime library (http://vmime.sourceforge.net)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -49,17 +49,13 @@ windowsHandler::windowsHandler()
 	m_socketFactory = vmime::create <windowsSocketFactory>();
 #endif
 #if VMIME_HAVE_FILESYSTEM_FEATURES
-	m_fileSysFactory = new windowsFileSystemFactory();
+	m_fileSysFactory = vmime::create <windowsFileSystemFactory>();
 #endif
 }
 
 
 windowsHandler::~windowsHandler()
 {
-#if VMIME_HAVE_FILESYSTEM_FEATURES
-	delete (m_fileSysFactory);
-#endif
-
 	WSACleanup();
 }
 
@@ -240,9 +236,9 @@ unsigned int windowsHandler::getProcessId() const
 
 #if VMIME_HAVE_MESSAGING_FEATURES
 
-ref <vmime::net::socketFactory> windowsHandler::getSocketFactory() const
+ref <vmime::net::socketFactory> windowsHandler::getSocketFactory()
 {
-	return m_socketFactory.dynamicCast <vmime::net::socketFactory>();
+	return m_socketFactory;
 }
 
 #endif
@@ -250,13 +246,13 @@ ref <vmime::net::socketFactory> windowsHandler::getSocketFactory() const
 
 #if VMIME_HAVE_FILESYSTEM_FEATURES
 
-vmime::utility::fileSystemFactory* windowsHandler::getFileSystemFactory() const
+ref <vmime::utility::fileSystemFactory> windowsHandler::getFileSystemFactory()
 {
-	return (m_fileSysFactory);
+	return m_fileSysFactory;
 }
 
 
-vmime::utility::childProcessFactory* windowsHandler::getChildProcessFactory() const
+ref <vmime::utility::childProcessFactory> windowsHandler::getChildProcessFactory()
 {
 	// TODO: Not implemented
 	return (NULL);

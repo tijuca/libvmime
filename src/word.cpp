@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -336,26 +336,64 @@ void word::generate(utility::outputStream& os, const string::size_type maxLineLe
 	if (state == NULL)
 		state = &defaultGeneratorState;
 
-	// Calculate the number of ASCII chars to check whether encoding is needed
-	// and _which_ encoding to use.
-	const string::size_type asciiCount =
-		utility::stringUtils::countASCIIchars(m_buffer.begin(), m_buffer.end());
+	// Find out if encoding is forced or required by contents + charset
+	bool encodingNeeded = (flags & text::FORCE_ENCODING) != 0;
 
-	bool noEncoding = (flags & text::FORCE_NO_ENCODING) ||
-	    (!(flags & text::FORCE_ENCODING) && asciiCount == m_buffer.length());
+	if (encodingNeeded == false)
+		encodingNeeded = wordEncoder::isEncodingNeeded(m_buffer, m_charset);
+	else if ((flags & text::FORCE_NO_ENCODING) != 0)
+		encodingNeeded = false;
 
-	if (!(flags & text::FORCE_NO_ENCODING) &&
-	    m_buffer.find_first_of("\n\r") != string::npos)
+	// If possible and requested (with flag), quote the buffer (no folding is performed).
+	// Quoting is possible if and only if:
+	//  - the buffer does not need to be encoded
+	//  - the buffer does not contain quoting character (")
+	//  - there is enough remaining space on the current line to hold the whole buffer
+	if (!encodingNeeded &&
+	    (flags & text::QUOTE_IF_POSSIBLE) &&
+	    m_buffer.find('"') == string::npos &&
+	    (curLineLength + 2 /* 2 x " */ + m_buffer.length()) < maxLineLength)
 	{
-		// Force encoding when there are only ASCII chars, but there is
-		// also at least one of '\n' or '\r' (header fields)
-		noEncoding = false;
+		os << '"' << m_buffer << '"';
+		curLineLength += 2 + m_buffer.length();
 	}
-
-	if (noEncoding)
+	// We will fold lines without encoding them.
+	else if (!encodingNeeded)
 	{
-		// We will fold lines without encoding them.
+		// Here, we could have the following conditions:
+		//
+		//  * a maximum line length of N bytes
+		//  * a buffer containing N+1 bytes, with no whitespace
+		//
+		// Look in the buffer for any run (ie. whitespace-separated sequence) which
+		// is longer than the maximum line length. If there is one, then force encoding,
+		// so that no generated line is longer than the maximum line length.
+		string::size_type maxRunLength = 0;
+		string::size_type curRunLength = 0;
 
+		for (string::const_iterator p = m_buffer.begin(), end = m_buffer.end() ; p != end ; ++p)
+		{
+			if (parserHelpers::isSpace(*p))
+			{
+				maxRunLength = std::max(maxRunLength, curRunLength);
+				curRunLength = 0;
+			}
+			else
+			{
+				curRunLength++;
+			}
+		}
+
+		maxRunLength = std::max(maxRunLength, curRunLength);
+
+		if (maxRunLength >= maxLineLength - 3)
+		{
+			// Generate with encoding forced
+			generate(os, maxLineLength, curLinePos, newLinePos, flags | text::FORCE_ENCODING, state);
+			return;
+		}
+
+		// Output runs, and fold line when a whitespace is encountered
 		string::const_iterator lastWSpos = m_buffer.end(); // last white-space position
 		string::const_iterator curLineStart = m_buffer.begin(); // current line start
 
@@ -463,7 +501,7 @@ void word::generate(utility::outputStream& os, const string::size_type maxLineLe
 
 				os << string(curLineStart, lastWSpos);
 
-				if (lastWSpos > curLineStart && std::isspace(*(lastWSpos - 1)))
+				if (lastWSpos > curLineStart && parserHelpers::isSpace(*(lastWSpos - 1)))
 					state->lastCharIsSpace = true;
 				else
 					state->lastCharIsSpace = false;
@@ -609,20 +647,6 @@ void word::generate(utility::outputStream& os, const string::size_type maxLineLe
 }
 
 
-#if VMIME_WIDE_CHAR_SUPPORT
-
-const wstring word::getDecodedText() const
-{
-	wstring out;
-
-	charset::decode(m_buffer, out, m_charset);
-
-	return (out);
-}
-
-#endif
-
-
 word& word::operator=(const word& w)
 {
 	m_buffer = w.m_buffer;
@@ -696,6 +720,12 @@ const string& word::getBuffer() const
 string& word::getBuffer()
 {
 	return (m_buffer);
+}
+
+
+bool word::isEmpty() const
+{
+	return m_buffer.empty();
 }
 
 

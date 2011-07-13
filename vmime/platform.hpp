@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -108,7 +108,7 @@ public:
 		  *
 		  * @return socket factory
 		  */
-		virtual ref <net::socketFactory> getSocketFactory() const = 0;
+		virtual ref <net::socketFactory> getSocketFactory() = 0;
 #endif
 
 #if VMIME_HAVE_FILESYSTEM_FEATURES
@@ -116,14 +116,14 @@ public:
 		  *
 		  * @return file-system factory
 		  */
-		virtual utility::fileSystemFactory* getFileSystemFactory() const = 0;
+		virtual ref <utility::fileSystemFactory> getFileSystemFactory() = 0;
 
 		/** Return a pointer to a factory that creates child process objects,
 		  * which are used to spawn processes (run executable files).
 		  *
 		  * @return child process factory
 		  */
-		virtual utility::childProcessFactory* getChildProcessFactory() const = 0;
+		virtual ref <utility::childProcessFactory> getChildProcessFactory() = 0;
 #endif
 
 	};
@@ -135,7 +135,7 @@ public:
 		sm_handler = vmime::create <TYPE>();
 	}
 
-	static ref <const handler> getHandler()
+	static ref <handler> getHandler()
 	{
 		if (!sm_handler)
 			throw exceptions::no_platform_handler();

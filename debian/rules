@@ -47,7 +47,11 @@ endif
 	CFLAGS="$(CFLAGS) -Wl,-z,defs" ./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info
 
 
-build: build-stamp
+build: build-arch build-indep
+build-arch: build-stamp
+build-indep: build-stamp
+
+
 build-stamp:  config.status
 	dh_testdir
 
@@ -63,7 +67,6 @@ clean:
 	# Add here commands to clean up after the build process.
 	[ ! -f Makefile ] || $(MAKE) clean
 	rm -f Makefile src/Makefile vmime/Makefile vmime/config.hpp build-stamp libtool config.guess config.log config.sub config.status config.h vmime.pc stamp-h1
-	test -e autotools/config.rpath && chmod +x autotools/config.rpath
 	cd src ; rm -f `find . -type l`
 
 	dh_clean 

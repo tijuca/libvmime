@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -44,6 +44,14 @@ VMIME_TEST_SUITE_BEGIN
 		VMIME_TEST(testWordGenerateSpace)
 		VMIME_TEST(testWordGenerateSpace2)
 		VMIME_TEST(testWordGenerateMultiBytes)
+		VMIME_TEST(testWordGenerateQuote)
+		VMIME_TEST(testWordGenerateSpecialCharsets)
+		VMIME_TEST(testWordGenerateSpecials)
+
+		VMIME_TEST(testWhitespace)
+		VMIME_TEST(testWhitespaceMBox)
+
+		VMIME_TEST(testFoldingAscii)
 	VMIME_TEST_LIST_END
 
 
@@ -138,9 +146,9 @@ VMIME_TEST_SUITE_BEGIN
 		t2.createFromString(s2, c2);
 
 		VASSERT_EQ("2.1", 3, t2.getWordCount());
-		VASSERT_EQ("2.2", "some ASCII characters and special chars:", t2.getWordAt(0)->getBuffer());
+		VASSERT_EQ("2.2", "some ASCII characters and special chars: ", t2.getWordAt(0)->getBuffer());
 		VASSERT_EQ("2.3", vmime::charset(vmime::charsets::US_ASCII), t2.getWordAt(0)->getCharset());
-		VASSERT_EQ("2.4", "\xf1\xf2\xf3\xf4", t2.getWordAt(1)->getBuffer());
+		VASSERT_EQ("2.4", "\xf1\xf2\xf3\xf4 ", t2.getWordAt(1)->getBuffer());
 		VASSERT_EQ("2.5", c2, t2.getWordAt(1)->getCharset());
 		VASSERT_EQ("2.6", "and then more ASCII chars.", t2.getWordAt(2)->getBuffer());
 		VASSERT_EQ("2.7", vmime::charset(vmime::charsets::US_ASCII), t2.getWordAt(2)->getCharset());
@@ -335,8 +343,103 @@ VMIME_TEST_SUITE_BEGIN
 		VASSERT_EQ("1", "=?utf-8?Q?aaa?==?utf-8?Q?=C3=A9?==?utf-8?Q?zzz?=",
 			cleanGeneratedWords(vmime::word("aaa\xc3\xa9zzz", vmime::charset("utf-8")).generate(16)));
 
-		VASSERT_EQ("1", "=?utf-8?Q?aaa=C3=A9?==?utf-8?Q?zzz?=",
+		VASSERT_EQ("2", "=?utf-8?Q?aaa=C3=A9?==?utf-8?Q?zzz?=",
 			cleanGeneratedWords(vmime::word("aaa\xc3\xa9zzz", vmime::charset("utf-8")).generate(17)));
+	}
+
+	void testWordGenerateQuote()
+	{
+		std::string str;
+		vmime::utility::outputStreamStringAdapter os(str);
+
+		// ASCII-only text is quotable
+		str.clear();
+		vmime::word("Quoted text").generate(os, 1000, 0, NULL, vmime::text::QUOTE_IF_POSSIBLE, NULL);
+		VASSERT_EQ("1", "\"Quoted text\"", cleanGeneratedWords(str));
+
+		// Text with CR/LF is not quotable
+		str.clear();
+		vmime::word("Non-quotable\ntext", "us-ascii").generate(os, 1000, 0, NULL, vmime::text::QUOTE_IF_POSSIBLE, NULL);
+		VASSERT_EQ("2", "=?us-ascii?Q?Non-quotable=0Atext?=", cleanGeneratedWords(str));
+
+		// Text with non-ASCII chars is not quotable
+		str.clear();
+		vmime::word("Non-quotable text \xc3\xa9").generate(os, 1000, 0, NULL, vmime::text::QUOTE_IF_POSSIBLE, NULL);
+		VASSERT_EQ("3", "=?UTF-8?Q?Non-quotable_text_=C3=A9?=", cleanGeneratedWords(str));
+	}
+
+	void testWordGenerateSpecialCharsets()
+	{
+		// ISO-2022-JP only uses 7-bit chars but should be encoded in Base64
+		VASSERT_EQ("1", "=?iso-2022-jp?B?XlskQiVRITwlPSVKJWshJiU9JVUlSCUmJSclIl5bKEI=?=",
+			cleanGeneratedWords(vmime::word("^[$B%Q!<%=%J%k!&%=%U%H%&%'%\"^[(B",
+				vmime::charset("iso-2022-jp")).generate(100)));
+	}
+
+	void testWordGenerateSpecials()
+	{
+		// In RFC-2047, quotation marks (ASCII 22h) should be encoded
+		VASSERT_EQ("1", "=?UTF-8?Q?=22=C3=9Cml=C3=A4ute=22?=",
+			vmime::word("\x22\xC3\x9Cml\xC3\xA4ute\x22", vmime::charset("UTF-8")).generate());
+	}
+
+	void testWhitespace()
+	{
+		// Create
+		vmime::text text;
+		text.createFromString("Achim Br\xc3\xa4ndt", vmime::charsets::UTF_8);
+
+		VASSERT_EQ("1", 2, text.getWordCount());
+		VASSERT_EQ("2", "Achim ", text.getWordAt(0)->getBuffer());
+		VASSERT_EQ("3", "us-ascii", text.getWordAt(0)->getCharset());
+		VASSERT_EQ("4", "Br\xc3\xa4ndt", text.getWordAt(1)->getBuffer());
+		VASSERT_EQ("5", "utf-8", text.getWordAt(1)->getCharset());
+
+		// Generate
+		VASSERT_EQ("6", "Achim =?utf-8?Q?Br=C3=A4ndt?=", text.generate());
+
+		// Parse
+		text.parse("=?us-ascii?Q?Achim_?= =?utf-8?Q?Br=C3=A4ndt?=");
+
+		VASSERT_EQ("7", 2, text.getWordCount());
+		VASSERT_EQ("8", "Achim ", text.getWordAt(0)->getBuffer());
+		VASSERT_EQ("9", "us-ascii", text.getWordAt(0)->getCharset());
+		VASSERT_EQ("10", "Br\xc3\xa4ndt", text.getWordAt(1)->getBuffer());
+		VASSERT_EQ("11", "utf-8", text.getWordAt(1)->getCharset());
+	}
+
+	void testWhitespaceMBox()
+	{
+		// Space MUST be encoded inside a word
+		vmime::mailbox mbox(vmime::text("Achim Br\xc3\xa4ndt", vmime::charsets::UTF_8), "me@vmime.org");
+		VASSERT_EQ("generate1", "=?us-ascii?Q?Achim_?= =?utf-8?Q?Br=C3=A4ndt?= <me@vmime.org>", mbox.generate());
+
+		vmime::text txt;
+		txt.appendWord(vmime::create <vmime::word>("Achim ", "us-ascii"));
+		txt.appendWord(vmime::create <vmime::word>("Br\xc3\xa4ndt", "utf-8"));
+		mbox = vmime::mailbox(txt, "me@vmime.org");
+		VASSERT_EQ("generate2", "=?us-ascii?Q?Achim_?= =?utf-8?Q?Br=C3=A4ndt?= <me@vmime.org>", mbox.generate());
+
+		mbox.parse("=?us-ascii?Q?Achim?= =?utf-8?Q?Br=C3=A4ndt?= <me@vmime.org>");
+		VASSERT_EQ("parse.name.count", 2, mbox.getName().getWordCount());
+		VASSERT_EQ("parse.name.word1.buffer", "Achim", mbox.getName().getWordAt(0)->getBuffer());
+		VASSERT_EQ("parse.name.word1.charset", "us-ascii", mbox.getName().getWordAt(0)->getCharset());
+		VASSERT_EQ("parse.name.word2.buffer", "Br\xc3\xa4ndt", mbox.getName().getWordAt(1)->getBuffer());
+		VASSERT_EQ("parse.name.word2.charset", "utf-8", mbox.getName().getWordAt(1)->getCharset());
+
+		VASSERT_EQ("parse.email", "me@vmime.org", mbox.getEmail());
+	}
+
+	void testFoldingAscii()
+	{
+		// In this test, no encoding is needed, but line should be folded anyway
+		vmime::word w("01234567890123456789012345678901234567890123456789"
+		              "01234567890123456789012345678901234567890123456789", vmime::charset("us-ascii"));
+
+		VASSERT_EQ("fold.ascii",
+			"=?us-ascii?Q?01234567890123456789012345678901234?=\r\n"
+			" =?us-ascii?Q?5678901234567890123456789012345678?=\r\n"
+			" =?us-ascii?Q?9012345678901234567890123456789?=", w.generate(50));
 	}
 
 VMIME_TEST_SUITE_END

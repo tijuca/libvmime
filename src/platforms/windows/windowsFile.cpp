@@ -1,10 +1,10 @@
 //
 // VMime library (http://vmime.sourceforge.net)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -268,7 +268,7 @@ bool windowsFile::canWrite() const
 	return true;
 }
 
-const windowsFile::length_type windowsFile::getLength()
+windowsFile::length_type windowsFile::getLength()
 {
 	HANDLE hFile = CreateFile(
 		m_nativePath.c_str(),
@@ -464,7 +464,7 @@ void windowsFileReaderInputStream::reset()
 	SetFilePointer(m_hFile, 0, NULL, FILE_BEGIN);
 }
 
-const vmime::utility::stream::size_type windowsFileReaderInputStream::read(value_type* const data, const size_type count)
+vmime::utility::stream::size_type windowsFileReaderInputStream::read(value_type* const data, const size_type count)
 {
 	DWORD dwBytesRead;
 	if (!ReadFile(m_hFile, (LPVOID)data, (DWORD)count, &dwBytesRead, NULL))
@@ -472,7 +472,7 @@ const vmime::utility::stream::size_type windowsFileReaderInputStream::read(value
 	return dwBytesRead;
 }
 
-const vmime::utility::stream::size_type windowsFileReaderInputStream::skip(const size_type count)
+vmime::utility::stream::size_type windowsFileReaderInputStream::skip(const size_type count)
 {
 	DWORD dwCurPos = SetFilePointer(m_hFile, 0, NULL, FILE_CURRENT);
 	DWORD dwNewPos = SetFilePointer(m_hFile, (LONG)count, NULL, FILE_CURRENT);

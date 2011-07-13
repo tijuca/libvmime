@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -54,11 +54,17 @@ ref <message> messageBuilder::construct() const
 	if (m_from.isEmpty())
 		throw exceptions::no_expeditor();
 
-	if (m_to.isEmpty() || m_to.getAddressAt(0)->isEmpty())
+	if ((m_to.isEmpty() || m_to.getAddressAt(0)->isEmpty()) &&
+	    (m_cc.isEmpty() || m_cc.getAddressAt(0)->isEmpty()) &&
+	    (m_bcc.isEmpty() || m_bcc.getAddressAt(0)->isEmpty()))
+	{
 		throw exceptions::no_recipient();
+	}
 
 	msg->getHeader()->From()->setValue(m_from);
-	msg->getHeader()->To()->setValue(m_to);
+
+	if (!m_to.isEmpty())
+		msg->getHeader()->To()->setValue(m_to);
 
 	if (!m_cc.isEmpty())
 		msg->getHeader()->Cc()->setValue(m_cc);
@@ -142,6 +148,9 @@ ref <message> messageBuilder::construct() const
 	{
 		const bodyPart& part = *msg->getBody()->getPartAt(0);
 
+		// Make a full copy of the body, otherwise the copyFrom() will delete the body we're copying
+		ref <body> bodyCopy = part.getBody()->clone().dynamicCast <body>();
+
 		// First, copy (and replace) the header fields
 		const std::vector <ref <const headerField> > fields = part.getHeader()->getFieldList();
 
@@ -153,7 +162,7 @@ ref <message> messageBuilder::construct() const
 
 		// Second, copy the body contents and sub-parts (this also remove
 		// the body part we are copying...)
-		msg->getBody()->copyFrom(*part.getBody());
+		msg->getBody()->copyFrom(*bodyCopy);
 	}
 
 	return (msg);

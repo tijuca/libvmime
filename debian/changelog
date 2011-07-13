@@ -1,3 +1,11 @@
+libvmime (0.9.1-1) unstable; urgency=low
+
+  * New upstream release.
+  * Acknowledge non-maintainer upload (closes: #610151, #529834)
+  * Updated to Debian Policy v3.9.2.
+
+ -- Mattias Nordstrom <mnordstr@debian.org>  Wed, 13 Jul 2011 14:45:56 +0300
+
 libvmime (0.9.0-1.2) unstable; urgency=low
 
   * Non-maintainer upload.
