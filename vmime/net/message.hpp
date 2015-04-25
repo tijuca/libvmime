@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -30,6 +30,8 @@
 
 #include "vmime/utility/progressListener.hpp"
 #include "vmime/utility/stream.hpp"
+
+#include "vmime/message.hpp"
 
 
 namespace vmime {
@@ -225,6 +227,7 @@ public:
 		FLAG_REPLIED = (1 << 3),   /**< User replied to this message. */
 		FLAG_MARKED  = (1 << 4),   /**< Used-defined flag. */
 		FLAG_PASSED  = (1 << 5),   /**< Message has been resent/forwarded/bounced. */
+		FLAG_DRAFT   = (1 << 6),   /**< Message is marked as a 'draft'. */
 
 		FLAG_UNDEFINED = 9999      /**< Used internally (this should not be returned
 		                                by the flags() function). */
@@ -286,6 +289,16 @@ public:
 	  * @param p the part for which to fetch the header
 	  */
 	virtual void fetchPartHeader(ref <part> p) = 0;
+
+	/** Get the RFC-822 message for this abstract message.
+	  * Warning: This may require getting some data (ie: structure and headers) from
+	  * the server, which is done automatically. Actual message contents (ie: body)
+	  * will not be fetched if possible (IMAP allows it, whereas POP3 will require
+	  * to fetch the whole message).
+	  *
+	  * @return a RFC-822-parsed message
+	  */
+	virtual ref <vmime::message> getParsedMessage() = 0;
 };
 
 

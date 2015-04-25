@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -69,6 +69,12 @@ bool SASLSocket::isConnected() const
 }
 
 
+SASLSocket::size_type SASLSocket::getBlockSize() const
+{
+	return m_wrapped->getBlockSize();
+}
+
+
 void SASLSocket::receive(string& buffer)
 {
 	const int n = receiveRaw(m_recvBuffer, sizeof(m_recvBuffer));
@@ -77,7 +83,7 @@ void SASLSocket::receive(string& buffer)
 }
 
 
-int SASLSocket::receiveRaw(char* buffer, const int count)
+SASLSocket::size_type SASLSocket::receiveRaw(char* buffer, const size_type count)
 {
 	if (m_pendingLen != 0)
 	{
@@ -141,7 +147,7 @@ void SASLSocket::send(const string& buffer)
 }
 
 
-void SASLSocket::sendRaw(const char* buffer, const int count)
+void SASLSocket::sendRaw(const char* buffer, const size_type count)
 {
 	byte_t* output = 0;
 	int outputLen = 0;

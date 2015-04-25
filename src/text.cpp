@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -24,6 +24,7 @@
 #include "vmime/text.hpp"
 
 #include "vmime/parserHelpers.hpp"
+#include "vmime/encoding.hpp"
 
 
 namespace vmime
@@ -89,21 +90,6 @@ void text::generate(utility::outputStream& os, const string::size_type maxLineLe
 {
 	encodeAndFold(os, maxLineLength, curLinePos, newLinePos, 0);
 }
-
-
-#if VMIME_WIDE_CHAR_SUPPORT
-
-const wstring text::getDecodedText() const
-{
-	wstring out;
-
-	for (std::vector <ref <word> >::const_iterator i = m_words.begin() ; i != m_words.end() ; ++i)
-		out += (*i)->getDecodedText();
-
-	return (out);
-}
-
-#endif
 
 
 void text::copyFrom(const component& other)
@@ -263,26 +249,36 @@ ref <text> text::newFromString(const string& in, const charset& ch)
 
 void text::createFromString(const string& in, const charset& ch)
 {
-	bool is8bit = false;     // is the current word 8-bit?
-	bool prevIs8bit = false; // is previous word 8-bit?
-	unsigned int count = 0;  // total number of words
+	string::size_type asciiCount = 0;
+	string::size_type asciiPercent = 0;
 
 	removeAllWords();
 
-	const string::size_type asciiCount =
-		utility::stringUtils::countASCIIchars(in.begin(), in.end());
+	// Check whether there is a recommended encoding for this charset.
+	// If so, the whole buffer will be encoded. Else, the number of
+	// 7-bit (ASCII) bytes in the input will be used to determine if
+	// we need to encode the whole buffer.
+	encoding recommendedEnc;
+	const bool alwaysEncode = ch.getRecommendedEncoding(recommendedEnc);
 
-	const string::size_type asciiPercent =
-		(in.length() == 0 ? 100 : (100 * asciiCount) / in.length());
+	if (!alwaysEncode)
+	{
+		asciiCount = utility::stringUtils::countASCIIchars(in.begin(), in.end());
+		asciiPercent = (in.length() == 0 ? 100 : (100 * asciiCount) / in.length());
+	}
 
 	// If there are "too much" non-ASCII chars, encode everything
-	if (asciiPercent < 60)  // less than 60% ASCII chars
+	if (alwaysEncode || asciiPercent < 60)  // less than 60% ASCII chars
 	{
 		appendWord(vmime::create <word>(in, ch));
 	}
 	// Else, only encode words which need it
 	else
 	{
+		bool is8bit = false;     // is the current word 8-bit?
+		bool prevIs8bit = false; // is previous word 8-bit?
+		unsigned int count = 0;  // total number of words
+
 		for (string::size_type end = in.size(), pos = 0, start = 0 ; ; )
 		{
 			if (pos == end || parserHelpers::isSpace(in[pos]))
@@ -303,6 +299,12 @@ void text::createFromString(const string& in, const charset& ch)
 					}
 					else
 					{
+						if (count)
+						{
+							ref <word> w = getWordAt(getWordCount() - 1);
+							w->getBuffer() += ' ';
+						}
+
 						appendWord(vmime::create <word>(chunk, ch));
 
 						prevIs8bit = true;
@@ -318,6 +320,12 @@ void text::createFromString(const string& in, const charset& ch)
 					}
 					else
 					{
+						if (count)
+						{
+							ref <word> w = getWordAt(getWordCount() - 1);
+							w->getBuffer() += ' ';
+						}
+
 						appendWord(vmime::create <word>
 							(chunk, charset(charsets::US_ASCII)));
 

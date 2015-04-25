@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -40,7 +40,7 @@ class posixSocket : public vmime::net::socket
 {
 public:
 
-	posixSocket();
+	posixSocket(ref <vmime::net::timeoutHandler> th);
 	~posixSocket();
 
 	void connect(const vmime::string& address, const vmime::port_t port);
@@ -48,16 +48,20 @@ public:
 	void disconnect();
 
 	void receive(vmime::string& buffer);
-	int receiveRaw(char* buffer, const int count);
+	size_type receiveRaw(char* buffer, const size_type count);
 
 	void send(const vmime::string& buffer);
-	void sendRaw(const char* buffer, const int count);
+	void sendRaw(const char* buffer, const size_type count);
+
+	size_type getBlockSize() const;
 
 protected:
 
 	static void throwSocketError(const int err);
 
 private:
+
+	ref <vmime::net::timeoutHandler> m_timeoutHandler;
 
 	char m_buffer[65536];
 	int m_desc;
@@ -70,6 +74,7 @@ class posixSocketFactory : public vmime::net::socketFactory
 public:
 
 	ref <vmime::net::socket> create();
+	ref <vmime::net::socket> create(ref <vmime::net::timeoutHandler> th);
 };
 
 

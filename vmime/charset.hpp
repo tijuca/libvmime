@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -33,6 +33,9 @@ namespace vmime
 {
 
 
+class encoding;  // forward reference
+
+
 /** Charset description (basic type).
   */
 
@@ -58,6 +61,16 @@ public:
 	bool operator!=(const charset& value) const;
 
 	const std::vector <ref <const component> > getChildComponents() const;
+
+	/** Gets the recommended encoding for this charset.
+	  * Note: there may be no recommended encoding.
+	  *
+	  * @param enc output parameter that will hold recommended encoding
+	  * @return true if an encoding is recommended (the encoding is stored
+	  * in the enc parameter), false otherwise (in this case, the enc
+	  * parameter is not modified)
+	  */
+	bool getRecommendedEncoding(encoding& enc) const;
 
 	/** Returns the default charset used on the system.
 	  *

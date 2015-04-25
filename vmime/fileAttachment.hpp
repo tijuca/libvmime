@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -41,9 +41,13 @@ class fileAttachment : public defaultAttachment
 {
 public:
 
-	fileAttachment(const string& filename, const mediaType& type);
-	fileAttachment(const string& filename, const mediaType& type, const text& desc);
-	fileAttachment(const string& filename, const mediaType& type, const text& desc, const encoding& enc);
+	fileAttachment(const string& filepath, const mediaType& type);
+	fileAttachment(const string& filepath, const mediaType& type, const text& desc);
+	fileAttachment(const string& filepath, const mediaType& type, const text& desc, const encoding& enc);
+
+	fileAttachment(ref <utility::inputStream> is, const word& filename, const mediaType& type);
+	fileAttachment(ref <utility::inputStream> is, const word& filename, const mediaType& type, const text& desc);
+	fileAttachment(ref <utility::inputStream> is, const word& filename, const mediaType& type, const text& desc, const encoding& enc);
 
 	/** Stores information about a file attachment.
 	  */
@@ -65,13 +69,19 @@ public:
 		  *
 		  * @return file name
 		  */
-		const string& getFilename() const;
+		const word& getFilename() const;
 
 		/** Set the value of the 'filename' property.
 		  *
 		  * @param name file name
 		  */
 		void setFilename(const string& name);
+
+		/** Set the value of the 'filename' property.
+		  *
+		  * @param name file name
+		  */
+		void setFilename(const word& name);
 
 		/** Check whether the 'creation-date' property is present.
 		  *
@@ -151,7 +161,7 @@ public:
 
 	private:
 
-		string* m_filename;
+		word* m_filename;
 		unsigned int* m_size;
 		datetime* m_creationDate;
 		datetime* m_modifDate;
@@ -163,7 +173,8 @@ public:
 
 private:
 
-	void setData(const string& filename);
+	void setData(const string& filepath);
+	void setData(ref <utility::inputStream> is);
 
 	fileInfo m_fileInfo;
 

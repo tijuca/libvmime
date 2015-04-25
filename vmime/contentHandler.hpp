@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -87,7 +87,8 @@ public:
 	virtual void extractRaw(utility::outputStream& os, utility::progressListener* progress = NULL) const = 0;
 
 	/** Returns the actual length of data. WARNING: this can return 0 if no
-	  * length was specified when setting data of this object.
+	  * length was specified when setting data of this object, or if the
+	  * length is not known).
 	  *
 	  * @return length of data
 	  */
@@ -110,6 +111,13 @@ public:
 	  * @return true if no data is managed by this object, false otherwise
 	  */
 	virtual bool isEmpty() const = 0;
+
+	/** Indicates whether the extract() method can be called multiple times.
+	  *
+	  * @return true if the data can be extracted multiple times, or false
+	  * if not (ie. streamed data from socket)
+	  */
+	virtual bool isBuffered() const = 0;
 };
 
 

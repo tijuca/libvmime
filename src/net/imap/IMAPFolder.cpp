@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -1284,7 +1284,11 @@ void IMAPFolder::addMessage(utility::inputStream& is, const int size, const int 
 	if (progress)
 		progress->start(total);
 
-	char buffer[65536];
+      const socket::size_type blockSize = std::min(is.getBlockSize(),
+		static_cast <size_t>(m_connection->getSocket()->getBlockSize()));
+
+	std::vector <char> vbuffer(blockSize);
+	char* buffer = &vbuffer.front();
 
 	while (!is.eof())
 	{

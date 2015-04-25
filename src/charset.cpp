@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -24,6 +24,7 @@
 #include "vmime/charset.hpp"
 #include "vmime/exception.hpp"
 #include "vmime/platform.hpp"
+#include "vmime/encoding.hpp"
 
 #include "vmime/utility/stringUtils.hpp"
 
@@ -137,6 +138,55 @@ void charset::copyFrom(const component& other)
 const std::vector <ref <const component> > charset::getChildComponents() const
 {
 	return std::vector <ref <const component> >();
+}
+
+
+
+// Explicitly force encoding for some charsets
+struct CharsetEncodingEntry
+{
+	CharsetEncodingEntry(const string& charset_, const string& encoding_)
+		: charset(charset_), encoding(encoding_)
+	{
+	}
+
+	const string charset;
+	const string encoding;
+};
+
+CharsetEncodingEntry g_charsetEncodingMap[] =
+{
+	// Use QP encoding for ISO-8859-x charsets
+	CharsetEncodingEntry("iso-8859",     encodingTypes::QUOTED_PRINTABLE),
+	CharsetEncodingEntry("iso8859",      encodingTypes::QUOTED_PRINTABLE),
+
+	// RFC-1468 states:
+	//   " ISO-2022-JP may also be used in MIME Part 2 headers.  The "B"
+	//     encoding should be used with ISO-2022-JP text. "
+	// Use Base64 encoding for all ISO-2022 charsets.
+	CharsetEncodingEntry("iso-2022",     encodingTypes::BASE64),
+	CharsetEncodingEntry("iso2022",      encodingTypes::BASE64),
+
+	// Last entry is not used
+	CharsetEncodingEntry("", "")
+};
+
+
+bool charset::getRecommendedEncoding(encoding& enc) const
+{
+	// Special treatment for some charsets
+	const string cset = utility::stringUtils::toLower(getName());
+
+	for (unsigned int i = 0 ; i < (sizeof(g_charsetEncodingMap) / sizeof(g_charsetEncodingMap[0])) - 1 ; ++i)
+	{
+		if (cset.find(g_charsetEncodingMap[i].charset) != string::npos)
+		{
+			enc = g_charsetEncodingMap[i].encoding;
+			return true;
+		}
+	}
+
+	return false;
 }
 
 

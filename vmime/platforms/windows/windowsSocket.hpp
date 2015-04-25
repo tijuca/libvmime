@@ -1,10 +1,10 @@
 //
 // VMime library (http://vmime.sourceforge.net)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -41,6 +41,7 @@ class windowsSocket : public vmime::net::socket
 {
 public:
 	windowsSocket();
+	windowsSocket(ref <vmime::net::timeoutHandler> th);
 	~windowsSocket();
 
 public:
@@ -50,12 +51,16 @@ public:
 	void disconnect();
 
 	void receive(vmime::string& buffer);
-	int receiveRaw(char* buffer, const int count);
+	size_type receiveRaw(char* buffer, const size_type count);
 
 	void send(const vmime::string& buffer);
-	void sendRaw(const char* buffer, const int count);
+	void sendRaw(const char* buffer, const size_type count);
+
+	size_type getBlockSize() const;
 
 private:
+
+	ref <vmime::net::timeoutHandler> m_timeoutHandler;
 
 	char m_buffer[65536];
 	SOCKET m_desc;
@@ -68,6 +73,7 @@ class windowsSocketFactory : public vmime::net::socketFactory
 public:
 
 	ref <vmime::net::socket> create();
+	ref <vmime::net::socket> create(ref <vmime::net::timeoutHandler> th);
 };
 
 

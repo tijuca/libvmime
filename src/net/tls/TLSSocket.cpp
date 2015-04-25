@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -90,6 +90,12 @@ bool TLSSocket::isConnected() const
 }
 
 
+TLSSocket::size_type TLSSocket::getBlockSize() const
+{
+	return 16384;  // 16 KB
+}
+
+
 void TLSSocket::receive(string& buffer)
 {
 	const int size = receiveRaw(m_buffer, sizeof(m_buffer));
@@ -103,7 +109,7 @@ void TLSSocket::send(const string& buffer)
 }
 
 
-int TLSSocket::receiveRaw(char* buffer, const int count)
+TLSSocket::size_type TLSSocket::receiveRaw(char* buffer, const size_type count)
 {
 	const ssize_t ret = gnutls_record_recv
 		(*m_session->m_gnutlsSession,
@@ -124,7 +130,7 @@ int TLSSocket::receiveRaw(char* buffer, const int count)
 }
 
 
-void TLSSocket::sendRaw(const char* buffer, const int count)
+void TLSSocket::sendRaw(const char* buffer, const size_type count)
 {
 	gnutls_record_send
 		(*m_session->m_gnutlsSession,
@@ -292,27 +298,26 @@ ref <security::cert::certificateChain> TLSSocket::getPeerCertificates() const
 	// Try X.509
 	gnutls_x509_crt* x509Certs = new gnutls_x509_crt[certCount];
 
-	unsigned int count = certCount;
-
-	int res = gnutls_x509_crt_list_import
-		(x509Certs, &count, rawData, GNUTLS_X509_FMT_PEM, 0);
-
-	if (res <= 0)
+	for (unsigned int i = 0; i < certCount; ++i)
 	{
-		count = certCount;
+		gnutls_x509_crt_init(x509Certs + i);
 
-		res = gnutls_x509_crt_list_import
-			(x509Certs, &count, rawData, GNUTLS_X509_FMT_DER, 0);
+		int res = gnutls_x509_crt_import(x509Certs[i], rawData + i,
+			GNUTLS_X509_FMT_DER);
+
+		if (res < 0)
+		{
+			// XXX more fine-grained error reporting?
+			delete [] x509Certs;
+			return NULL;
+		}
 	}
 
-	if (res >= 1)
 	{
 		std::vector <ref <security::cert::certificate> > certs;
 		bool error = false;
 
-		count = static_cast <unsigned int>(res);
-
-		for (unsigned int i = 0 ; i < count ; ++i)
+		for (unsigned int i = 0 ; i < certCount ; ++i)
 		{
 			size_t dataSize = 0;
 

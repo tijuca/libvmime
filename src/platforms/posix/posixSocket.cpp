@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -49,8 +49,8 @@ namespace posix {
 // posixSocket
 //
 
-posixSocket::posixSocket()
-	: m_desc(-1)
+posixSocket::posixSocket(ref <vmime::net::timeoutHandler> th)
+	: m_timeoutHandler(th), m_desc(-1)
 {
 }
 
@@ -105,11 +105,115 @@ void posixSocket::connect(const vmime::string& address, const vmime::port_t port
 		if (sock < 0)
 			continue;  // try next
 
-		if (::connect(sock, res->ai_addr, res->ai_addrlen) < 0)
+		if (m_timeoutHandler != NULL)
 		{
-			::close(sock);
-			sock = -1;
-			continue;  // try next
+			::fcntl(sock, F_SETFL, ::fcntl(sock, F_GETFL) | O_NONBLOCK);
+
+			if (::connect(sock, res->ai_addr, res->ai_addrlen) < 0)
+			{
+				switch (errno)
+				{
+				case 0:
+				case EINPROGRESS:
+				case EINTR:
+#if defined(EAGAIN)
+				case EAGAIN:
+#endif // EAGAIN
+#if defined(EWOULDBLOCK) && (!defined(EAGAIN) || (EWOULDBLOCK != EAGAIN))
+				case EWOULDBLOCK:
+#endif // EWOULDBLOCK
+
+					// Connection in progress
+					break;
+
+				default:
+
+					::close(sock);
+					sock = -1;
+					continue;  // try next
+				}
+
+				// Wait for socket to be connected.
+				// We will check for time out every second.
+				fd_set fds;
+				FD_ZERO(&fds);
+				FD_SET(sock, &fds);
+
+				fd_set fdsError;
+				FD_ZERO(&fdsError);
+				FD_SET(sock, &fdsError);
+
+				struct timeval tm;
+				tm.tv_sec = 1;
+				tm.tv_usec = 0;
+
+				m_timeoutHandler->resetTimeOut();
+
+				bool connected = false;
+
+				do
+				{
+					const int ret = select(sock + 1, NULL, &fds, &fdsError, &tm);
+
+					// Success
+					if (ret > 0)
+					{
+						connected = true;
+						break;
+					}
+					// Error
+					else if (ret < -1)
+					{
+						if (errno != EINTR)
+						{
+							// Cancel connection
+							break;
+						}
+					}
+					// 1-second timeout
+					else if (ret == 0)
+					{
+						if (m_timeoutHandler->isTimeOut())
+						{
+							if (!m_timeoutHandler->handleTimeOut())
+							{
+								// Cancel connection
+								break;
+							}
+							else
+							{
+								// Reset timeout and keep waiting for connection
+								m_timeoutHandler->resetTimeOut();
+							}
+						}
+						else
+						{
+							// Keep waiting for connection
+						}
+					}
+
+					::sched_yield();
+
+				} while (true);
+
+				if (!connected)
+				{
+					::close(sock);
+					sock = -1;
+					continue;  // try next
+				}
+
+				break;
+			}
+		}
+		else
+		{
+			if (::connect(sock, res->ai_addr, res->ai_addrlen) < 0)
+			{
+				::close(sock);
+				sock = -1;
+				continue;  // try next
+			}
 		}
 	}
 
@@ -217,6 +321,12 @@ void posixSocket::disconnect()
 }
 
 
+posixSocket::size_type posixSocket::getBlockSize() const
+{
+	return 16384;  // 16 KB
+}
+
+
 void posixSocket::receive(vmime::string& buffer)
 {
 	const int size = receiveRaw(m_buffer, sizeof(m_buffer));
@@ -224,7 +334,7 @@ void posixSocket::receive(vmime::string& buffer)
 }
 
 
-int posixSocket::receiveRaw(char* buffer, const int count)
+posixSocket::size_type posixSocket::receiveRaw(char* buffer, const size_type count)
 {
 	const int ret = ::recv(m_desc, buffer, count, 0);
 
@@ -252,9 +362,9 @@ void posixSocket::send(const vmime::string& buffer)
 }
 
 
-void posixSocket::sendRaw(const char* buffer, const int count)
+void posixSocket::sendRaw(const char* buffer, const size_type count)
 {
-	int size = count;
+	size_type size = count;
 
 	while (size > 0)
 	{
@@ -319,7 +429,14 @@ void posixSocket::throwSocketError(const int err)
 
 ref <vmime::net::socket> posixSocketFactory::create()
 {
-	return vmime::create <posixSocket>();
+	ref <vmime::net::timeoutHandler> th = NULL;
+	return vmime::create <posixSocket>(th);
+}
+
+
+ref <vmime::net::socket> posixSocketFactory::create(ref <vmime::net::timeoutHandler> th)
+{
+	return vmime::create <posixSocket>(th);
 }
 
 

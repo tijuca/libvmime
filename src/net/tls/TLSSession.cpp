@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -24,6 +24,14 @@
 #include <gnutls/gnutls.h>
 #include <gnutls/extra.h>
 
+#include "vmime/config.hpp"
+
+#if VMIME_HAVE_PTHREAD
+#	include <pthread.h>
+#	include <gcrypt.h>
+#	include <errno.h>
+#endif // VMIME_HAVE_PTHREAD
+
 #include "vmime/net/tls/TLSSession.hpp"
 
 #include "vmime/exception.hpp"
@@ -38,6 +46,14 @@
 #endif // VMIME_DEBUG && GNUTLS_DEBUG
 
 
+#if VMIME_HAVE_PTHREAD && defined(GCRY_THREAD_OPTION_PTHREAD_IMPL)
+extern "C"
+{
+	GCRY_THREAD_OPTION_PTHREAD_IMPL;
+}
+#endif // VMIME_HAVE_PTHREAD && defined(GCRY_THREAD_OPTION_PTHREAD_IMPL
+
+
 namespace vmime {
 namespace net {
 namespace tls {
@@ -50,6 +66,10 @@ struct TLSGlobal
 {
 	TLSGlobal()
 	{
+#if VMIME_HAVE_PTHREAD && defined(GCRY_THREAD_OPTION_PTHREAD_IMPL)
+		gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+#endif // VMIME_HAVE_PTHREAD && defined(GCRY_THREAD_OPTION_PTHREAD_IMPL
+
 		gnutls_global_init();
 		//gnutls_global_init_extra();
 
@@ -179,10 +199,10 @@ TLSSession::TLSSession(ref <security::cert::certificateVerifier> cv)
 
 	// Initialize credentials
 	gnutls_credentials_set(*m_gnutlsSession,
-		GNUTLS_CRD_ANON, &g_gnutlsGlobal.anonCred);
+		GNUTLS_CRD_ANON, g_gnutlsGlobal.anonCred);
 
 	gnutls_credentials_set(*m_gnutlsSession,
-		GNUTLS_CRD_CERTIFICATE, &g_gnutlsGlobal.certCred);
+		GNUTLS_CRD_CERTIFICATE, g_gnutlsGlobal.certCred);
 }
 
 

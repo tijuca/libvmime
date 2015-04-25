@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -142,12 +142,30 @@ string::size_type stringUtils::countASCIIchars
 	{
 		if (parserHelpers::isAscii(*i))
 		{
-			if (*i != '=' || *(i + 1) != '?') // To avoid bad behaviour...
+			if (*i != '=' || ((i + 1) != end && *(i + 1) != '?')) // To avoid bad behaviour...
 				++count;
 		}
 	}
 
 	return (count);
+}
+
+
+string::size_type stringUtils::findFirstNonASCIIchar
+	(const string::const_iterator begin, const string::const_iterator end)
+{
+	string::size_type pos = string::npos;
+
+	for (string::const_iterator i = begin ; i != end ; ++i)
+	{
+		if (!parserHelpers::isAscii(*i))
+		{
+			pos = i - begin;
+			break;
+		}
+	}
+
+	return pos;
 }
 
 

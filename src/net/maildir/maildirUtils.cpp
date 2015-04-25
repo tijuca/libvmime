@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -25,6 +25,7 @@
 #include "vmime/net/maildir/maildirStore.hpp"
 
 #include "vmime/utility/random.hpp"
+#include "vmime/platform.hpp"
 
 #include "vmime/exception.hpp"
 
@@ -101,6 +102,7 @@ int maildirUtils::extractFlags(const utility::file::path::component& comp)
 		case 'T': case 't': flags |= message::FLAG_DELETED; break;
 		case 'F': case 'f': flags |= message::FLAG_MARKED; break;
 		case 'P': case 'p': flags |= message::FLAG_PASSED; break;
+		case 'D': case 'd': flags |= message::FLAG_DRAFT; break;
 		}
 	}
 
@@ -120,6 +122,7 @@ const utility::file::path::component maildirUtils::buildFlags(const int flags)
 	if (flags & message::FLAG_REPLIED) str += "R";
 	if (flags & message::FLAG_SEEN)    str += "S";
 	if (flags & message::FLAG_DELETED) str += "T";
+	if (flags & message::FLAG_DRAFT)   str += "D";
 
 	return (utility::file::path::component(str));
 }
@@ -128,18 +131,24 @@ const utility::file::path::component maildirUtils::buildFlags(const int flags)
 const utility::file::path::component maildirUtils::buildFilename
 	(const utility::file::path::component& id, const int flags)
 {
-	return (buildFilename(id, buildFlags(flags)));
+	if (flags == message::FLAG_RECENT)
+		return id;
+	else
+		return (buildFilename(id, buildFlags(flags)));
 }
 
 
 const utility::file::path::component maildirUtils::buildFilename
-	(const utility::file::path::component& id, const utility::file::path::component& flags)
+	(const utility::file::path::component& id,
+	 const utility::file::path::component& flags)
 {
 #if VMIME_BUILTIN_PLATFORM_WINDOWS
-	return (utility::path::component(id.getBuffer() + "-" + flags.getBuffer()));  // use dash
+	static const char DELIMITER[] = "-";
 #else
-	return (utility::path::component(id.getBuffer() + ":" + flags.getBuffer()));  // use colon
+	static const char DELIMITER[] = ":";
 #endif
+
+	return utility::path::component(id.getBuffer() + DELIMITER + flags.getBuffer());
 }
 
 
@@ -153,6 +162,8 @@ const utility::file::path::component maildirUtils::generateId()
 	oss << utility::random::getProcess();
 	oss << ".";
 	oss << utility::random::getString(6);
+	oss << ".";
+	oss << platform::getHandler()->getHostName();
 
 	return (utility::file::path::component(oss.str()));
 }

@@ -4,7 +4,7 @@
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -216,6 +216,8 @@ public:
 	int receiveRaw(char* buffer, const int count);
 	void sendRaw(const char* buffer, const int count);
 
+	size_type getBlockSize() const;
+
 	/** Send data to client.
 	  *
 	  * @buffer data to send
@@ -255,6 +257,11 @@ class testSocketFactory : public vmime::net::socketFactory
 public:
 
 	vmime::ref <vmime::net::socket> create()
+	{
+		return vmime::create <T>();
+	}
+
+	vmime::ref <vmime::net::socket> create(vmime::ref <vmime::net::timeoutHandler> /* th */)
 	{
 		return vmime::create <T>();
 	}
@@ -302,4 +309,8 @@ public:
 
 	vmime::ref <vmime::net::timeoutHandler> create();
 };
+
+
+// Exception helper
+std::ostream& operator<<(std::ostream& os, const vmime::exception& e);
 

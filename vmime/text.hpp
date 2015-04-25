@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -129,10 +129,6 @@ public:
 	  */
 	const std::vector <ref <word> > getWordList();
 
-	// Decoding
-#if VMIME_WIDE_CHAR_SUPPORT
-	const wstring getDecodedText() const;
-#endif
 
 	/** Return the text converted into the specified charset.
 	  * The encoded-words are decoded and then converted in the
@@ -197,7 +193,8 @@ public:
 
 		FORCE_NO_ENCODING = (1 << 0),    /**< Just fold lines, don't encode them. */
 		FORCE_ENCODING = (1 << 1),       /**< Encode lines even if they are plain ASCII text. */
-		NO_NEW_LINE_SEQUENCE = (1 << 2)  /**< Use CRLF instead of new-line sequence (CRLF + TAB). */
+		NO_NEW_LINE_SEQUENCE = (1 << 2), /**< Use CRLF instead of new-line sequence (CRLF + TAB). */
+		QUOTE_IF_POSSIBLE = (1 << 3)     /**< Use quoting instead of encoding when possible (even if FORCE_ENCODING is specified). */
 	};
 
 	/** Encode and fold text in respect to RFC-2047.

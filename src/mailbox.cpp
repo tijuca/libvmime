@@ -1,10 +1,10 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of
+// published by the Free Software Foundation; either version 3 of
 // the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful,
@@ -311,7 +311,7 @@ void mailbox::parse(const string& buffer, const string::size_type position,
 	// (email address is mandatory, whereas name is optional).
 	if (address.empty() && !name.empty())
 	{
-		m_email.empty();
+		m_email.clear();
 		m_email.reserve(name.size());
 		m_name.removeAllWords();
 
@@ -324,7 +324,7 @@ void mailbox::parse(const string& buffer, const string::size_type position,
 	else
 	{
 		text::decodeAndUnfold(name, &m_name);
-		m_email.empty();
+		m_email.clear();
 		m_email.reserve(address.size());
 
 		for (string::size_type i = 0 ; i < address.size() ; ++i)
@@ -369,7 +369,7 @@ void mailbox::generate(utility::outputStream& os, const string::size_type maxLin
 		// We have to encode the name:
 		//   - if it contains characters in a charset different from "US-ASCII",
 		//   - and/or if it contains one or more of these special chars:
-		//        SPACE  TAB  "  ;  ,  <  >  (  )  @  /  ?  .  =  :
+		//        CR  LF  TAB  "  ;  ,  <  >  (  )  @  /  ?  .  =  :
 
 		// Check whether there are words that are not "US-ASCII"
 		// and/or contain the special chars.
@@ -386,7 +386,8 @@ void mailbox::generate(utility::outputStream& os, const string::size_type maxLin
 				{
 					switch (*c)
 					{
-					case ' ':
+					case '\r':
+					case '\n':
 					case '\t':
 					case ';':
 					case ',':
@@ -415,7 +416,7 @@ void mailbox::generate(utility::outputStream& os, const string::size_type maxLin
 		bool newLine = true;
 
 		m_name.encodeAndFold(os, maxLineLength, pos, &pos,
-			forceEncode ? text::FORCE_ENCODING : 0);
+			text::QUOTE_IF_POSSIBLE | (forceEncode ? text::FORCE_ENCODING : 0));
 
 		if (pos + m_email.length() + 3 > maxLineLength)
 		{

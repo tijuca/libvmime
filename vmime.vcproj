@@ -202,14 +202,17 @@
 <File RelativePath=".\src\net\smtp\SMTPResponse.cpp"/>
 </Filter>
 <Filter Name="imap">
-<File RelativePath=".\src\net\imap\IMAPSStore.cpp"/>
+<File RelativePath=".\src\net\imap\IMAPMessagePartContentHandler.cpp"/>
 <File RelativePath=".\src\net\imap\IMAPMessage.cpp"/>
 <File RelativePath=".\src\net\imap\IMAPFolder.cpp"/>
 <File RelativePath=".\src\net\imap\IMAPConnection.cpp"/>
-<File RelativePath=".\src\net\imap\IMAPUtils.cpp"/>
-<File RelativePath=".\src\net\imap\IMAPTag.cpp"/>
 <File RelativePath=".\src\net\imap\IMAPStore.cpp"/>
 <File RelativePath=".\src\net\imap\IMAPServiceInfos.cpp"/>
+<File RelativePath=".\src\net\imap\IMAPSStore.cpp"/>
+<File RelativePath=".\src\net\imap\IMAPPart.cpp"/>
+<File RelativePath=".\src\net\imap\IMAPTag.cpp"/>
+<File RelativePath=".\src\net\imap\IMAPStructure.cpp"/>
+<File RelativePath=".\src\net\imap\IMAPUtils.cpp"/>
 </Filter>
 <File RelativePath=".\src\net\transport.cpp"/>
 </Filter>
@@ -287,6 +290,7 @@
 </Filter>
 </Filter>
 <File RelativePath=".\vmime\parameterizedHeaderField.hpp"/>
+<File RelativePath=".\vmime\word.hpp"/>
 <Filter Name="misc">
 <File RelativePath=".\vmime\misc\importanceHelper.hpp"/>
 </Filter>
@@ -393,15 +397,18 @@
 </Filter>
 <File RelativePath=".\vmime\net\transport.hpp"/>
 <Filter Name="imap">
-<File RelativePath=".\vmime\net\imap\IMAPParser.hpp"/>
+<File RelativePath=".\vmime\net\imap\IMAPMessagePartContentHandler.hpp"/>
 <File RelativePath=".\vmime\net\imap\IMAPMessage.hpp"/>
 <File RelativePath=".\vmime\net\imap\IMAPFolder.hpp"/>
 <File RelativePath=".\vmime\net\imap\IMAPConnection.hpp"/>
-<File RelativePath=".\vmime\net\imap\IMAPTag.hpp"/>
-<File RelativePath=".\vmime\net\imap\IMAPStore.hpp"/>
 <File RelativePath=".\vmime\net\imap\IMAPServiceInfos.hpp"/>
 <File RelativePath=".\vmime\net\imap\IMAPSStore.hpp"/>
+<File RelativePath=".\vmime\net\imap\IMAPPart.hpp"/>
+<File RelativePath=".\vmime\net\imap\IMAPParser.hpp"/>
+<File RelativePath=".\vmime\net\imap\IMAPStructure.hpp"/>
+<File RelativePath=".\vmime\net\imap\IMAPStore.hpp"/>
 <File RelativePath=".\vmime\net\imap\IMAPUtils.hpp"/>
+<File RelativePath=".\vmime\net\imap\IMAPTag.hpp"/>
 </Filter>
 <Filter Name="smtp">
 <File RelativePath=".\vmime\net\smtp\SMTPTransport.hpp"/>
@@ -463,7 +470,6 @@
 <File RelativePath=".\vmime\parameter.hpp"/>
 <File RelativePath=".\vmime\constants.hpp"/>
 <File RelativePath=".\vmime\component.hpp"/>
-<File RelativePath=".\vmime\word.hpp"/>
 <Filter Name="mdn">
 <File RelativePath=".\vmime\mdn\sendableMDNInfos.hpp"/>
 <File RelativePath=".\vmime\mdn\receivedMDNInfos.hpp"/>
