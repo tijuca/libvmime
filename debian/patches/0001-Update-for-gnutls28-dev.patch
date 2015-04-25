@@ -1,0 +1,31 @@
+From: Matthias Geerdsen <matthias@vorlons.info>
+Date: Sat, 25 Apr 2015 13:53:51 +0200
+Subject: Update for gnutls28-dev
+
+---
+ src/net/tls/TLSSession.cpp | 4 ----
+ 2 files changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/src/net/tls/TLSSession.cpp b/src/net/tls/TLSSession.cpp
+index 010c007..68f4266 100644
+--- a/src/net/tls/TLSSession.cpp
++++ b/src/net/tls/TLSSession.cpp
+@@ -22,7 +22,6 @@
+ //
+ 
+ #include <gnutls/gnutls.h>
+-#include <gnutls/extra.h>
+ 
+ #include "vmime/config.hpp"
+ 
+@@ -298,10 +297,7 @@ void TLSSession::throwTLSException(const string& fname, const int code)
+ 	ERROR(GNUTLS_E_FILE_ERROR)
+ 	ERROR(GNUTLS_E_TOO_MANY_EMPTY_PACKETS)
+ 	ERROR(GNUTLS_E_UNKNOWN_PK_ALGORITHM)
+-	ERROR(GNUTLS_E_INIT_LIBEXTRA)
+-	ERROR(GNUTLS_E_LIBRARY_VERSION_MISMATCH)
+ 	ERROR(GNUTLS_E_NO_TEMPORARY_RSA_PARAMS)
+-	ERROR(GNUTLS_E_LZO_INIT_FAILED)
+ 	ERROR(GNUTLS_E_NO_COMPRESSION_ALGORITHMS)
+ 	ERROR(GNUTLS_E_NO_CIPHER_SUITES)
+ 	ERROR(GNUTLS_E_OPENPGP_GETKEY_FAILED)
