@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -100,7 +100,7 @@ void relay::parse(const string& buffer, const string::size_type position,
 		{
 			Parts newPart = Part_None;
 
-			if (cont = ((iss >> word) != 0))
+			if ((cont = ((iss >> word) != 0)))
 			{
 				// A little hack for handling comments
 				if (inComment)

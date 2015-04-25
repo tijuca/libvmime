@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -50,8 +50,8 @@ public:
 
 public:
 
-	const bool operator==(const text& t) const;
-	const bool operator!=(const text& t) const;
+	bool operator==(const text& t) const;
+	bool operator!=(const text& t) const;
 
 	ref <component> clone() const;
 	void copyFrom(const component& other);
@@ -95,13 +95,13 @@ public:
 	  *
 	  * @return number of words
 	  */
-	const int getWordCount() const;
+	int getWordCount() const;
 
 	/** Tests whether the list of words is empty.
 	  *
 	  * @return true if there is no word, false otherwise
 	  */
-	const bool isEmpty() const;
+	bool isEmpty() const;
 
 	/** Return the word at the specified position.
 	  *

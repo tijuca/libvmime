@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -128,19 +128,11 @@ void X509Certificate::write
 
 	gnutls_x509_crt_export(m_data->cert, fmt, NULL, &dataSize);
 
-	byte_t* data = new byte_t[dataSize];
+	std::vector <byte_t> data(dataSize);
 
-	gnutls_x509_crt_export(m_data->cert, fmt, data, &dataSize);
+	gnutls_x509_crt_export(m_data->cert, fmt, &data[0], &dataSize);
 
-	try
-	{
-		os.write(reinterpret_cast <utility::stream::value_type*>(data), dataSize);
-	}
-	catch (...)
-	{
-		delete [] data;
-		throw;
-	}
+	os.write(reinterpret_cast <utility::stream::value_type*>(&data[0]), dataSize);
 }
 
 
@@ -155,15 +147,14 @@ const byteArray X509Certificate::getSerialNumber() const
 }
 
 
-const bool X509Certificate::checkIssuer
-	(ref <const X509Certificate> issuer) const
+bool X509Certificate::checkIssuer(ref <const X509Certificate> issuer) const
 {
 	return (gnutls_x509_crt_check_issuer
 			(m_data->cert, issuer->m_data->cert) >= 1);
 }
 
 
-const bool X509Certificate::verify(ref <const X509Certificate> caCert) const
+bool X509Certificate::verify(ref <const X509Certificate> caCert) const
 {
 	unsigned int verify = 0;
 
@@ -212,20 +203,16 @@ const byteArray X509Certificate::getFingerprint(const DigestAlgorithm algo) cons
 	gnutls_x509_crt_get_fingerprint
 		(m_data->cert, galgo, NULL, &bufferSize);
 
-	byte_t* buffer = new byte_t[bufferSize];
+	std::vector <byte_t> buffer(bufferSize);
 
 	if (gnutls_x509_crt_get_fingerprint
-		(m_data->cert, galgo, buffer, &bufferSize) == 0)
+		(m_data->cert, galgo, &buffer[0], &bufferSize) == 0)
 	{
 		byteArray res;
-		res.insert(res.end(), buffer, buffer + bufferSize);
-
-		delete [] buffer;
+		res.insert(res.end(), &buffer[0], &buffer[0] + bufferSize);
 
 		return res;
 	}
-
-	delete [] buffer;
 
 	return byteArray();
 }
@@ -248,13 +235,13 @@ const string X509Certificate::getType() const
 }
 
 
-const int X509Certificate::getVersion() const
+int X509Certificate::getVersion() const
 {
 	return gnutls_x509_crt_get_version(m_data->cert);
 }
 
 
-const bool X509Certificate::equals(ref <const certificate> other) const
+bool X509Certificate::equals(ref <const certificate> other) const
 {
 	ref <const X509Certificate> otherX509 =
 		other.dynamicCast <const X509Certificate>();

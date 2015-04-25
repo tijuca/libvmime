@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,9 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/net/imap/IMAPStore.hpp"
@@ -87,7 +91,7 @@ ref <folder> IMAPStore::getFolder(const folder::path& path)
 }
 
 
-const bool IMAPStore::isValidFolderName(const folder::path::component& /* name */) const
+bool IMAPStore::isValidFolderName(const folder::path::component& /* name */) const
 {
 	return true;
 }
@@ -113,19 +117,19 @@ void IMAPStore::connect()
 }
 
 
-const bool IMAPStore::isConnected() const
+bool IMAPStore::isConnected() const
 {
 	return (m_connection && m_connection->isConnected());
 }
 
 
-const bool IMAPStore::isIMAPS() const
+bool IMAPStore::isIMAPS() const
 {
 	return m_isIMAPS;
 }
 
 
-const bool IMAPStore::isSecuredConnection() const
+bool IMAPStore::isSecuredConnection() const
 {
 	if (m_connection == NULL)
 		return false;
@@ -199,7 +203,7 @@ void IMAPStore::unregisterFolder(IMAPFolder* folder)
 }
 
 
-const int IMAPStore::getCapabilities() const
+int IMAPStore::getCapabilities() const
 {
 	return (CAPABILITY_CREATE_FOLDER |
 	        CAPABILITY_RENAME_FOLDER |

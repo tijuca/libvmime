@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -21,20 +21,21 @@
 // the GNU General Public License cover the whole combination.
 //
 
-#include "vmime/encoderQP.hpp"
+#include "vmime/utility/encoder/qpEncoder.hpp"
 #include "vmime/parserHelpers.hpp"
 
 
-namespace vmime
-{
+namespace vmime {
+namespace utility {
+namespace encoder {
 
 
-encoderQP::encoderQP()
+qpEncoder::qpEncoder()
 {
 }
 
 
-const std::vector <string> encoderQP::getAvailableProperties() const
+const std::vector <string> qpEncoder::getAvailableProperties() const
 {
 	std::vector <string> list(encoder::getAvailableProperties());
 
@@ -51,10 +52,10 @@ const std::vector <string> encoderQP::getAvailableProperties() const
 
 
 // Encoding table
-const unsigned char encoderQP::sm_hexDigits[] = "0123456789ABCDEF";
+const unsigned char qpEncoder::sm_hexDigits[] = "0123456789ABCDEF";
 
 // Decoding table
-const unsigned char encoderQP::sm_hexDecodeTable[256] =
+const unsigned char qpEncoder::sm_hexDecodeTable[256] =
 {
 	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
 	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -89,7 +90,7 @@ const unsigned char encoderQP::sm_hexDecodeTable[256] =
 #endif // VMIME_BUILDING_DOC
 
 
-const utility::stream::size_type encoderQP::encode(utility::inputStream& in,
+utility::stream::size_type qpEncoder::encode(utility::inputStream& in,
 	utility::outputStream& out, utility::progressListener* progress)
 {
 	in.reset();  // may not work...
@@ -223,10 +224,18 @@ const utility::stream::size_type encoderQP::encode(utility::inputStream& in,
 			QP_ENCODE_HEX('=')
 			break;
 		}
+		// RFC-2047 'especials' characters
 		case ',':
 		case ';':
 		case ':':
 		case '_':
+		case '@':
+		case '(':
+		case ')':
+		case '<':
+		case '>':
+		case '[':
+		case ']':
 		{
 			if (rfc2047)
 			{
@@ -250,7 +259,7 @@ const utility::stream::size_type encoderQP::encode(utility::inputStream& in,
 		default:
 		{
 			//if ((c >= 33 && c <= 60) || (c >= 62 && c <= 126))
-			if (c >= 33 && c <= 126 && c != 61)
+			if (c >= 33 && c <= 126 && c != 61 && c != 63)
 			{
 				outBuffer[outBufferPos++] = c;
 				++curCol;
@@ -297,7 +306,7 @@ const utility::stream::size_type encoderQP::encode(utility::inputStream& in,
 }
 
 
-const utility::stream::size_type encoderQP::decode(utility::inputStream& in,
+utility::stream::size_type qpEncoder::decode(utility::inputStream& in,
 	utility::outputStream& out, utility::progressListener* progress)
 {
 	in.reset();  // may not work...
@@ -398,9 +407,8 @@ const utility::stream::size_type encoderQP::decode(utility::inputStream& in,
 
 						++inTotal;
 
-						const unsigned char value =
-							  sm_hexDecodeTable[c] * 16
-							+ sm_hexDecodeTable[next];
+						const unsigned char value = static_cast <unsigned char>
+							(sm_hexDecodeTable[c] * 16 + sm_hexDecodeTable[next]);
 
 						outBuffer[outBufferPos++] = value;
 					}
@@ -459,4 +467,6 @@ const utility::stream::size_type encoderQP::decode(utility::inputStream& in,
 }
 
 
+} // encoder
+} // utility
 } // vmime

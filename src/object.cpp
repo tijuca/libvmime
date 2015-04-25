@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -33,13 +33,13 @@ namespace vmime
 
 
 object::object()
-	: m_refMgr(new utility::refManager(this))
+	: m_refMgr(utility::refManager::create(this))
 {
 }
 
 
 object::object(const object&)
-	: m_refMgr(new utility::refManager(this))
+	: m_refMgr(utility::refManager::create(this))
 {
 }
 

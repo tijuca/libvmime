@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -141,8 +141,8 @@ void body::parse(const string& buffer, const string::size_type position,
 			string::size_type partEnd = pos;
 
 			// Get rid of the [CR]LF just before the boundary string
-			if (pos - 1 >= position && buffer[pos - 1] == '\n') --partEnd;
-			if (pos - 2 >= position && buffer[pos - 2] == '\r') --partEnd;
+			if (pos >= (position + 1) && buffer[pos - 1] == '\n') --partEnd;
+			if (pos >= (position + 2) && buffer[pos - 2] == '\r') --partEnd;
 
 			// Check whether it is the last part (boundary terminated by "--")
 			pos += boundarySep.length();
@@ -186,8 +186,29 @@ void body::parse(const string& buffer, const string::size_type position,
 
 		m_contents = vmime::create <emptyContentHandler>();
 
-		if (partStart < end)
+		// Last part was not found: recover from missing boundary
+		if (!lastPart && pos == string::npos)
+		{
+			ref <bodyPart> part = vmime::create <bodyPart>();
+
+			try
+			{
+				part->parse(buffer, partStart, end);
+			}
+			catch (std::exception&)
+			{
+				throw;
+			}
+
+			part->m_parent = m_part;
+
+			m_parts.push_back(part);
+		}
+		// Treat remaining text as epilog
+		else if (partStart < end)
+		{
 			m_epilogText = string(buffer.begin() + partStart, buffer.begin() + end);
+		}
 	}
 	// Treat the contents as 'simple' data
 	else
@@ -357,7 +378,7 @@ const string body::generateRandomBoundaryString()
 }
 
 
-const bool body::isValidBoundary(const string& boundary)
+bool body::isValidBoundary(const string& boundary)
 {
 	static const string validChars("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'()+_,-./:=?");
 
@@ -448,7 +469,7 @@ void body::setParentPart(ref <bodyPart> parent)
 }
 
 
-const bool body::isRootPart() const
+bool body::isRootPart() const
 {
 	ref <const bodyPart> part = m_part.acquire();
 	return (part == NULL || part->getParentPart() == NULL);
@@ -653,13 +674,13 @@ void body::removeAllParts()
 }
 
 
-const int body::getPartCount() const
+int body::getPartCount() const
 {
 	return (m_parts.size());
 }
 
 
-const bool body::isEmpty() const
+bool body::isEmpty() const
 {
 	return (m_parts.size() == 0);
 }

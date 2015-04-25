@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -35,7 +35,7 @@ certificateChain::certificateChain(const std::vector <ref <certificate> >& certs
 }
 
 
-const unsigned int certificateChain::getCount() const
+unsigned int certificateChain::getCount() const
 {
 	return static_cast <unsigned int>(m_certs.size());
 }

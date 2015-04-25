@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -41,8 +41,9 @@ class fileAttachment : public defaultAttachment
 {
 public:
 
-	fileAttachment(const string& filename, const mediaType& type, const text& desc = NULL_TEXT);
-	fileAttachment(const string& filename, const mediaType& type, const encoding& enc, const text& desc = NULL_TEXT);
+	fileAttachment(const string& filename, const mediaType& type);
+	fileAttachment(const string& filename, const mediaType& type, const text& desc);
+	fileAttachment(const string& filename, const mediaType& type, const text& desc, const encoding& enc);
 
 	/** Stores information about a file attachment.
 	  */
@@ -58,7 +59,7 @@ public:
 		  * @return true if the 'filename' property is set,
 		  * false otherwise
 		  */
-		const bool hasFilename() const;
+		bool hasFilename() const;
 
 		/** Return the value of the 'filename' property.
 		  *
@@ -77,7 +78,7 @@ public:
 		  * @return true if the 'creation-date' property is set,
 		  * false otherwise
 		  */
-		const bool hasCreationDate() const;
+		bool hasCreationDate() const;
 
 		/** Return the value of the 'creation-date' property.
 		  *
@@ -96,7 +97,7 @@ public:
 		  * @return true if the 'modification-date' property is set,
 		  * false otherwise
 		  */
-		const bool hasModificationDate() const;
+		bool hasModificationDate() const;
 
 		/** Return the value of the 'modification-date' property.
 		  *
@@ -115,7 +116,7 @@ public:
 		  * @return true if the 'read-date' property is set,
 		  * false otherwise
 		  */
-		const bool hasReadDate() const;
+		bool hasReadDate() const;
 
 		/** Return the value of the 'read-date' property.
 		  *
@@ -134,13 +135,13 @@ public:
 		  * @return true if the 'size' property is set,
 		  * false otherwise
 		  */
-		const bool hasSize() const;
+		bool hasSize() const;
 
 		/** Return the value of the 'size' property.
 		  *
 		  * @return file size
 		  */
-		const unsigned int getSize() const;
+		unsigned int getSize() const;
 
 		/** Set the value of the 'size' property.
 		  *

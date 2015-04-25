@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -21,29 +21,32 @@
 // the GNU General Public License cover the whole combination.
 //
 
-#ifndef VMIME_ENCODER7BIT_HPP_INCLUDED
-#define VMIME_ENCODER7BIT_HPP_INCLUDED
+#ifndef VMIME_UTILITY_ENCODER_EIGHTBITENCODER_HPP_INCLUDED
+#define VMIME_UTILITY_ENCODER_EIGHTBITENCODER_HPP_INCLUDED
 
 
-#include "vmime/encoderDefault.hpp"
+#include "vmime/utility/encoder/defaultEncoder.hpp"
 
 
-namespace vmime
-{
+namespace vmime {
+namespace utility {
+namespace encoder {
 
 
-/** 7-bit encoder.
+/** 8-bit encoder.
   */
 
-class encoder7bit : public encoderDefault
+class eightBitEncoder : public defaultEncoder
 {
 public:
 
-	encoder7bit();
+	eightBitEncoder();
 };
 
 
+} // encoder
+} // utility
 } // vmime
 
 
-#endif // VMIME_ENCODER7BIT_HPP_INCLUDED
+#endif // VMIME_UTILITY_ENCODER_EIGHTBITENCODER_HPP_INCLUDED

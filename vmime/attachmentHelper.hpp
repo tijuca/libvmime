@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -50,7 +50,7 @@ public:
 	  * @param part message part to test
 	  * @return true if the part is an attachment, false otherwise
 	  */
-	static const bool isBodyPartAnAttachment(ref <const bodyPart> part);
+	static bool isBodyPartAnAttachment(ref <const bodyPart> part);
 
 	/** Return attachment information in the specified body part.
 	  * If the specified body part does not contain attachment

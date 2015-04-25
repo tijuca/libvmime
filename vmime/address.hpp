@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -55,13 +55,13 @@ public:
 	  *
 	  * @return true if this address is empty
 	  */
-	virtual const bool isEmpty() const = 0;
+	virtual bool isEmpty() const = 0;
 
 	/** Test whether this is object is a mailboxGroup.
 	  *
 	  * @return true if this is a mailboxGroup, false otherwise
 	  */
-	virtual const bool isGroup() const = 0;
+	virtual bool isGroup() const = 0;
 
 	virtual ref <component> clone() const = 0;
 

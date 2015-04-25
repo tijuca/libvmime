@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -58,10 +58,10 @@ public:
 	  */
 	static const string quoteString(const string& text);
 
-	static const int folderTypeFromFlags(const IMAPParser::mailbox_flag_list* list);
-	static const int folderFlagsFromFlags(const IMAPParser::mailbox_flag_list* list);
+	static int folderTypeFromFlags(const IMAPParser::mailbox_flag_list* list);
+	static int folderFlagsFromFlags(const IMAPParser::mailbox_flag_list* list);
 
-	static const int messageFlagsFromFlags(const IMAPParser::flag_list* list);
+	static int messageFlagsFromFlags(const IMAPParser::flag_list* list);
 
 	static const string messageFlagList(const int flags);
 

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -66,8 +66,8 @@ public:
 	path& operator=(const component& c);
 
 	// Path comparison
-	const bool operator==(const path& p) const;
-	const bool operator!=(const path& p) const;
+	bool operator==(const path& p) const;
+	bool operator!=(const path& p) const;
 
 	/** Append a component to the path.
 	  *
@@ -93,7 +93,13 @@ public:
 	  *
 	  * @return true if the path is empty (no components = root)
 	  */
-	const bool isEmpty() const;
+	bool isEmpty() const;
+
+	/** Test whether this path is the root (alias for isEmpty()).
+	  *
+	  * @return true if the path is the root
+	  */
+	bool isRoot() const;
 
 	/** Return the last component of this path (const version).
 	  *
@@ -111,7 +117,7 @@ public:
 	  *
 	  * @return number of components
 	  */
-	const int getSize() const;
+	int getSize() const;
 
 	/** Return the specified component of the path (const version).
 	  *
@@ -133,7 +139,7 @@ public:
 	  * @return true if the specified path is a child
 	  * of this path, false otherwise
 	  */
-	const bool isDirectParentOf(const path& p) const;
+	bool isDirectParentOf(const path& p) const;
 
 	/** Test whether this path is a parent of another one.
 	  *
@@ -141,7 +147,7 @@ public:
 	  * @return true if the specified path is a child (direct or
 	  * indirect) of this path, false otherwise
 	  */
-	const bool isParentOf(const path& p) const;
+	bool isParentOf(const path& p) const;
 
 	/** Rename a parent component in the path.
 	  * Example: path("a/b/c/d").renameParent("a/b", "x/y/z")

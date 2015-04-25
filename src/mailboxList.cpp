@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -109,13 +109,13 @@ void mailboxList::removeAllMailboxes()
 }
 
 
-const int mailboxList::getMailboxCount() const
+int mailboxList::getMailboxCount() const
 {
 	return (m_list.getAddressCount());
 }
 
 
-const bool mailboxList::isEmpty() const
+bool mailboxList::isEmpty() const
 {
 	return (m_list.isEmpty());
 }

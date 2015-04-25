@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,9 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/platforms/posix/posixSocket.hpp"
@@ -190,7 +194,7 @@ void posixSocket::connect(const vmime::string& address, const vmime::port_t port
 }
 
 
-const bool posixSocket::isConnected() const
+bool posixSocket::isConnected() const
 {
 	if (m_desc == -1)
 		return false;
@@ -220,7 +224,7 @@ void posixSocket::receive(vmime::string& buffer)
 }
 
 
-const int posixSocket::receiveRaw(char* buffer, const int count)
+int posixSocket::receiveRaw(char* buffer, const int count)
 {
 	const int ret = ::recv(m_desc, buffer, count, 0);
 

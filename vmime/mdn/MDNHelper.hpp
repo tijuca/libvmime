@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -70,7 +70,7 @@ public:
 	  * @param msg message
 	  * @return true if the message is a MDN, false otherwise
 	  */
-	static const bool isMDN(const ref <const message> msg);
+	static bool isMDN(const ref <const message> msg);
 
 	/** If the specified message is a MDN, return information
 	  * about it.
@@ -88,7 +88,7 @@ public:
 	  * @param msg message for which to send a MDN
 	  * @return true if user confirmation should be asked, false otherwise
 	  */
-	static const bool needConfirmation(const ref <const message> msg);
+	static bool needConfirmation(const ref <const message> msg);
 
 	/** Build a new MDN for the message. The resulting MDN can then be
 	  * sent over SMTP transport service.

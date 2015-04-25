@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -28,9 +28,9 @@
 #include "vmime/utility/smartPtr.hpp"
 #include "vmime/parserHelpers.hpp"
 
-#include "vmime/encoder.hpp"
-#include "vmime/encoderB64.hpp"
-#include "vmime/encoderQP.hpp"
+#include "vmime/utility/encoder/encoder.hpp"
+#include "vmime/utility/encoder/b64Encoder.hpp"
+#include "vmime/utility/encoder/qpEncoder.hpp"
 
 #include "vmime/wordEncoder.hpp"
 
@@ -73,8 +73,13 @@ ref <word> word::parseNext(const string& buffer, const string::size_type positio
 	//   - before the first word
 	//   - between two encoded words
 	//   - after the last word
+	string whiteSpaces;
+
 	while (pos < end && parserHelpers::isSpace(buffer[pos]))
+	{
+		whiteSpaces += buffer[pos];
 		++pos;
+	}
 
 	string::size_type startPos = pos;
 	string unencoded;
@@ -88,7 +93,10 @@ ref <word> word::parseNext(const string& buffer, const string::size_type positio
 			string::size_type endPos = pos;
 
 			if (pos > position && buffer[pos - 1] == '\r')
+			{
+				++pos;
 				--endPos;
+			}
 
 			while (pos != end && parserHelpers::isSpace(buffer[pos]))
 				++pos;
@@ -97,6 +105,7 @@ ref <word> word::parseNext(const string& buffer, const string::size_type positio
 			unencoded += ' ';
 
 			startPos = pos;
+			continue;
 		}
 		// Start of an encoded word
 		else if (pos + 8 < end &&  // 8 = "=?(.+)?(.+)?(.*)?="
@@ -107,6 +116,9 @@ ref <word> word::parseNext(const string& buffer, const string::size_type positio
 
 			if (!unencoded.empty())
 			{
+				if (prevIsEncoded)
+					unencoded = whiteSpaces + unencoded;
+
 				ref <word> w = vmime::create <word>(unencoded, charset(charsets::US_ASCII));
 				w->setParsedBounds(position, pos);
 
@@ -183,7 +195,7 @@ ref <word> word::parseNext(const string& buffer, const string::size_type positio
 	if (end != startPos)
 	{
 		if (startPos != pos && !isFirst && prevIsEncoded)
-			unencoded += ' ';
+			unencoded += whiteSpaces;
 
 		unencoded += buffer.substr(startPos, end - startPos);
 
@@ -234,38 +246,38 @@ void word::parse(const string& buffer, const string::size_type position,
 
 		const string::const_iterator charsetPos = p;
 
-		for ( ; p != pend && *p != '?' ; ++p);
+		for ( ; p != pend && *p != '?' ; ++p) {}
 
 		if (p != pend) // a charset is specified
 		{
 			const string::const_iterator charsetEnd = p;
 			const string::const_iterator encPos = ++p; // skip '?'
 
-			for ( ; p != pend && *p != '?' ; ++p);
+			for ( ; p != pend && *p != '?' ; ++p) {}
 
 			if (p != pend) // an encoding is specified
 			{
 				//const string::const_iterator encEnd = p;
 				const string::const_iterator dataPos = ++p; // skip '?'
 
-				for ( ; p != pend && !(*p == '?' && *(p + 1) == '=') ; ++p);
+				for ( ; p != pend && !(*p == '?' && *(p + 1) == '=') ; ++p) {}
 
 				if (p != pend) // some data is specified
 				{
 					const string::const_iterator dataEnd = p;
 					p += 2; // skip '?='
 
-					encoder* theEncoder = NULL;
+					utility::encoder::encoder* theEncoder = NULL;
 
 					// Base-64 encoding
 					if (*encPos == 'B' || *encPos == 'b')
 					{
-						theEncoder = new encoderB64;
+						theEncoder = new utility::encoder::b64Encoder();
 					}
 					// Quoted-Printable encoding
 					else if (*encPos == 'Q' || *encPos == 'q')
 					{
-						theEncoder = new encoderQP;
+						theEncoder = new utility::encoder::qpEncoder();
 						theEncoder->getProperties()["rfc2047"] = true;
 					}
 
@@ -309,15 +321,20 @@ void word::parse(const string& buffer, const string::size_type position,
 void word::generate(utility::outputStream& os, const string::size_type maxLineLength,
 	const string::size_type curLinePos, string::size_type* newLinePos) const
 {
-	generate(os, maxLineLength, curLinePos, newLinePos, 0, true);
+	generate(os, maxLineLength, curLinePos, newLinePos, 0, NULL);
 }
 
 
 void word::generate(utility::outputStream& os, const string::size_type maxLineLength,
 	const string::size_type curLinePos, string::size_type* newLinePos, const int flags,
-	const bool isFirstWord) const
+	generatorState* state) const
 {
 	string::size_type curLineLength = curLinePos;
+
+	generatorState defaultGeneratorState;
+
+	if (state == NULL)
+		state = &defaultGeneratorState;
 
 	// Calculate the number of ASCII chars to check whether encoding is needed
 	// and _which_ encoding to use.
@@ -374,7 +391,7 @@ void word::generate(utility::outputStream& os, const string::size_type maxLineLe
 				// we write the full line no matter of the max line length...
 
 				if (!newLine && p != end && lastWSpos == end &&
-				    !isFirstWord && curLineStart == m_buffer.begin())
+				    !state->isFirstWord && curLineStart == m_buffer.begin())
 				{
 					// Here, we are continuing on the line of previous encoded
 					// word, but there is not even enough space to put the
@@ -383,11 +400,15 @@ void word::generate(utility::outputStream& os, const string::size_type maxLineLe
 					{
 						os << CRLF;
 						curLineLength = 0;
+
+						state->lastCharIsSpace = true;
 					}
 					else
 					{
 						os << NEW_LINE_SEQUENCE;
 						curLineLength = NEW_LINE_SEQUENCE_LENGTH;
+
+						state->lastCharIsSpace = true;
 					}
 
 					p = curLineStart;
@@ -396,7 +417,15 @@ void word::generate(utility::outputStream& os, const string::size_type maxLineLe
 				}
 				else
 				{
+					if (!state->isFirstWord && state->prevWordIsEncoded && !state->lastCharIsSpace && !parserHelpers::isSpace(*curLineStart))
+						os << " "; // Separate from previous word
+
 					os << string(curLineStart, p);
+
+					if (parserHelpers::isSpace(*(p - 1)))
+						state->lastCharIsSpace = true;
+					else
+						state->lastCharIsSpace = false;
 
 					if (p == end)
 					{
@@ -428,21 +457,30 @@ void word::generate(utility::outputStream& os, const string::size_type maxLineLe
 				// last white-space.
 
 #if 1
-				if (curLineLength != 1 && !isFirstWord)
+				if (curLineLength != NEW_LINE_SEQUENCE_LENGTH && !state->isFirstWord && state->prevWordIsEncoded)
 					os << " "; // Separate from previous word
 #endif
 
 				os << string(curLineStart, lastWSpos);
 
+				if (lastWSpos > curLineStart && std::isspace(*(lastWSpos - 1)))
+					state->lastCharIsSpace = true;
+				else
+					state->lastCharIsSpace = false;
+
 				if (flags & text::NO_NEW_LINE_SEQUENCE)
 				{
 					os << CRLF;
 					curLineLength = 0;
+
+					state->lastCharIsSpace = true;
 				}
 				else
 				{
 					os << NEW_LINE_SEQUENCE;
 					curLineLength = NEW_LINE_SEQUENCE_LENGTH;
+
+					state->lastCharIsSpace = true;
 				}
 
 				curLineStart = lastWSpos + 1;
@@ -518,13 +556,17 @@ void word::generate(utility::outputStream& os, const string::size_type maxLineLe
 		{
 			os << NEW_LINE_SEQUENCE;
 			curLineLength = NEW_LINE_SEQUENCE_LENGTH;
+
+			state->lastCharIsSpace = true;
 		}
 
 		// Encode and fold input buffer
-		if (curLineLength != 1 && !isFirstWord)
+		if (!startNewLine && !state->isFirstWord && !state->lastCharIsSpace)
 		{
 			os << " "; // Separate from previous word
 			++curLineLength;
+
+			state->lastCharIsSpace = true;
 		}
 
 		for (unsigned int i = 0 ; ; ++i)
@@ -554,11 +596,16 @@ void word::generate(utility::outputStream& os, const string::size_type maxLineLe
 
 			// End of the encoded word
 			os << wordEnd;
+
+			state->prevWordIsEncoded = true;
+			state->lastCharIsSpace = false;
 		}
 	}
 
 	if (newLinePos)
 		*newLinePos = curLineLength;
+
+	state->isFirstWord = false;
 }
 
 
@@ -600,13 +647,13 @@ void word::copyFrom(const component& other)
 }
 
 
-const bool word::operator==(const word& w) const
+bool word::operator==(const word& w) const
 {
 	return (m_charset == w.m_charset && m_buffer == w.m_buffer);
 }
 
 
-const bool word::operator!=(const word& w) const
+bool word::operator!=(const word& w) const
 {
 	return (m_charset != w.m_charset || m_buffer != w.m_buffer);
 }

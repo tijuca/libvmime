@@ -28,8 +28,8 @@ import string
 
 # Package version number
 packageVersionMajor = 0
-packageVersionMinor = 8
-packageVersionMicro = 1
+packageVersionMinor = 9
+packageVersionMicro = 0
 
 # API version number (libtool)
 #
@@ -93,15 +93,6 @@ libvmime_sources = [
 	'defaultAttachment.cpp', 'defaultAttachment.hpp',
 	'disposition.cpp', 'disposition.hpp',
 	'emptyContentHandler.cpp', 'emptyContentHandler.hpp',
-	'encoder.cpp', 'encoder.hpp',
-	'encoder7bit.cpp', 'encoder7bit.hpp',
-	'encoder8bit.cpp', 'encoder8bit.hpp',
-	'encoderB64.cpp', 'encoderB64.hpp',
-	'encoderBinary.cpp', 'encoderBinary.hpp',
-	'encoderDefault.cpp', 'encoderDefault.hpp',
-	'encoderFactory.cpp', 'encoderFactory.hpp',
-	'encoderQP.cpp', 'encoderQP.hpp',
-	'encoderUUE.cpp', 'encoderUUE.hpp',
 	'encoding.cpp', 'encoding.hpp',
 	'exception.cpp', 'exception.hpp',
 	'fileAttachment.cpp', 'fileAttachment.hpp',
@@ -151,11 +142,22 @@ libvmime_sources = [
 	'utility/progressListener.cpp', 'utility/progressListener.hpp',
 	'utility/random.cpp', 'utility/random.hpp',
 	'utility/smartPtr.cpp', 'utility/smartPtr.hpp',
+	'utility/smartPtrInt.cpp', 'utility/smartPtrInt.hpp',
 	'utility/stream.cpp', 'utility/stream.hpp',
 	'utility/stringProxy.cpp', 'utility/stringProxy.hpp',
 	'utility/stringUtils.cpp', 'utility/stringUtils.hpp',
 	'utility/url.cpp', 'utility/url.hpp',
 	'utility/urlUtils.cpp', 'utility/urlUtils.hpp',
+	# -- encoder
+	'utility/encoder/encoder.cpp', 'utility/encoder/encoder.hpp',
+	'utility/encoder/sevenBitEncoder.cpp', 'utility/encoder/sevenBitEncoder.hpp',
+	'utility/encoder/eightBitEncoder.cpp', 'utility/encoder/eightBitEncoder.hpp',
+	'utility/encoder/b64Encoder.cpp', 'utility/encoder/b64Encoder.hpp',
+	'utility/encoder/binaryEncoder.cpp', 'utility/encoder/binaryEncoder.hpp',
+	'utility/encoder/defaultEncoder.cpp', 'utility/encoder/defaultEncoder.hpp',
+	'utility/encoder/encoderFactory.cpp', 'utility/encoder/encoderFactory.hpp',
+	'utility/encoder/qpEncoder.cpp', 'utility/encoder/qpEncoder.hpp',
+	'utility/encoder/uuEncoder.cpp', 'utility/encoder/uuEncoder.hpp',
 	# ===============================  MDN  ================================
 	'mdn/MDNHelper.cpp', 'mdn/MDNHelper.hpp',
 	'mdn/MDNInfos.cpp', 'mdn/MDNInfos.hpp',
@@ -269,7 +271,10 @@ libvmime_messaging_proto_sources = [
 			'net/maildir/maildirStore.cpp',        'net/maildir/maildirStore.hpp',
 			'net/maildir/maildirFolder.cpp',       'net/maildir/maildirFolder.hpp',
 			'net/maildir/maildirMessage.cpp',      'net/maildir/maildirMessage.hpp',
-			'net/maildir/maildirUtils.cpp',        'net/maildir/maildirUtils.hpp'
+			'net/maildir/maildirUtils.cpp',        'net/maildir/maildirUtils.hpp',
+			'net/maildir/maildirFormat.cpp',       'net/maildir/maildirFormat.hpp',
+			'net/maildir/format/kmailMaildirFormat.cpp',    'net/maildir/format/kmailMaildirFormat.hpp',
+			'net/maildir/format/courierMaildirFormat.cpp',  'net/maildir/format/courierMaildirFormat.hpp'
 		]
 	],
 	[
@@ -341,7 +346,6 @@ libvmimetest_sources = [
 	'tests/parser/charsetTest.cpp',
 	'tests/parser/datetimeTest.cpp',
 	'tests/parser/dispositionTest.cpp',
-	'tests/parser/encoderTest.cpp',
 	'tests/parser/headerTest.cpp',
 	'tests/parser/htmlTextPartTest.cpp',
 	'tests/parser/mailboxTest.cpp',
@@ -359,6 +363,7 @@ libvmimetest_sources = [
 	'tests/utility/pathTest.cpp',
 	'tests/utility/urlTest.cpp',
 	'tests/utility/smartPtrTest.cpp',
+	'tests/utility/encoderTest.cpp',
 	# ===============================  Misc  ===============================
 	'tests/misc/importanceHelperTest.cpp',
 	# =============================  Security  =============================
@@ -366,7 +371,8 @@ libvmimetest_sources = [
 	'tests/security/digest/sha1Test.cpp',
 	# ===============================  Net  ================================
 	'tests/net/smtp/SMTPTransportTest.cpp',
-	'tests/net/smtp/SMTPResponseTest.cpp'
+	'tests/net/smtp/SMTPResponseTest.cpp',
+	'tests/net/maildir/maildirStoreTest.cpp'
 ]
 
 libvmime_autotools = [
@@ -610,14 +616,27 @@ else:
 #env.Append(LIBS = ['additional-lib-here'])
 
 if env['with_sasl'] == 'yes':
-	env.ParseConfig('pkg-config --cflags --libs libgsasl')
+	libgsasl_pc = string.strip(os.popen("pkg-config --list-all | grep '^libgsasl[ ]' | cut -f 1 -d ' '").read())
+
+	if len(libgsasl_pc) == 0:
+		print "ERROR: GNU SASL development package is not installed\n"
+		Exit(1)
+
+	env.ParseConfig('pkg-config --cflags --libs ' + libgsasl_pc)
 
 if env['with_tls'] == 'yes':
 	libgnutls_pc = string.strip(os.popen("pkg-config --list-all | grep '^libgnutls[ ]' | cut -f 1 -d ' '").read())
+
 	if len(libgnutls_pc) == 0:
 		libgnutls_pc = string.strip(os.popen("pkg-config --list-all | grep '^gnutls[ ]' | cut -f 1 -d ' '").read())
 
+	if len(libgnutls_pc) == 0:
+		print "ERROR: GNU TLS development package is not installed\n"
+		Exit(1)
+
 	env.ParseConfig('pkg-config --cflags --libs ' + libgnutls_pc)
+
+env.Append(CXXFLAGS = ['-pthread'])
 
 # Generate help text for command line options
 Help(opts.GenerateHelpText(env))
@@ -845,6 +864,7 @@ config_hpp.write("""
 
 // Additional defines
 #define VMIME_HAVE_GETADDRINFO 1
+#define VMIME_HAVE_PTHREAD 1
 
 
 #endif // VMIME_CONFIG_HPP_INCLUDED
@@ -946,7 +966,7 @@ Default(libVmime)
 if env['build_tests'] == 'yes':
 	if env['debug'] == 'yes':
 		env = env.Copy()
-		env.Append(LIBS = ['cppunit', 'dl', packageVersionedGenericName + '-debug'])
+		env.Append(LIBS = ['cppunit', 'dl', packageVersionedGenericName + '-debug', 'pthread'])
 		env.Append(LIBPATH=['.'])
 		Default(
 			env.Program(
@@ -1298,6 +1318,8 @@ AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 AC_PROG_LN_S
 AC_PROG_LIBTOOL
+
+OST_LIB_PTHREAD  # from GNU Commons C++
 
 AM_SANITY_CHECK
 AM_PROG_LIBTOOL
@@ -1698,6 +1720,10 @@ if test "x$VMIME_DETECT_PLATFORM" = "xposix"; then
 	AC_CHECK_FUNC(getaddrinfo, [VMIME_ADDITIONAL_DEFINES="$VMIME_ADDITIONAL_DEFINES HAVE_GETADDRINFO"])
 fi
 
+# -- pthreads (POSIX)
+
+ACX_PTHREAD([VMIME_ADDITIONAL_DEFINES="$VMIME_ADDITIONAL_DEFINES HAVE_PTHREAD"])
+
 
 """)
 
@@ -1976,6 +2002,9 @@ env.Alias('autotools', env.GenerateAutoTools('foo_autotools', 'SConstruct'))
 #  Generate MSVC project files #
 ################################
 
+MSVC_filesDone = []
+MSVC_dupCounter = 1      # counter for duplicate file names
+
 def generateMSVC(target, source, env):
 	# vmime.sln
 	vmime_sln = open("vmime.sln", 'w')
@@ -2089,7 +2118,7 @@ EndGlobal
 """)
 
 	# Source files
-	all_sources = libvmime_all_sources
+	all_sources = libvmime_sel_sources
 
 	# -- Remove all platform files and re-add files for "windows" only
 	for i in range(len(all_sources)):
@@ -2097,14 +2126,41 @@ EndGlobal
 			all_sources[i] = ''
 
 	for f in libvmime_platforms_sources['windows']:
-		if f[-4:] == '.hpp':
-			all_sources.append('vmime/' + f)
+		all_sources.append(f)
+
+	# -- Prepend with 'src' (for source files) or 'vmime' (for includes)
+	for i in range(len(all_sources)):
+		f = all_sources[i]
+		if f[-4:] == '.cpp':
+			all_sources[i] = 'src/' + f
 		else:
-			all_sources.append('src/' + f)
+			all_sources[i] = 'vmime/' + f
 
 	# -- Replace '/' with '\'
 	for i in range(len(all_sources)):
 		all_sources[i] = string.replace(all_sources[i], '/', '\\')
+
+	all_sources.sort()
+
+	# -- Sort by directory
+	filesInDir = {}
+
+	for f in all_sources:
+		if len(f) != 0:
+			comps = re.split('\\\\', f)
+			l = len(comps) - 1
+
+			tmp = filesInDir
+
+			for i in range(len(comps) - 1):
+				d = '*' + comps[i]
+
+				if not tmp.has_key(d):
+					tmp[d] = {}
+
+				tmp = tmp[d]
+
+			tmp['file%i' % len(tmp)] = f
 
 	# -- Output files in filters
 	vmime_vcproj.write("""
@@ -2114,56 +2170,41 @@ EndGlobal
 		        UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 """)
 
-	all_sources.sort()
+	def MSVC_OutputFiles(filesInDir):
+		global MSVC_filesDone, MSVC_dupCounter
 
-	prevLen = 0
-	prevComps = []
+		for k in filesInDir.keys():
+			f = filesInDir[k]
 
-	filesDone = []
-	dupCounter = 1      # counter for duplicate file names
-
-	for f in all_sources:
-		if len(f) != 0:
-			comps = re.split('\\\\', f)
-			l = len(comps) - 1
-
-			# Directory change
-			if l != prevLen:
-				if l < prevLen:
-					for i in range(prevLen - l):
-						vmime_vcproj.write('</Filter>\n')
-				else:
-					for i in range(l - prevLen):
-						vmime_vcproj.write('<Filter Name="' + comps[i + prevLen] + '">\n')
+			# Directory
+			if k[0] == '*':
+				vmime_vcproj.write('<Filter Name="' + k[1:] + '">\n')
+				MSVC_OutputFiles(f)
+				vmime_vcproj.write('</Filter>\n')
+			# File
 			else:
-				if comps[l - 1] != prevComps[prevLen - 1]:
-					vmime_vcproj.write('</Filter>\n')
-					vmime_vcproj.write('<Filter Name="' + comps[l - 1] + '">\n')
+				fn = f[string.rfind(f, '\\') + 1:]
 
-			fn = f[string.rfind(f, '\\') + 1:]
-
-			if fn in filesDone:
-				# File (duplicate filename)
-				vmime_vcproj.write('<File RelativePath=".\\' + f + '">\n')
-				vmime_vcproj.write("""	<FileConfiguration Name="Debug|Win32">
-		<Tool Name="VCCLCompilerTool" ObjectFile="$(IntDir)/$(InputName)""" + str(dupCounter) + """.obj"/>
+				if len(fn) != 0:
+					if fn in MSVC_filesDone:
+						# File (duplicate filename)
+						vmime_vcproj.write('<File RelativePath=".\\' + f + '">\n')
+						vmime_vcproj.write("""	<FileConfiguration Name="Debug|Win32">
+		<Tool Name="VCCLCompilerTool" ObjectFile="$(IntDir)/$(InputName)""" + str(MSVC_dupCounter) + """.obj"/>
 	</FileConfiguration>
 	<FileConfiguration Name="Release|Win32">
-		<Tool Name="VCCLCompilerTool" ObjectFile="$(IntDir)/$(InputName)""" + str(dupCounter) + """.obj"/>
+		<Tool Name="VCCLCompilerTool" ObjectFile="$(IntDir)/$(InputName)""" + str(MSVC_dupCounter) + """.obj"/>
 	</FileConfiguration>
 """)
-				vmime_vcproj.write('</File>')
-				dupCounter = dupCounter + 1
-			else:
-				# File
-				vmime_vcproj.write('<File RelativePath=".\\' + f + '"/>\n')
-				filesDone.append(fn)
+						vmime_vcproj.write('</File>')
+						MSVC_dupCounter = MSVC_dupCounter + 1
+					else:
+						# File
+						vmime_vcproj.write('<File RelativePath=".\\' + f + '"/>\n')
+						MSVC_filesDone.append(fn)
 
-			prevComps = comps
-			prevLen = l
 
-	for i in range(prevLen):
-		vmime_vcproj.write('</Filter>\n')
+	MSVC_OutputFiles(filesInDir)
 
 	vmime_vcproj.write("""		</Filter>
 	</Files>

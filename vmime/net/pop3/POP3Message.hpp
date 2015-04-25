@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -56,20 +56,20 @@ private:
 
 public:
 
-	const int getNumber() const;
+	int getNumber() const;
 
 	const uid getUniqueId() const;
 
-	const int getSize() const;
+	int getSize() const;
 
-	const bool isExpunged() const;
+	bool isExpunged() const;
 
 	ref <const structure> getStructure() const;
 	ref <structure> getStructure();
 
 	ref <const header> getHeader() const;
 
-	const int getFlags() const;
+	int getFlags() const;
 	void setFlags(const int flags, const int mode = FLAG_MODE_SET);
 
 	void extract(utility::outputStream& os, utility::progressListener* progress = NULL, const int start = 0, const int length = -1, const bool peek = false) const;

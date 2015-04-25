@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -105,13 +105,13 @@ void mediaType::generate(utility::outputStream& os, const string::size_type maxL
 }
 
 
-const bool mediaType::operator==(const mediaType& type) const
+bool mediaType::operator==(const mediaType& type) const
 {
 	return (m_type == type.m_type && m_subType == type.m_subType);
 }
 
 
-const bool mediaType::operator!=(const mediaType& type) const
+bool mediaType::operator!=(const mediaType& type) const
 {
 	return !(*this == type);
 }

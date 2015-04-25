@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -84,7 +84,7 @@ void TLSSocket::disconnect()
 }
 
 
-const bool TLSSocket::isConnected() const
+bool TLSSocket::isConnected() const
 {
 	return m_wrapped->isConnected() && m_connected;
 }
@@ -103,7 +103,7 @@ void TLSSocket::send(const string& buffer)
 }
 
 
-const int TLSSocket::receiveRaw(char* buffer, const int count)
+int TLSSocket::receiveRaw(char* buffer, const int count)
 {
 	const ssize_t ret = gnutls_record_recv
 		(*m_session->m_gnutlsSession,
@@ -319,20 +319,18 @@ ref <security::cert::certificateChain> TLSSocket::getPeerCertificates() const
 			gnutls_x509_crt_export(x509Certs[i],
 				GNUTLS_X509_FMT_DER, NULL, &dataSize);
 
-			byte_t* data = new byte_t[dataSize];
+			std::vector <byte_t> data(dataSize);
 
 			gnutls_x509_crt_export(x509Certs[i],
-				GNUTLS_X509_FMT_DER, data, &dataSize);
+				GNUTLS_X509_FMT_DER, &data[0], &dataSize);
 
 			ref <security::cert::X509Certificate> cert =
-				security::cert::X509Certificate::import(data, dataSize);
+				security::cert::X509Certificate::import(&data[0], dataSize);
 
 			if (cert != NULL)
 				certs.push_back(cert);
 			else
 				error = true;
-
-			delete [] data;
 
 			gnutls_x509_crt_deinit(x509Certs[i]);
 		}
@@ -355,7 +353,7 @@ ref <security::cert::certificateChain> TLSSocket::getPeerCertificates() const
 // C and C++ calls.
 //
 // gnutls_record_recv() calls TLSSocket::gnutlsPullFunc, and exceptions
-// thrown by the socket can not not catched.
+// thrown by the socket can not be caught.
 
 #ifndef VMIME_BUILDING_DOC
 
@@ -380,10 +378,15 @@ void TLSSocket::internalThrow()
 
 	if (m_ex)
 	{
-		// To avoid memory leaks
-		exToDelete.push_back(vmime::create <TLSSocket_DeleteExWrapper>(m_ex));
+		// Reset the current exception pointer to prevent the same
+		// exception from being thrown again later
+		exception* ex = m_ex;
+		m_ex = NULL;
 
-		throw *m_ex;
+		// To avoid memory leaks
+		exToDelete.push_back(vmime::create <TLSSocket_DeleteExWrapper>(ex));
+
+		throw *ex;
 	}
 }
 

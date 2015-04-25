@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -21,16 +21,42 @@
 // the GNU General Public License cover the whole combination.
 //
 
-#include "vmime/encoder7bit.hpp"
+#ifndef VMIME_UTILITY_ENCODER_B64ENCODER_HPP_INCLUDED
+#define VMIME_UTILITY_ENCODER_B64ENCODER_HPP_INCLUDED
 
 
-namespace vmime
+#include "vmime/utility/encoder/encoder.hpp"
+
+
+namespace vmime {
+namespace utility {
+namespace encoder {
+
+
+/** Base64 encoder.
+  */
+
+class b64Encoder : public encoder
 {
+public:
+
+	b64Encoder();
+
+	utility::stream::size_type encode(utility::inputStream& in, utility::outputStream& out, utility::progressListener* progress = NULL);
+	utility::stream::size_type decode(utility::inputStream& in, utility::outputStream& out, utility::progressListener* progress = NULL);
+
+	const std::vector <string> getAvailableProperties() const;
+
+protected:
+
+	static const unsigned char sm_alphabet[];
+	static const unsigned char sm_decodeMap[256];
+};
 
 
-encoder7bit::encoder7bit()
-{
-}
-
-
+} // encoder
+} // utility
 } // vmime
+
+
+#endif // VMIME_UTILITY_ENCODER_B64ENCODER_HPP_INCLUDED

@@ -1,6 +1,6 @@
 //
 // VMime library (http://vmime.sourceforge.net)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -103,7 +103,7 @@ void windowsSocket::connect(const vmime::string& address, const vmime::port_t po
 }
 
 
-const bool windowsSocket::isConnected() const
+bool windowsSocket::isConnected() const
 {
 	return (m_desc != -1);
 }
@@ -137,7 +137,7 @@ void windowsSocket::receive(vmime::string& buffer)
 }
 
 
-const int windowsSocket::receiveRaw(char* buffer, const int count)
+int windowsSocket::receiveRaw(char* buffer, const int count)
 {
 	int ret = ::recv(m_desc, buffer, count, 0);
 

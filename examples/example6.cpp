@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -346,7 +346,7 @@ static void printFolders(vmime::ref <vmime::net::folder> folder, const int level
   *
   * @param choices menu choices
   */
-static const unsigned int printMenu(const std::vector <std::string>& choices)
+static unsigned int printMenu(const std::vector <std::string>& choices)
 {
 	std::cout << std::endl;
 
@@ -780,7 +780,7 @@ static void connectStore()
  *
  * @return true to quit the program, false to continue
  */
-static const bool menu()
+static bool menu()
 {
 	std::vector <std::string> items;
 

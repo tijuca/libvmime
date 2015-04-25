@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,9 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/net/pop3/POP3Folder.hpp"
@@ -59,7 +63,7 @@ POP3Folder::~POP3Folder()
 }
 
 
-const int POP3Folder::getMode() const
+int POP3Folder::getMode() const
 {
 	if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -68,7 +72,7 @@ const int POP3Folder::getMode() const
 }
 
 
-const int POP3Folder::getType()
+int POP3Folder::getType()
 {
 	if (!isOpen())
 		throw exceptions::illegal_state("Folder not open");
@@ -82,7 +86,7 @@ const int POP3Folder::getType()
 }
 
 
-const int POP3Folder::getFlags()
+int POP3Folder::getFlags()
 {
 	return (0);
 }
@@ -190,7 +194,7 @@ void POP3Folder::destroy()
 }
 
 
-const bool POP3Folder::exists()
+bool POP3Folder::exists()
 {
 	ref <POP3Store> store = m_store.acquire();
 
@@ -201,7 +205,7 @@ const bool POP3Folder::exists()
 }
 
 
-const bool POP3Folder::isOpen() const
+bool POP3Folder::isOpen() const
 {
 	return (m_open);
 }
@@ -269,7 +273,7 @@ std::vector <ref <message> > POP3Folder::getMessages(const std::vector <int>& nu
 }
 
 
-const int POP3Folder::getMessageCount()
+int POP3Folder::getMessageCount()
 {
 	ref <POP3Store> store = m_store.acquire();
 
@@ -513,7 +517,7 @@ void POP3Folder::fetchMessage(ref <message> msg, const int options)
 }
 
 
-const int POP3Folder::getFetchCapabilities() const
+int POP3Folder::getFetchCapabilities() const
 {
 	return (FETCH_ENVELOPE | FETCH_CONTENT_INFO |
 	        FETCH_SIZE | FETCH_FULL_HEADER | FETCH_UID |

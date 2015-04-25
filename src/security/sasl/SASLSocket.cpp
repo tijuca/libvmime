@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -63,7 +63,7 @@ void SASLSocket::disconnect()
 }
 
 
-const bool SASLSocket::isConnected() const
+bool SASLSocket::isConnected() const
 {
 	return m_wrapped->isConnected();
 }
@@ -77,7 +77,7 @@ void SASLSocket::receive(string& buffer)
 }
 
 
-const int SASLSocket::receiveRaw(char* buffer, const int count)
+int SASLSocket::receiveRaw(char* buffer, const int count)
 {
 	if (m_pendingLen != 0)
 	{

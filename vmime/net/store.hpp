@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -72,7 +72,7 @@ public:
 	  *
 	  * @return true if the specified folder name is valid, false otherwise
 	  */
-	virtual const bool isValidFolderName(const folder::path::component& name) const = 0;
+	virtual bool isValidFolderName(const folder::path::component& name) const = 0;
 
 	/** Store capabilities. */
 	enum Capabilities
@@ -92,10 +92,10 @@ public:
 	  *
 	  * @return features supported by this service
 	  */
-	virtual const int getCapabilities() const = 0;
+	virtual int getCapabilities() const = 0;
 
 
-	const Type getType() const { return (TYPE_STORE); }
+	Type getType() const { return (TYPE_STORE); }
 };
 
 

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -99,19 +99,19 @@ public:
 	  *
 	  * @return folder type (see folder::Types)
 	  */
-	virtual const int getType() = 0;
+	virtual int getType() = 0;
 
 	/** Return the flags of this folder.
 	  *
 	  * @return folder flags (see folder::Flags)
 	  */
-	virtual const int getFlags() = 0;
+	virtual int getFlags() = 0;
 
 	/** Return the mode in which the folder has been open.
 	  *
 	  * @return folder opening mode (see folder::Modes)
 	  */
-	virtual const int getMode() const = 0;
+	virtual int getMode() const = 0;
 
 	/** Return the name of this folder.
 	  *
@@ -154,7 +154,7 @@ public:
 	  *
 	  * @return true if the folder exists, false otherwise
 	  */
-	virtual const bool exists() = 0;
+	virtual bool exists() = 0;
 
 	/** Delete this folder.
 	  * The folder should be closed before attempting to delete it.
@@ -167,7 +167,7 @@ public:
 	  *
 	  * @return true if the folder is open, false otherwise
 	  */
-	virtual const bool isOpen() const = 0;
+	virtual bool isOpen() const = 0;
 
 	/** Get a new reference to a message in this folder.
 	  *
@@ -198,7 +198,7 @@ public:
 	  *
 	  * @return number of messages in the folder
 	  */
-	virtual const int getMessageCount() = 0;
+	virtual int getMessageCount() = 0;
 
 	/** Get a new reference to a sub-folder in this folder.
 	  *
@@ -381,7 +381,7 @@ public:
 	  *
 	  * @return list of supported fetchable objects
 	  */
-	virtual const int getFetchCapabilities() const = 0;
+	virtual int getFetchCapabilities() const = 0;
 
 	// Event listeners
 	void addMessageChangedListener(events::messageChangedListener* l);

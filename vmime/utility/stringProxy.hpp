@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -66,11 +66,11 @@ public:
 	void extract(outputStream& os, const size_type start = 0, const size_type end = std::numeric_limits <size_type>::max(), utility::progressListener* progress = NULL) const;
 
 	// Return the "virtual" length of the string
-	const size_type length() const;
+	size_type length() const;
 
 	// Return the boundaries of the "virtual" string
-	const size_type start() const;
-	const size_type end() const;
+	size_type start() const;
+	size_type end() const;
 
 	string::const_iterator it_begin() const { return (m_buffer.begin() + m_start); }
 	string::const_iterator it_end() const { return (m_buffer.begin() + m_end); }

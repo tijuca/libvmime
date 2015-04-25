@@ -1,6 +1,6 @@
 //
 // VMime library (http://vmime.sourceforge.net)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -28,6 +28,7 @@
 #include <locale.h>
 #include <process.h>
 #include <windows.h>  // for winnls.h
+#include <winsock2.h> // for WSAStartup()
 
 #ifdef VMIME_HAVE_MLANG_H
 #   include <mlang.h>
@@ -41,6 +42,9 @@ namespace windows {
 
 windowsHandler::windowsHandler()
 {
+	WSAData wsaData;
+	WSAStartup(MAKEWORD(1, 1), &wsaData);
+
 #if VMIME_HAVE_MESSAGING_FEATURES
 	m_socketFactory = vmime::create <windowsSocketFactory>();
 #endif
@@ -55,10 +59,12 @@ windowsHandler::~windowsHandler()
 #if VMIME_HAVE_FILESYSTEM_FEATURES
 	delete (m_fileSysFactory);
 #endif
+
+	WSACleanup();
 }
 
 
-const unsigned int windowsHandler::getUnixTime() const
+unsigned int windowsHandler::getUnixTime() const
 {
 	return static_cast <unsigned int>(::time(NULL));
 }
@@ -226,7 +232,7 @@ const vmime::string windowsHandler::getHostName() const
 }
 
 
-const unsigned int windowsHandler::getProcessId() const
+unsigned int windowsHandler::getProcessId() const
 {
 	return (static_cast <unsigned int>(::GetCurrentProcessId()));
 }

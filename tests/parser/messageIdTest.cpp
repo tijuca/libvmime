@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -59,12 +59,12 @@ VMIME_TEST_SUITE_BEGIN
 	{
 		vmime::messageId m1;
 
-		VASSERT_EQ("1", "<@>", m1.generate());
+		VASSERT_EQ("1", "<>", m1.generate());
 
 		vmime::messageId m2;
 		m2.setLeft("a");
 
-		VASSERT_EQ("2", "<a@>", m2.generate());
+		VASSERT_EQ("2", "<a>", m2.generate());
 
 		vmime::messageId m3;
 		m3.setRight("b");

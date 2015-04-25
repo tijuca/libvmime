@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -73,22 +73,22 @@ public:
 	void setEmail(const string& email);
 
 	// Comparison
-	const bool operator==(const class mailbox& mailbox) const;
-	const bool operator!=(const class mailbox& mailbox) const;
+	bool operator==(const class mailbox& mailbox) const;
+	bool operator!=(const class mailbox& mailbox) const;
 
 	// Assignment
 	void copyFrom(const component& other);
 	ref <component> clone() const;
 	mailbox& operator=(const mailbox& other);
 
-	const bool isEmpty() const;
+	bool isEmpty() const;
 
 	void clear();
 
 	const std::vector <ref <const component> > getChildComponents() const;
 
 
-	const bool isGroup() const;
+	bool isGroup() const;
 
 protected:
 

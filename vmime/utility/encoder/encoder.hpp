@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -21,8 +21,8 @@
 // the GNU General Public License cover the whole combination.
 //
 
-#ifndef VMIME_ENCODER_HPP_INCLUDED
-#define VMIME_ENCODER_HPP_INCLUDED
+#ifndef VMIME_UTILITY_ENCODER_ENCODER_HPP_INCLUDED
+#define VMIME_UTILITY_ENCODER_ENCODER_HPP_INCLUDED
 
 
 #include "vmime/base.hpp"
@@ -31,8 +31,9 @@
 #include "vmime/utility/progressListener.hpp"
 
 
-namespace vmime
-{
+namespace vmime {
+namespace utility {
+namespace encoder {
 
 
 /** Encode/decode data in different encodings.
@@ -53,7 +54,7 @@ public:
 	  * want to receive progress notifications
 	  * @return number of bytes written into output stream
 	  */
-	virtual const utility::stream::size_type encode(utility::inputStream& in, utility::outputStream& out, utility::progressListener* progress = NULL) = 0;
+	virtual utility::stream::size_type encode(utility::inputStream& in, utility::outputStream& out, utility::progressListener* progress = NULL) = 0;
 
 	/** Decode data.
 	  *
@@ -63,7 +64,7 @@ public:
 	  * want to receive progress notifications
 	  * @return number of bytes written into output stream
 	  */
-	virtual const utility::stream::size_type decode(utility::inputStream& in, utility::outputStream& out, utility::progressListener* progress = NULL) = 0;
+	virtual utility::stream::size_type decode(utility::inputStream& in, utility::outputStream& out, utility::progressListener* progress = NULL) = 0;
 
 	/** Return the properties of the encoder.
 	  *
@@ -101,7 +102,9 @@ private:
 };
 
 
+} // encoder
+} // utility
 } // vmime
 
 
-#endif // VMIME_ENCODER_HPP_INCLUDED
+#endif // VMIME_UTILITY_ENCODER_ENCODER_HPP_INCLUDED

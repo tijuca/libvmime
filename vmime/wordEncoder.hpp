@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -32,7 +32,13 @@ namespace vmime
 {
 
 
+namespace utility {
+namespace encoder {
+
 class encoder;
+
+} // encoder
+} // utility
 
 
 /** Encodes words following RFC-2047.
@@ -65,11 +71,11 @@ public:
 	  *
 	  * @return encoding
 	  */
-	const Encoding getEncoding() const;
+	Encoding getEncoding() const;
 
 private:
 
-	static const Encoding guessBestEncoding(const string& buffer, const charset& charset);
+	static Encoding guessBestEncoding(const string& buffer, const charset& charset);
 
 	void guessBestEncoding();
 
@@ -83,7 +89,7 @@ private:
 	charset m_charset;
 	Encoding m_encoding;
 
-	ref <encoder> m_encoder;
+	ref <utility::encoder::encoder> m_encoder;
 };
 
 

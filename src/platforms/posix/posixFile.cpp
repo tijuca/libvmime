@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,9 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/platforms/posix/posixFile.hpp"
@@ -62,7 +66,7 @@ posixFileIterator::~posixFileIterator()
 }
 
 
-const bool posixFileIterator::hasMoreElements() const
+bool posixFileIterator::hasMoreElements() const
 {
 	return (m_dirEntry != NULL);
 }
@@ -142,7 +146,7 @@ posixFileReaderInputStream::~posixFileReaderInputStream()
 }
 
 
-const bool posixFileReaderInputStream::eof() const
+bool posixFileReaderInputStream::eof() const
 {
 	return (m_eof);
 }
@@ -154,7 +158,7 @@ void posixFileReaderInputStream::reset()
 }
 
 
-const vmime::utility::stream::size_type posixFileReaderInputStream::read
+vmime::utility::stream::size_type posixFileReaderInputStream::read
 	(value_type* const data, const size_type count)
 {
 	ssize_t c = 0;
@@ -169,7 +173,7 @@ const vmime::utility::stream::size_type posixFileReaderInputStream::read
 }
 
 
-const vmime::utility::stream::size_type posixFileReaderInputStream::skip(const size_type count)
+vmime::utility::stream::size_type posixFileReaderInputStream::skip(const size_type count)
 {
 	const off_t curPos = ::lseek(m_fd, 0, SEEK_CUR);
 	const off_t newPos = ::lseek(m_fd, count, SEEK_CUR);
@@ -250,21 +254,21 @@ void posixFile::createDirectory(const bool createAll)
 }
 
 
-const bool posixFile::isFile() const
+bool posixFile::isFile() const
 {
 	struct stat buf;
 	return (::stat(m_nativePath.c_str(), &buf) == 0 && S_ISREG(buf.st_mode));
 }
 
 
-const bool posixFile::isDirectory() const
+bool posixFile::isDirectory() const
 {
 	struct stat buf;
 	return (::stat(m_nativePath.c_str(), &buf) == 0 && S_ISDIR(buf.st_mode));
 }
 
 
-const bool posixFile::canRead() const
+bool posixFile::canRead() const
 {
 	struct stat buf;
 	return (::stat(m_nativePath.c_str(), &buf) == 0 &&
@@ -273,7 +277,7 @@ const bool posixFile::canRead() const
 }
 
 
-const bool posixFile::canWrite() const
+bool posixFile::canWrite() const
 {
 	struct stat buf;
 	return (::stat(m_nativePath.c_str(), &buf) == 0 &&
@@ -282,7 +286,7 @@ const bool posixFile::canWrite() const
 }
 
 
-const posixFile::length_type posixFile::getLength()
+posixFile::length_type posixFile::getLength()
 {
 	struct stat buf;
 
@@ -299,7 +303,7 @@ const posixFile::path& posixFile::getFullPath() const
 }
 
 
-const bool posixFile::exists() const
+bool posixFile::exists() const
 {
 	struct stat buf;
 	return (::stat(m_nativePath.c_str(), &buf) == 0);
@@ -447,13 +451,13 @@ const vmime::string posixFileSystemFactory::pathToStringImpl(const vmime::utilit
 }
 
 
-const bool posixFileSystemFactory::isValidPathComponent(const vmime::utility::file::path::component& comp) const
+bool posixFileSystemFactory::isValidPathComponent(const vmime::utility::file::path::component& comp) const
 {
 	return (comp.getBuffer().find_first_of("/*") == vmime::string::npos);
 }
 
 
-const bool posixFileSystemFactory::isValidPath(const vmime::utility::file::path& path) const
+bool posixFileSystemFactory::isValidPath(const vmime::utility::file::path& path) const
 {
 	for (int i = 0 ; i < path.getSize() ; ++i)
 	{

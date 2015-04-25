@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -244,6 +244,17 @@ namespace vmime
 	ref <T> clone(const T& x)
 	{
 		return x.clone().template dynamicCast <T>();
+	}
+
+
+	/** Downcast helper.
+	  * Usage: vmime::dynamicCast <DerivedType>(obj), where 'obj' is of
+	  * type Type, and DerivedType is derived from Type.
+	  */
+	template <class X, class Y>
+	ref <X> dynamicCast(ref <Y> y)
+	{
+		return y.dynamicCast <X>();
 	}
 
 } // vmime

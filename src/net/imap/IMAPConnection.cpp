@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,9 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/net/imap/IMAPTag.hpp"
@@ -527,14 +531,14 @@ ref <security::authenticator> IMAPConnection::getAuthenticator()
 }
 
 
-const bool IMAPConnection::isConnected() const
+bool IMAPConnection::isConnected() const
 {
 	return (m_socket && m_socket->isConnected() &&
 	        (m_state == STATE_AUTHENTICATED || m_state == STATE_SELECTED));
 }
 
 
-const bool IMAPConnection::isSecuredConnection() const
+bool IMAPConnection::isSecuredConnection() const
 {
 	return m_secured;
 }
@@ -666,7 +670,7 @@ IMAPParser::response* IMAPConnection::readResponse(IMAPParser::literalHandler* l
 }
 
 
-const IMAPConnection::ProtocolStates IMAPConnection::state() const
+IMAPConnection::ProtocolStates IMAPConnection::state() const
 {
 	return (m_state);
 }
@@ -677,7 +681,8 @@ void IMAPConnection::setState(const ProtocolStates state)
 	m_state = state;
 }
 
-const char IMAPConnection::hierarchySeparator() const
+
+char IMAPConnection::hierarchySeparator() const
 {
 	return (m_hierarchySeparator);
 }

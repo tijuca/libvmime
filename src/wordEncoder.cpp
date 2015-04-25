@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -25,8 +25,9 @@
 
 #include "vmime/exception.hpp"
 #include "vmime/charsetConverter.hpp"
-#include "vmime/encoderB64.hpp"
-#include "vmime/encoderQP.hpp"
+
+#include "vmime/utility/encoder/b64Encoder.hpp"
+#include "vmime/utility/encoder/qpEncoder.hpp"
 
 #include "vmime/utility/stringUtils.hpp"
 
@@ -62,17 +63,17 @@ wordEncoder::wordEncoder(const string& buffer, const charset& charset, const Enc
 
 	if (m_encoding == ENCODING_B64)
 	{
-		m_encoder = vmime::create <encoderB64>();
+		m_encoder = vmime::create <utility::encoder::b64Encoder>();
 	}
 	else // ENCODING_QP
 	{
-		m_encoder = vmime::create <encoderQP>();
+		m_encoder = vmime::create <utility::encoder::qpEncoder>();
 		m_encoder->getProperties()["rfc2047"] = true;
 	}
 }
 
 
-static const string::size_type getUTF8CharLength
+static string::size_type getUTF8CharLength
 	(const string& buffer, const string::size_type pos, const string::size_type length)
 {
 	// Gives the number of extra bytes in a UTF8 char, given the leading char
@@ -253,14 +254,14 @@ const string wordEncoder::getNextChunk(const string::size_type maxLength)
 }
 
 
-const wordEncoder::Encoding wordEncoder::getEncoding() const
+wordEncoder::Encoding wordEncoder::getEncoding() const
 {
 	return m_encoding;
 }
 
 
 // static
-const wordEncoder::Encoding wordEncoder::guessBestEncoding
+wordEncoder::Encoding wordEncoder::guessBestEncoding
 	(const string& buffer, const charset& charset)
 {
 	// If the charset is ISO-8859-x, set to QP encoding

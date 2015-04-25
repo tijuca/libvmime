@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -24,6 +24,8 @@
 #ifndef VMIME_UTILITY_FILTEREDSTREAM_HPP_INCLUDED
 #define VMIME_UTILITY_FILTEREDSTREAM_HPP_INCLUDED
 
+
+#include <algorithm>
 
 #include "vmime/utility/stream.hpp"
 
@@ -78,13 +80,13 @@ public:
 
 	inputStream& getPreviousInputStream();
 
-	const bool eof() const;
+	bool eof() const;
 
 	void reset();
 
-	const size_type read(value_type* const data, const size_type count);
+	size_type read(value_type* const data, const size_type count);
 
-	const size_type skip(const size_type count);
+	size_type skip(const size_type count);
 
 private:
 
@@ -171,7 +173,7 @@ public:
 		return (m_stream);
 	}
 
-	const bool eof() const
+	bool eof() const
 	{
 		return (m_found == COUNT || m_eof);
 	}
@@ -182,9 +184,9 @@ public:
 		m_stream.reset();
 	}
 
-	const size_type read(value_type* const data, const size_type count);
+	size_type read(value_type* const data, const size_type count);
 
-	const size_type skip(const size_type /* count */)
+	size_type skip(const size_type /* count */)
 	{
 		// Not supported
 		return 0;
@@ -202,12 +204,12 @@ private:
 
 
 template <>
-const stream::size_type stopSequenceFilteredInputStream <1>::read
+stream::size_type stopSequenceFilteredInputStream <1>::read
 	(value_type* const data, const size_type count);
 
 
 template <int COUNT>
-const stream::size_type stopSequenceFilteredInputStream <COUNT>::read
+stream::size_type stopSequenceFilteredInputStream <COUNT>::read
 	(value_type* const data, const size_type count)
 {
 	// Read buffer must be at least 'COUNT' size + 1 byte

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,9 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/utility/stringUtils.hpp"
@@ -25,7 +29,7 @@ namespace vmime {
 namespace utility {
 
 
-const bool stringUtils::isStringEqualNoCase
+bool stringUtils::isStringEqualNoCase
 	(const string& s1, const char* s2, const string::size_type n)
 {
 	// 'n' is the number of characters to compare
@@ -45,7 +49,7 @@ const bool stringUtils::isStringEqualNoCase
 }
 
 
-const bool stringUtils::isStringEqualNoCase(const string& s1, const string& s2)
+bool stringUtils::isStringEqualNoCase(const string& s1, const string& s2)
 {
 	if (s1.length() != s2.length())
 		return (false);
@@ -63,7 +67,7 @@ const bool stringUtils::isStringEqualNoCase(const string& s1, const string& s2)
 }
 
 
-const bool stringUtils::isStringEqualNoCase
+bool stringUtils::isStringEqualNoCase
 	(const string::const_iterator begin, const string::const_iterator end,
 	 const char* s, const string::size_type n)
 {
@@ -121,15 +125,15 @@ const string stringUtils::trim(const string& str)
 
 	if (b != e)
 	{
-		for ( ; b != e && parserHelpers::isSpace(*b) ; ++b);
-		for ( ; e != b && parserHelpers::isSpace(*(e - 1)) ; --e);
+		for ( ; b != e && parserHelpers::isSpace(*b) ; ++b) {}
+		for ( ; e != b && parserHelpers::isSpace(*(e - 1)) ; --e) {}
 	}
 
 	return (string(b, e));
 }
 
 
-const string::size_type stringUtils::countASCIIchars
+string::size_type stringUtils::countASCIIchars
 	(const string::const_iterator begin, const string::const_iterator end)
 {
 	string::size_type count = 0;
@@ -144,6 +148,42 @@ const string::size_type stringUtils::countASCIIchars
 	}
 
 	return (count);
+}
+
+
+const string stringUtils::unquote(const string& str)
+{
+	if (str.length() < 2)
+		return str;
+
+	if (str[0] != '"' || str[str.length() - 1] != '"')
+		return str;
+
+	string res;
+	res.reserve(str.length());
+
+	bool escaped = false;
+
+	for (string::const_iterator it = str.begin() + 1, end = str.end() - 1 ; it != end ; ++it)
+	{
+		const string::value_type c = *it;
+
+		if (escaped)
+		{
+			res += c;
+			escaped = false;
+		}
+		else if (!escaped && c == '\\')
+		{
+			escaped = true;
+		}
+		else
+		{
+			res += c;
+		}
+	}
+
+	return res;
 }
 
 

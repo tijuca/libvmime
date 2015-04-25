@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -300,7 +300,7 @@ void TLSSession::throwTLSException(const string& fname, const int code)
 	ERROR(GNUTLS_E_ASN1_TYPE_ANY_ERROR)
 	ERROR(GNUTLS_E_ASN1_SYNTAX_ERROR)
 	ERROR(GNUTLS_E_ASN1_DER_OVERFLOW)
-	ERROR(GNUTLS_E_OPENPGP_TRUSTDB_VERSION_UNSUPPORTED)
+	//ERROR(GNUTLS_E_OPENPGP_TRUSTDB_VERSION_UNSUPPORTED)
 	ERROR(GNUTLS_E_OPENPGP_UID_REVOKED)
 	ERROR(GNUTLS_E_CERTIFICATE_ERROR)
 	//ERROR(GNUTLS_E_X509_CERTIFICATE_ERROR)

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -68,8 +68,8 @@ public:
 	void setDomain(const string& domain);
 
 	// Comparison
-	const bool operator==(const path& p) const;
-	const bool operator!=(const path& p) const;
+	bool operator==(const path& p) const;
+	bool operator!=(const path& p) const;
 
 	// Assignment
 	void copyFrom(const component& other);

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -60,13 +60,13 @@ const string component::generate(const string::size_type maxLineLength,
 }
 
 
-const string::size_type component::getParsedOffset() const
+string::size_type component::getParsedOffset() const
 {
 	return (m_parsedOffset);
 }
 
 
-const string::size_type component::getParsedLength() const
+string::size_type component::getParsedLength() const
 {
 	return (m_parsedLength);
 }

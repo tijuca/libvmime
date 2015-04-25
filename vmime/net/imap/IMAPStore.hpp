@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -65,22 +65,22 @@ public:
 	ref <folder> getRootFolder();
 	ref <folder> getFolder(const folder::path& path);
 
-	const bool isValidFolderName(const folder::path::component& name) const;
+	bool isValidFolderName(const folder::path::component& name) const;
 
 	static const serviceInfos& getInfosInstance();
 	const serviceInfos& getInfos() const;
 
 	void connect();
-	const bool isConnected() const;
+	bool isConnected() const;
 	void disconnect();
 
 	void noop();
 
-	const int getCapabilities() const;
+	int getCapabilities() const;
 
-	const bool isIMAPS() const;
+	bool isIMAPS() const;
 
-	const bool isSecuredConnection() const;
+	bool isSecuredConnection() const;
 	ref <connectionInfos> getConnectionInfos() const;
 
 protected:

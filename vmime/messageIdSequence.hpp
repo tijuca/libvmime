@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -110,13 +110,13 @@ public:
 	  *
 	  * @return number of message-ides
 	  */
-	const int getMessageIdCount() const;
+	int getMessageIdCount() const;
 
 	/** Tests whether the list of message-ides is empty.
 	  *
 	  * @return true if there is no message-id, false otherwise
 	  */
-	const bool isEmpty() const;
+	bool isEmpty() const;
 
 	/** Return the message-id at the specified position.
 	  *

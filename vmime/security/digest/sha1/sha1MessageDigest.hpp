@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -50,7 +50,7 @@ public:
 	void finalize(const byte_t* buffer, const unsigned long len);
 	void finalize(const byte_t* buffer, const unsigned long offset, const unsigned long len);
 
-	const int getDigestLength() const;
+	int getDigestLength() const;
 	const byte_t* getDigest() const;
 
 	void reset();

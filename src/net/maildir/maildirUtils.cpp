@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -12,9 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 // General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License along along
-// with this program; if not, write to the Free Software Foundation, Inc., Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA..
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Linking this library statically or dynamically with other modules is making
+// a combined work based on this library.  Thus, the terms and conditions of
+// the GNU General Public License cover the whole combination.
 //
 
 #include "vmime/net/maildir/maildirUtils.hpp"
@@ -30,68 +34,7 @@ namespace net {
 namespace maildir {
 
 
-const vmime::word maildirUtils::TMP_DIR("tmp", vmime::charset(vmime::charsets::US_ASCII));  // ensure reliable delivery (not to be listed)
-const vmime::word maildirUtils::CUR_DIR("cur", vmime::charset(vmime::charsets::US_ASCII));  // no longer new messages
-const vmime::word maildirUtils::NEW_DIR("new", vmime::charset(vmime::charsets::US_ASCII));  // unread messages
-
-
-const utility::file::path maildirUtils::getFolderFSPath
-	(ref <const maildirStore> store, const utility::path& folderPath,
-	 const FolderFSPathMode mode)
-{
-	// Root path
-	utility::file::path path(store->getFileSystemPath());
-
-	const int count = (mode == FOLDER_PATH_CONTAINER
-		? folderPath.getSize() : folderPath.getSize() - 1);
-
-	// Parent folders
-	for (int i = 0 ; i < count ; ++i)
-	{
-		utility::file::path::component comp(folderPath[i]);
-
-		// TODO: may not work with all encodings...
-		comp.setBuffer("." + comp.getBuffer() + ".directory");
-
-		path /= comp;
-	}
-
-	// Last component
-	if (folderPath.getSize() != 0 &&
-	    mode != FOLDER_PATH_CONTAINER)
-	{
-		path /= folderPath.getLastComponent();
-
-		switch (mode)
-		{
-		case FOLDER_PATH_ROOT: break; // Nothing to do
-		case FOLDER_PATH_NEW: path /= NEW_DIR; break;
-		case FOLDER_PATH_CUR: path /= CUR_DIR; break;
-		case FOLDER_PATH_TMP: path /= TMP_DIR; break;
-		case FOLDER_PATH_CONTAINER: break; // Can't happen...
-		}
-	}
-
-	return (path);
-}
-
-
-const bool maildirUtils::isSubfolderDirectory(const utility::file& file)
-{
-	// A directory which name does not start with '.'
-	// is listed as a sub-folder...
-	if (file.isDirectory() &&
-	    file.getFullPath().getLastComponent().getBuffer().length() >= 1 &&
-	    file.getFullPath().getLastComponent().getBuffer()[0] != '.')
-	{
-		return (true);
-	}
-
-	return (false);
-}
-
-
-const bool maildirUtils::isMessageFile(const utility::file& file)
+bool maildirUtils::isMessageFile(const utility::file& file)
 {
 	// Ignore files which name begins with '.'
 	if (file.isFile() &&
@@ -134,7 +77,7 @@ const utility::file::path::component maildirUtils::extractId
 }
 
 
-const int maildirUtils::extractFlags(const utility::file::path::component& comp)
+int maildirUtils::extractFlags(const utility::file::path::component& comp)
 {
 	string::size_type sep = comp.getBuffer().rfind(':');  // try colon
 
@@ -265,7 +208,7 @@ maildirUtils::messageIdComparator::messageIdComparator
 }
 
 
-const bool maildirUtils::messageIdComparator::operator()
+bool maildirUtils::messageIdComparator::operator()
 	(const utility::file::path::component& other) const
 {
 	return (m_comp == maildirUtils::extractId(other));

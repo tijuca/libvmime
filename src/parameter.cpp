@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -175,7 +175,7 @@ void parameter::parse(const std::vector <valueChunk>& chunks)
 
 				if (c == '%' && i + 2 < len)
 				{
-					string::value_type v = 0;
+					unsigned int v = 0;
 
 					// First char
 					switch (chunk.data[i + 1])
@@ -209,7 +209,7 @@ void parameter::parse(const std::vector <valueChunk>& chunks)
 						break;
 					}
 
-					value << v;
+					value << static_cast <string::value_type>(v);
 
 					i += 2; // skip next 2 chars
 				}

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -45,7 +45,7 @@ public:
 	  *
 	  * @return true if the time-out delay is elapsed
 	  */
-	virtual const bool isTimeOut() = 0;
+	virtual bool isTimeOut() = 0;
 
 	/** Called to reset the time-out counter.
 	  */
@@ -57,7 +57,7 @@ public:
 	  * @return true to continue (and reset the time-out)
 	  * or false to cancel the current operation
 	  */
-	virtual const bool handleTimeOut() = 0;
+	virtual bool handleTimeOut() = 0;
 };
 
 

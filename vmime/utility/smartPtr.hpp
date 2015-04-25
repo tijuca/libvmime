@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2008 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -53,30 +53,8 @@ public:
 
 	operator T*() { return (m_ptr); }
 
-	T* const operator ->() { return (m_ptr); }
+	T* operator ->() { return (m_ptr); }
 	T& operator *() { return (*m_ptr); }
-};
-
-
-/** Reference counter for shared pointers.
-  */
-
-class refCounter
-{
-public:
-
-	refCounter(const long initialValue);
-	~refCounter();
-
-	const long increment();
-	const long decrement();
-	const long compareExchange(const long compare, const long exchangeWith);
-
-	operator long() const;
-
-private:
-
-	long m_value;
 };
 
 
@@ -85,59 +63,61 @@ private:
 
 class refManager
 {
+protected:
+
+	refManager() {}
+
 public:
 
-	refManager(object* obj);
-	~refManager();
+	virtual ~refManager() {}
+
+	/** Create a ref manager for the specified object.
+	  *
+	  * @return a new manager
+	  */
+	static refManager* create(object* obj);
 
 	/** Add a strong reference to the managed object.
 	  */
-	const bool addStrong();
+	virtual bool addStrong() = 0;
 
 	/** Release a strong reference to the managed object.
 	  * If it is the last reference, the object is destroyed.
 	  */
-	void releaseStrong();
+	virtual void releaseStrong() = 0;
 
 	/** Add a weak reference to the managed object.
 	  */
-	void addWeak();
+	virtual void addWeak() = 0;
 
 	/** Release a weak reference to the managed object.
 	  * If it is the last weak reference, the manager is destroyed.
 	  */
-	void releaseWeak();
+	virtual void releaseWeak() = 0;
 
 	/** Return a raw pointer to the managed object.
 	  *
 	  * @return pointer to the managed object
 	  */
-	object* getObject();
+	virtual object* getObject() = 0;
 
 	/** Return the number of strong refs to this object.
 	  * For debugging purposes only.
 	  *
 	  * @return strong reference count
 	  */
-	const long getStrongRefCount() const;
+	virtual long getStrongRefCount() const = 0;
 
 	/** Return the number of weak refs to this object.
 	  * For debugging purposes only.
 	  *
 	  * @return weak reference count
 	  */
-	const long getWeakRefCount() const;
+	virtual long getWeakRefCount() const = 0;
 
-private:
+protected:
 
-	void deleteManager();
-	void deleteObject();
-
-
-	object* m_object;
-
-	refCounter m_strongCount;
-	refCounter m_weakCount;
+	void deleteObjectImpl(object* obj);
 };
 
 
@@ -188,8 +168,8 @@ public:
 	T* operator ->() { return m_ptr; }
 	const T* operator ->() const { return m_ptr; }
 
-	const T* const get() const { return m_ptr; }
-	T* const get() { return m_ptr; }
+	const T* get() const { return m_ptr; }
+	T* get() { return m_ptr; }
 
 
 	// dynamic_cast
@@ -277,7 +257,14 @@ public:
 		if (m_ptr)
 			m_ptr->getRefManager()->addStrong();
 
+#if defined(_MSC_VER) // VC++ compiler bug (stack overflow)
+		ref <const T> r;
+		r.m_ptr = m_ptr;
+		return r;
+#else
 		return ref <const T>::fromPtrImpl(m_ptr);
+#endif // defined(_MSC_VER)
+
 	}
 
 	// Copy
