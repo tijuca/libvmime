@@ -19,6 +19,9 @@ Description: C++ mail library (development files)
  protocols (POP3, IMAP, SMTP and maildir) with a lot of features supported:
  listing folders, downloading and adding messages to folders, extracting parts
  from message, getting and setting message flags, and a lot more.
+ .
+ This package contains the development headers and the static library to
+ develop applications using the libvmime.
 
 Package: libvmime0
 Architecture: any
