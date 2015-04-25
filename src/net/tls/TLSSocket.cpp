@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -280,11 +280,14 @@ ssize_t TLSSocket::gnutlsPullFunc
 }
 
 
-ref <security::cert::certificateChain> TLSSocket::getPeerCertificates()
+ref <security::cert::certificateChain> TLSSocket::getPeerCertificates() const
 {
 	unsigned int certCount = 0;
 	const gnutls_datum* rawData = gnutls_certificate_get_peers
 		(*m_session->m_gnutlsSession, &certCount);
+
+	if (rawData == NULL)
+		return NULL;
 
 	// Try X.509
 	gnutls_x509_crt* x509Certs = new gnutls_x509_crt[certCount];
@@ -316,7 +319,7 @@ ref <security::cert::certificateChain> TLSSocket::getPeerCertificates()
 			gnutls_x509_crt_export(x509Certs[i],
 				GNUTLS_X509_FMT_DER, NULL, &dataSize);
 
-			byte* data = new byte[dataSize];
+			byte_t* data = new byte_t[dataSize];
 
 			gnutls_x509_crt_export(x509Certs[i],
 				GNUTLS_X509_FMT_DER, data, &dataSize);

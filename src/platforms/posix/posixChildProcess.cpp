@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -247,7 +247,7 @@ void posixChildProcess::start(const std::vector <string> args, const int flags)
 	m_argArray = argv;   // to free later
 
 	argv[0] = m_processPath.getLastComponent().getBuffer().c_str();
-	argv[args.size()] = NULL;
+	argv[args.size() + 1] = NULL;
 
 	for (unsigned int i = 0 ; i < m_argVector.size() ; ++i)
 		argv[i + 1] = m_argVector[i].c_str();

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -77,7 +77,7 @@ public:
 	  * @param mode type of path to return (see FolderFSPathMode)
 	  * @return filesystem path for the specified folder
 	  */
-	static const utility::file::path getFolderFSPath(weak_ref <maildirStore> store,
+	static const utility::file::path getFolderFSPath(ref <const maildirStore> store,
 		const utility::path& folderPath, const FolderFSPathMode mode);
 
 	/** Test whether the specified file-system directory corresponds to
@@ -147,6 +147,12 @@ public:
 	  * @return unique message id
 	  */
 	static const utility::file::path::component generateId();
+
+	/** Recursively delete a directory on the file system.
+	  *
+	  * @param dir directory to delete
+	  */
+	static void recursiveFSDelete(ref <utility::file> dir);
 
 private:
 

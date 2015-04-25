@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -77,6 +77,13 @@ public:
 	  * @param att attachment to add
 	  */
 	static void addAttachment(ref <message> msg, ref <attachment> att);
+
+	/** Add a message attachment to the specified message.
+	  *
+	  * @param msg message into which to add the attachment
+	  * @param amsg message to attach
+	  */
+	static void addAttachment(ref <message> msg, ref <message> amsg);
 
 protected:
 

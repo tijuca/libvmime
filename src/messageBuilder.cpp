@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -105,12 +105,12 @@ ref <message> messageBuilder::construct() const
 
 		// Generate the text parts into this sub-part (normally, this
 		// sub-part will have the "multipart/alternative" content-type...)
-		m_textPart->generateIn(*msg, *subPart);
+		m_textPart->generateIn(msg, subPart);
 	}
 	else
 	{
 		// Generate the text part(s) directly into the message
-		m_textPart->generateIn(*msg, *msg);
+		m_textPart->generateIn(msg, msg);
 
 		// If any attachment, set message content-type to "multipart/mixed"
 		if (!m_attach.empty())
@@ -132,7 +132,7 @@ ref <message> messageBuilder::construct() const
 		for (std::vector <ref <attachment> >::const_iterator a = m_attach.begin() ;
 		     a != m_attach.end() ; ++a)
 		{
-			(*a)->generateIn(*msg);
+			(*a)->generateIn(msg);
 		}
 	}
 

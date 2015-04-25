@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -30,6 +30,7 @@
 #include "vmime/net/socket.hpp"
 #include "vmime/net/timeoutHandler.hpp"
 #include "vmime/net/session.hpp"
+#include "vmime/net/connectionInfos.hpp"
 
 #include "vmime/net/imap/IMAPParser.hpp"
 
@@ -49,7 +50,7 @@ class IMAPConnection : public object
 {
 public:
 
-	IMAPConnection(weak_ref <IMAPStore> store, ref <security::authenticator> auth);
+	IMAPConnection(ref <IMAPStore> store, ref <security::authenticator> auth);
 	~IMAPConnection();
 
 
@@ -83,14 +84,17 @@ public:
 	ref <const IMAPTag> getTag() const;
 	ref <const IMAPParser> getParser() const;
 
-	weak_ref <const IMAPStore> getStore() const;
-	weak_ref <IMAPStore> getStore();
+	ref <const IMAPStore> getStore() const;
+	ref <IMAPStore> getStore();
 
 	ref <session> getSession();
 
 	const std::vector <string> getCapabilities();
 
 	ref <security::authenticator> getAuthenticator();
+
+	const bool isSecuredConnection() const;
+	ref <connectionInfos> getConnectionInfos() const;
 
 private:
 
@@ -119,6 +123,9 @@ private:
 	ProtocolStates m_state;
 
 	ref <timeoutHandler> m_timeoutHandler;
+
+	bool m_secured;
+	ref <connectionInfos> m_cntInfos;
 
 
 	void internalDisconnect();

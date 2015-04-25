@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -39,6 +39,9 @@ namespace net {
 namespace smtp {
 
 
+class SMTPResponse;
+
+
 /** SMTP transport service.
   */
 
@@ -62,18 +65,17 @@ public:
 
 	void send(const mailbox& expeditor, const mailboxList& recipients, utility::inputStream& is, const utility::stream::size_type size, utility::progressListener* progress = NULL);
 
+	const bool isSecuredConnection() const;
+	ref <connectionInfos> getConnectionInfos() const;
+
 private:
 
-	static const int getResponseCode(const string& response);
-
 	void sendRequest(const string& buffer, const bool end = true);
-
-	const string readResponseLine();
-	const int readResponse(string& text);
-	const int readAllResponses(string& text, const bool allText = false);
+	ref <SMTPResponse> readResponse();
 
 	void internalDisconnect();
 
+	void helo();
 	void authenticate();
 #if VMIME_HAVE_SASL_SUPPORT
 	void authenticateSASL();
@@ -89,12 +91,12 @@ private:
 	bool m_extendedSMTP;
 	string m_extendedSMTPResponse;
 
-	string m_responseBuffer;
-	bool m_responseContinues;
-
 	ref <timeoutHandler> m_timeoutHandler;
 
+	const bool m_isSMTPS;
+
 	bool m_secured;
+	ref <connectionInfos> m_cntInfos;
 
 
 	// Service infos

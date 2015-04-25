@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -27,6 +27,8 @@
 #include "vmime/utility/filteredStream.hpp"
 #include "vmime/utility/childProcess.hpp"
 #include "vmime/utility/smartPtr.hpp"
+
+#include "vmime/net/defaultConnectionInfos.hpp"
 
 #include "vmime/config.hpp"
 
@@ -89,6 +91,18 @@ void sendmailTransport::connect()
 const bool sendmailTransport::isConnected() const
 {
 	return (m_connected);
+}
+
+
+const bool sendmailTransport::isSecuredConnection() const
+{
+	return false;
+}
+
+
+ref <connectionInfos> sendmailTransport::getConnectionInfos() const
+{
+	return vmime::create <defaultConnectionInfos>("localhost", 0);
 }
 
 

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -49,7 +49,7 @@ private:
 	friend class POP3Folder;
 	friend class vmime::creator;  // vmime::create <POP3Message>
 
-	POP3Message(POP3Folder* folder, const int num);
+	POP3Message(ref <POP3Folder> folder, const int num);
 	POP3Message(const POP3Message&) : message() { }
 
 	~POP3Message();
@@ -79,11 +79,11 @@ public:
 
 private:
 
-	void fetch(POP3Folder* folder, const int options);
+	void fetch(ref <POP3Folder> folder, const int options);
 
 	void onFolderClosed();
 
-	POP3Folder* m_folder;
+	weak_ref <POP3Folder> m_folder;
 	int m_num;
 	uid m_uid;
 	int m_size;

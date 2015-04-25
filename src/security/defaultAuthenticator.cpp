@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -44,8 +44,10 @@ defaultAuthenticator::~defaultAuthenticator()
 
 const string defaultAuthenticator::getUsername() const
 {
-	const string& prefix = m_service->getInfos().getPropertyPrefix();
-	const propertySet& props = m_service->getSession()->getProperties();
+	ref <const net::service> service = m_service.acquire();
+
+	const string prefix = service->getInfos().getPropertyPrefix();
+	const propertySet& props = service->getSession()->getProperties();
 
 	if (props.hasProperty(prefix + net::serviceInfos::property::AUTH_USERNAME.getName()))
 		return props[prefix + net::serviceInfos::property::AUTH_USERNAME.getName()];
@@ -56,8 +58,10 @@ const string defaultAuthenticator::getUsername() const
 
 const string defaultAuthenticator::getPassword() const
 {
-	const string& prefix = m_service->getInfos().getPropertyPrefix();
-	const propertySet& props = m_service->getSession()->getProperties();
+	ref <const net::service> service = m_service.acquire();
+
+	const string prefix = service->getInfos().getPropertyPrefix();
+	const propertySet& props = service->getSession()->getProperties();
 
 	if (props.hasProperty(prefix + net::serviceInfos::property::AUTH_PASSWORD.getName()))
 		return props[prefix + net::serviceInfos::property::AUTH_PASSWORD.getName()];

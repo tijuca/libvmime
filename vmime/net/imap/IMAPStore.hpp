@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -78,7 +78,10 @@ public:
 
 	const int getCapabilities() const;
 
+	const bool isIMAPS() const;
+
 	const bool isSecuredConnection() const;
+	ref <connectionInfos> getConnectionInfos() const;
 
 protected:
 
@@ -95,7 +98,7 @@ protected:
 
 	std::list <IMAPFolder*> m_folders;
 
-	bool m_secured;  // Use IMAPS
+	const bool m_isIMAPS;  // Use IMAPS
 
 
 	static IMAPServiceInfos sm_infos;

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -30,6 +30,7 @@
 
 #include "vmime/relay.hpp"
 #include "vmime/contentTypeField.hpp"
+#include "vmime/contentDispositionField.hpp"
 
 
 namespace vmime
@@ -100,7 +101,7 @@ void messageParser::parse(ref <const message> msg)
 	findAttachments(msg);
 
 	// Text parts
-	findTextParts(*msg, *msg);
+	findTextParts(msg, msg);
 }
 
 
@@ -110,11 +111,11 @@ void messageParser::findAttachments(ref <const message> msg)
 }
 
 
-void messageParser::findTextParts(const bodyPart& msg, const bodyPart& part)
+void messageParser::findTextParts(ref <const bodyPart> msg, ref <const bodyPart> part)
 {
 	// Handle the case in which the message is not multipart: if the body part is
 	// "text/*", take this part.
-	if (part.getBody()->getPartCount() == 0)
+	if (part->getBody()->getPartCount() == 0)
 	{
 		mediaType type(mediaTypes::TEXT, mediaTypes::TEXT_PLAIN);
 		bool accept = false;
@@ -122,7 +123,7 @@ void messageParser::findTextParts(const bodyPart& msg, const bodyPart& part)
 		try
 		{
 			const contentTypeField& ctf = dynamic_cast<contentTypeField&>
-				(*msg.getHeader()->findField(fields::CONTENT_TYPE));
+				(*msg->getHeader()->findField(fields::CONTENT_TYPE));
 
 			const mediaType ctfType =
 				*ctf.getValue().dynamicCast <const mediaType>();
@@ -155,7 +156,7 @@ void messageParser::findTextParts(const bodyPart& msg, const bodyPart& part)
 }
 
 
-bool messageParser::findSubTextParts(const bodyPart& msg, const bodyPart& part)
+bool messageParser::findSubTextParts(ref <const bodyPart> msg, ref <const bodyPart> part)
 {
 	// In general, all the text parts are contained in parallel in the same
 	// parent part (or message).
@@ -164,9 +165,9 @@ bool messageParser::findSubTextParts(const bodyPart& msg, const bodyPart& part)
 
 	std::vector <ref <const bodyPart> > textParts;
 
-	for (int i = 0 ; i < part.getBody()->getPartCount() ; ++i)
+	for (int i = 0 ; i < part->getBody()->getPartCount() ; ++i)
 	{
-		const ref <const bodyPart> p = part.getBody()->getPartAt(i);
+		const ref <const bodyPart> p = part->getBody()->getPartAt(i);
 
 		try
 		{
@@ -174,10 +175,24 @@ bool messageParser::findSubTextParts(const bodyPart& msg, const bodyPart& part)
 				(*(p->getHeader()->findField(fields::CONTENT_TYPE)));
 
 			const mediaType type = *ctf.getValue().dynamicCast <const mediaType>();
+			contentDisposition disp; // default should be inline
 
 			if (type.getType() == mediaTypes::TEXT)
 			{
-				textParts.push_back(p);
+				try
+				{
+					ref <const contentDispositionField> cdf = p->getHeader()->
+						findField(fields::CONTENT_DISPOSITION).dynamicCast <const contentDispositionField>();
+
+					disp = *cdf->getValue().dynamicCast <const contentDisposition>();
+				}
+				catch (exceptions::no_such_field&)
+				{
+					// No "Content-Disposition" field, assume default
+				}
+
+				if (disp.getName() == contentDispositionTypes::INLINE)
+					textParts.push_back(p);
 			}
 		}
 		catch (exceptions::no_such_field&)
@@ -200,7 +215,7 @@ bool messageParser::findSubTextParts(const bodyPart& msg, const bodyPart& part)
 			try
 			{
 				ref <textPart> txtPart = textPartFactory::getInstance()->create(type);
-				txtPart->parse(msg, part, **p);
+				txtPart->parse(msg, part, *p);
 
 				m_textParts.push_back(txtPart);
 			}
@@ -209,21 +224,16 @@ bool messageParser::findSubTextParts(const bodyPart& msg, const bodyPart& part)
 				// Content-type not recognized.
 			}
 		}
-
-		//return true;
 	}
 
-	//else
+	bool found = false;
+
+	for (int i = 0 ; !found && (i < part->getBody()->getPartCount()) ; ++i)
 	{
-		bool found = false;
-
-		for (int i = 0 ; !found && (i < part.getBody()->getPartCount()) ; ++i)
-		{
-			found = findSubTextParts(msg, *part.getBody()->getPartAt(i));
-		}
-
-		return found;
+		found = findSubTextParts(msg, part->getBody()->getPartAt(i));
 	}
+
+	return found;
 }
 
 

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -56,7 +56,8 @@ charset::charset(const char* name)
 void charset::parse(const string& buffer, const string::size_type position,
 	const string::size_type end, string::size_type* newPosition)
 {
-	m_name = string(buffer.begin() + position, buffer.begin() + end);
+	m_name = utility::stringUtils::trim
+		(string(buffer.begin() + position, buffer.begin() + end));
 
 	setParsedBounds(position, end);
 

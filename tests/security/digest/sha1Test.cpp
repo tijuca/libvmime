@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -74,7 +74,7 @@ VMIME_TEST_SUITE_BEGIN
 	{
 		INIT_DIGEST(algo, "sha1");
 
-		vmime::byte* buffer = new vmime::byte[1000000];
+		vmime::byte_t* buffer = new vmime::byte_t[1000000];
 
 		for (int i = 0 ; i < 1000000 ; ++i)
 			buffer[i] = 'a';

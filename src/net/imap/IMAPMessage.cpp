@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -53,7 +53,7 @@ public:
 	ref <const structure> getStructure() const;
 	ref <structure> getStructure();
 
-	weak_ref <const IMAPpart> getParent() const { return (m_parent); }
+	ref <const IMAPpart> getParent() const { return m_parent.acquire(); }
 
 	const mediaType& getType() const { return (m_mediaType); }
 	const int getSize() const { return (m_size); }
@@ -272,18 +272,20 @@ private:
 //
 
 
-IMAPMessage::IMAPMessage(IMAPFolder* folder, const int num)
+IMAPMessage::IMAPMessage(ref <IMAPFolder> folder, const int num)
 	: m_folder(folder), m_num(num), m_size(-1), m_flags(FLAG_UNDEFINED),
 	  m_expunged(false), m_structure(NULL)
 {
-	m_folder->registerMessage(this);
+	folder->registerMessage(this);
 }
 
 
 IMAPMessage::~IMAPMessage()
 {
-	if (m_folder)
-		m_folder->unregisterMessage(this);
+	ref <IMAPFolder> folder = m_folder.acquire();
+
+	if (folder)
+		folder->unregisterMessage(this);
 }
 
 
@@ -359,7 +361,9 @@ ref <const header> IMAPMessage::getHeader() const
 void IMAPMessage::extract(utility::outputStream& os, utility::progressListener* progress,
                           const int start, const int length, const bool peek) const
 {
-	if (!m_folder)
+	ref <const IMAPFolder> folder = m_folder.acquire();
+
+	if (!folder)
 		throw exceptions::folder_not_found();
 
 	extract(NULL, os, progress, start, length, false, peek);
@@ -370,7 +374,9 @@ void IMAPMessage::extractPart
 	(ref <const part> p, utility::outputStream& os, utility::progressListener* progress,
 	 const int start, const int length, const bool peek) const
 {
-	if (!m_folder)
+	ref <const IMAPFolder> folder = m_folder.acquire();
+
+	if (!folder)
 		throw exceptions::folder_not_found();
 
 	extract(p, os, progress, start, length, false, peek);
@@ -379,7 +385,9 @@ void IMAPMessage::extractPart
 
 void IMAPMessage::fetchPartHeader(ref <part> p)
 {
-	if (!m_folder)
+	ref <IMAPFolder> folder = m_folder.acquire();
+
+	if (!folder)
 		throw exceptions::folder_not_found();
 
 	std::ostringstream oss;
@@ -395,6 +403,8 @@ void IMAPMessage::extract(ref <const part> p, utility::outputStream& os,
 	utility::progressListener* progress, const int start,
 	const int length, const bool headerOnly, const bool peek) const
 {
+	ref <const IMAPFolder> folder = m_folder.acquire();
+
 	IMAPMessage_literalHandler literalHandler(os, progress);
 
 	// Construct section identifier
@@ -402,7 +412,7 @@ void IMAPMessage::extract(ref <const part> p, utility::outputStream& os,
 
 	if (p != NULL)
 	{
-		weak_ref <const IMAPpart> currentPart = p.dynamicCast <const IMAPpart>();
+		ref <const IMAPpart> currentPart = p.dynamicCast <const IMAPpart>();
 		std::vector <int> numbers;
 
 		numbers.push_back(currentPart->getNumber());
@@ -437,17 +447,17 @@ void IMAPMessage::extract(ref <const part> p, utility::outputStream& os,
 		command << "<" << start << "." << length << ">";
 
 	// Send the request
-	m_folder->m_connection->send(true, command.str(), true);
+	folder.constCast <IMAPFolder>()->m_connection->send(true, command.str(), true);
 
 	// Get the response
 	utility::auto_ptr <IMAPParser::response> resp
-		(m_folder->m_connection->readResponse(&literalHandler));
+		(folder.constCast <IMAPFolder>()->m_connection->readResponse(&literalHandler));
 
 	if (resp->isBad() || resp->response_done()->response_tagged()->
 		resp_cond_state()->status() != IMAPParser::resp_cond_state::OK)
 	{
 		throw exceptions::command_error("FETCH",
-			m_folder->m_connection->getParser()->lastLine(), "bad response");
+			folder.constCast <IMAPFolder>()->m_connection->getParser()->lastLine(), "bad response");
 	}
 
 
@@ -458,94 +468,29 @@ void IMAPMessage::extract(ref <const part> p, utility::outputStream& os,
 }
 
 
-void IMAPMessage::fetch(IMAPFolder* folder, const int options)
+void IMAPMessage::fetch(ref <IMAPFolder> msgFolder, const int options)
 {
-	if (m_folder != folder)
+	ref <IMAPFolder> folder = m_folder.acquire();
+
+	if (folder != msgFolder)
 		throw exceptions::folder_not_found();
 
-	// TODO: optimization: send the request for multiple
-	// messages at the same time (FETCH x:y)
-
-	// Example:
-	//   C: A654 FETCH 2:4 (FLAGS BODY[HEADER.FIELDS (DATE FROM)])
-	//   S: * 2 FETCH ....
-	//   S: * 3 FETCH ....
-	//   S: * 4 FETCH ....
-	//   S: A654 OK FETCH completed
-
-	std::vector <string> items;
-
-	if (options & folder::FETCH_SIZE)
-		items.push_back("RFC822.SIZE");
-
-	if (options & folder::FETCH_FLAGS)
-		items.push_back("FLAGS");
-
-	if (options & folder::FETCH_STRUCTURE)
-		items.push_back("BODYSTRUCTURE");
-
-	if (options & folder::FETCH_UID)
-		items.push_back("UID");
-
-	if (options & folder::FETCH_FULL_HEADER)
-		items.push_back("RFC822.HEADER");
-	else
-	{
-		if (options & folder::FETCH_ENVELOPE)
-			items.push_back("ENVELOPE");
-
-		std::vector <string> headerFields;
-
-		if (options & folder::FETCH_CONTENT_INFO)
-			headerFields.push_back("CONTENT_TYPE");
-
-		if (options & folder::FETCH_IMPORTANCE)
-		{
-			headerFields.push_back("IMPORTANCE");
-			headerFields.push_back("X-PRIORITY");
-		}
-
-		if (!headerFields.empty())
-		{
-			string list;
-
-			for (std::vector <string>::iterator it = headerFields.begin() ;
-			     it != headerFields.end() ; ++it)
-			{
-				if (it != headerFields.begin())
-					list += " ";
-
-				list += *it;
-			}
-
-			items.push_back("BODY[HEADER.FIELDS (" + list + ")]");
-		}
-	}
-
-	// Build the request text
-	std::ostringstream command;
-	command << "FETCH " << m_num << " (";
-
-	for (std::vector <string>::const_iterator it = items.begin() ;
-	     it != items.end() ; ++it)
-	{
-		if (it != items.begin()) command << " ";
-		command << *it;
-	}
-
-	command << ")";
-
 	// Send the request
-	m_folder->m_connection->send(true, command.str(), true);
+	std::vector <int> list;
+	list.push_back(m_num);
+
+	const string command = IMAPUtils::buildFetchRequest(list, options);
+
+	folder->m_connection->send(true, command, true);
 
 	// Get the response
-	utility::auto_ptr <IMAPParser::response> resp(m_folder->m_connection->readResponse());
+	utility::auto_ptr <IMAPParser::response> resp(folder->m_connection->readResponse());
 
 	if (resp->isBad() || resp->response_done()->response_tagged()->
 		resp_cond_state()->status() != IMAPParser::resp_cond_state::OK)
 	{
 		throw exceptions::command_error("FETCH",
-			m_folder->m_connection->getParser()->lastLine(), "bad response");
+			folder->m_connection->getParser()->lastLine(), "bad response");
 	}
 
 	const std::vector <IMAPParser::continue_req_or_response_data*>& respDataList =
@@ -557,7 +502,7 @@ void IMAPMessage::fetch(IMAPFolder* folder, const int options)
 		if ((*it)->response_data() == NULL)
 		{
 			throw exceptions::command_error("FETCH",
-				m_folder->m_connection->getParser()->lastLine(), "invalid response");
+				folder->m_connection->getParser()->lastLine(), "invalid response");
 		}
 
 		const IMAPParser::message_data* messageData =
@@ -579,6 +524,8 @@ void IMAPMessage::fetch(IMAPFolder* folder, const int options)
 void IMAPMessage::processFetchResponse
 	(const int options, const IMAPParser::msg_att* msgAtt)
 {
+	ref <IMAPFolder> folder = m_folder.acquire();
+
 	// Get message attributes
 	const std::vector <IMAPParser::msg_att_item*> atts =
 		msgAtt->items();
@@ -598,7 +545,7 @@ void IMAPMessage::processFetchResponse
 		case IMAPParser::msg_att_item::UID:
 		{
 			std::ostringstream oss;
-			oss << m_folder->m_uidValidity << ":" << (*it)->unique_id()->value();
+			oss << folder->m_uidValidity << ":" << (*it)->unique_id()->value();
 
 			m_uid = oss.str();
 			break;
@@ -621,41 +568,41 @@ void IMAPMessage::processFetchResponse
 
 				// From
 				mailboxList from;
-				convertAddressList(*(env->env_from()), from);
+				IMAPUtils::convertAddressList(*(env->env_from()), from);
 
 				if (!from.isEmpty())
 					hdr->From()->setValue(*(from.getMailboxAt(0)));
 
 				// To
 				mailboxList to;
-				convertAddressList(*(env->env_to()), to);
+				IMAPUtils::convertAddressList(*(env->env_to()), to);
 
 				hdr->To()->setValue(to);
 
 				// Sender
 				mailboxList sender;
-				convertAddressList(*(env->env_sender()), sender);
+				IMAPUtils::convertAddressList(*(env->env_sender()), sender);
 
 				if (!sender.isEmpty())
 					hdr->Sender()->setValue(*(sender.getMailboxAt(0)));
 
 				// Reply-to
 				mailboxList replyTo;
-				convertAddressList(*(env->env_reply_to()), replyTo);
+				IMAPUtils::convertAddressList(*(env->env_reply_to()), replyTo);
 
 				if (!replyTo.isEmpty())
 					hdr->ReplyTo()->setValue(*(replyTo.getMailboxAt(0)));
 
 				// Cc
 				mailboxList cc;
-				convertAddressList(*(env->env_cc()), cc);
+				IMAPUtils::convertAddressList(*(env->env_cc()), cc);
 
 				if (!cc.isEmpty())
 					hdr->Cc()->setValue(cc);
 
 				// Bcc
 				mailboxList bcc;
-				convertAddressList(*(env->env_bcc()), bcc);
+				IMAPUtils::convertAddressList(*(env->env_bcc()), bcc);
 
 				if (!bcc.isEmpty())
 					hdr->Bcc()->setValue(bcc);
@@ -727,30 +674,13 @@ ref <header> IMAPMessage::getOrCreateHeader()
 }
 
 
-void IMAPMessage::convertAddressList
-	(const IMAPParser::address_list& src, mailboxList& dest)
-{
-	for (std::vector <IMAPParser::address*>::const_iterator
-	     it = src.addresses().begin() ; it != src.addresses().end() ; ++it)
-	{
-		const IMAPParser::address& addr = **it;
-
-		text name;
-		text::decodeAndUnfold(addr.addr_name()->value(), &name);
-
-		string email = addr.addr_mailbox()->value()
-			+ "@" + addr.addr_host()->value();
-
-		dest.appendMailbox(vmime::create <mailbox>(name, email));
-	}
-}
-
-
 void IMAPMessage::setFlags(const int flags, const int mode)
 {
-	if (!m_folder)
+	ref <IMAPFolder> folder = m_folder.acquire();
+
+	if (!folder)
 		throw exceptions::folder_not_found();
-	else if (m_folder->m_mode == folder::MODE_READ_ONLY)
+	else if (folder->m_mode == folder::MODE_READ_ONLY)
 		throw exceptions::illegal_state("Folder is read-only");
 
 	// Build the request text
@@ -790,16 +720,16 @@ void IMAPMessage::setFlags(const int flags, const int mode)
 		command << *(flagList.end() - 1) << ")";
 
 		// Send the request
-		m_folder->m_connection->send(true, command.str(), true);
+		folder->m_connection->send(true, command.str(), true);
 
 		// Get the response
-		utility::auto_ptr <IMAPParser::response> resp(m_folder->m_connection->readResponse());
+		utility::auto_ptr <IMAPParser::response> resp(folder->m_connection->readResponse());
 
 		if (resp->isBad() || resp->response_done()->response_tagged()->
 			resp_cond_state()->status() != IMAPParser::resp_cond_state::OK)
 		{
 			throw exceptions::command_error("STORE",
-				m_folder->m_connection->getParser()->lastLine(), "bad response");
+				folder->m_connection->getParser()->lastLine(), "bad response");
 		}
 
 		// Update the local flags for this message
@@ -843,13 +773,12 @@ void IMAPMessage::setFlags(const int flags, const int mode)
 		nums.push_back(m_num);
 
 		events::messageChangedEvent event
-			(m_folder->thisRef().dynamicCast <folder>(),
-			 events::messageChangedEvent::TYPE_FLAGS, nums);
+			(folder, events::messageChangedEvent::TYPE_FLAGS, nums);
 
-		for (std::list <IMAPFolder*>::iterator it = m_folder->m_store->m_folders.begin() ;
-		     it != m_folder->m_store->m_folders.end() ; ++it)
+		for (std::list <IMAPFolder*>::iterator it = folder->m_store.acquire()->m_folders.begin() ;
+		     it != folder->m_store.acquire()->m_folders.end() ; ++it)
 		{
-			if ((*it)->getFullPath() == m_folder->m_path)
+			if ((*it)->getFullPath() == folder->m_path)
 				(*it)->notifyMessageChanged(event);
 		}
 	}

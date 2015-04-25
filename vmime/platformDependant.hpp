@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -56,7 +56,7 @@ public:
 	  * access platform-dependant objects: sockets, date/time, file system, etc.
 	  */
 
-	class handler
+	class handler : public object
 	{
 	public:
 
@@ -132,11 +132,10 @@ public:
 	template <class TYPE>
 	static void setHandler()
 	{
-		delete (sm_handler);
-		sm_handler = new TYPE;
+		sm_handler = vmime::create <TYPE>();
 	}
 
-	static const handler* getHandler()
+	static ref <const handler> getHandler()
 	{
 		if (!sm_handler)
 			throw exceptions::no_platform_dependant_handler();
@@ -146,7 +145,7 @@ public:
 
 private:
 
-	static handler* sm_handler;
+	static ref <handler> sm_handler;
 };
 
 

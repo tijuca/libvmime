@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -35,7 +35,9 @@ static vmime::ref <vmime::net::session> g_session
 	= vmime::create <vmime::net::session>();
 
 
-// Authentification handler
+#if VMIME_HAVE_SASL_SUPPORT
+
+// SASL authentication handler
 class interactiveAuthenticator : public vmime::security::sasl::defaultSASLAuthenticator
 {
 	const std::vector <vmime::ref <vmime::security::sasl::SASLMechanism> > getAcceptableMechanisms
@@ -96,6 +98,46 @@ private:
 	mutable vmime::string m_username;
 	mutable vmime::string m_password;
 };
+
+#else // !VMIME_HAVE_SASL_SUPPORT
+
+// Simple authentication handler
+class interactiveAuthenticator : public vmime::security::defaultAuthenticator
+{
+	const vmime::string getUsername() const
+	{
+		if (m_username.empty())
+			m_username = getUserInput("Username");
+
+		return m_username;
+	}
+
+	const vmime::string getPassword() const
+	{
+		if (m_password.empty())
+			m_password = getUserInput("Password");
+
+		return m_password;
+	}
+
+	static const vmime::string getUserInput(const std::string& prompt)
+	{
+		std::cout << prompt << ": ";
+		std::cout.flush();
+
+		vmime::string res;
+		std::getline(std::cin, res);
+
+		return res;
+	}
+
+private:
+
+	mutable vmime::string m_username;
+	mutable vmime::string m_password;
+};
+
+#endif // VMIME_HAVE_SASL_SUPPORT
 
 
 #if VMIME_HAVE_TLS_SUPPORT
@@ -200,6 +242,14 @@ static std::ostream& operator<<(std::ostream& os, const vmime::exception& e)
 
 		os << "    command = " << cee.command() << std::endl;
 		os << "    response = " << cee.response() << std::endl;
+	}
+
+	if (dynamic_cast <const vmime::exceptions::invalid_response*>(&e))
+	{
+		const vmime::exceptions::invalid_response& ir =
+			dynamic_cast <const vmime::exceptions::invalid_response&>(e);
+
+		os << "    response = " << ir.response() << std::endl;
 	}
 
 	if (dynamic_cast <const vmime::exceptions::connection_greeting_error*>(&e))
@@ -385,7 +435,7 @@ static void sendMessage()
 				to.appendMailbox(vmime::create <vmime::mailbox>(toString));
 		}
 
-		std::cout << "Enter message data (end with '.' on a single line):" << std::endl;
+		std::cout << "Enter message data, including headers (end with '.' on a single line):" << std::endl;
 
 		std::ostringstream data;
 
@@ -473,6 +523,13 @@ static void connectStore()
 
 		// Connect to the mail store
 		st->connect();
+
+		// Display some information about the connection
+		vmime::ref <vmime::net::connectionInfos> ci = st->getConnectionInfos();
+
+		std::cout << std::endl;
+		std::cout << "Connected to '" << ci->getHost() << "' (port " << ci->getPort() << ")" << std::endl;
+		std::cout << "Connection is " << (st->isSecuredConnection() ? "" : "NOT ") << "secured." << std::endl;
 
 		// Open the default folder in this store
 		vmime::ref <vmime::net::folder> f = st->getDefaultFolder();

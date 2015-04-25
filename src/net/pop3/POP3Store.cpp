@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -27,12 +27,15 @@
 #include "vmime/utility/filteredStream.hpp"
 #include "vmime/utility/stringUtils.hpp"
 
+#include "vmime/net/defaultConnectionInfos.hpp"
+
 #if VMIME_HAVE_SASL_SUPPORT
 	#include "vmime/security/sasl/SASLContext.hpp"
 #endif // VMIME_HAVE_SASL_SUPPORT
 
 #if VMIME_HAVE_TLS_SUPPORT
 	#include "vmime/net/tls/TLSSession.hpp"
+	#include "vmime/net/tls/TLSSecuredConnectionInfos.hpp"
 #endif // VMIME_HAVE_TLS_SUPPORT
 
 #include <algorithm>
@@ -54,7 +57,8 @@ namespace pop3 {
 
 POP3Store::POP3Store(ref <session> sess, ref <security::authenticator> auth, const bool secured)
 	: store(sess, getInfosInstance(), auth), m_socket(NULL),
-	  m_authentified(false), m_timeoutHandler(NULL), m_secured(secured)
+	  m_authentified(false), m_timeoutHandler(NULL),
+	  m_isPOP3S(secured), m_secured(false)
 {
 }
 
@@ -86,7 +90,8 @@ ref <folder> POP3Store::getDefaultFolder()
 	if (!isConnected())
 		throw exceptions::illegal_state("Not connected");
 
-	return vmime::create <POP3Folder>(folder::path(folder::path::component("INBOX")), this);
+	return vmime::create <POP3Folder>(folder::path(folder::path::component("INBOX")),
+		thisRef().dynamicCast <POP3Store>());
 }
 
 
@@ -95,7 +100,8 @@ ref <folder> POP3Store::getRootFolder()
 	if (!isConnected())
 		throw exceptions::illegal_state("Not connected");
 
-	return vmime::create <POP3Folder>(folder::path(), this);
+	return vmime::create <POP3Folder>(folder::path(),
+		thisRef().dynamicCast <POP3Store>());
 }
 
 
@@ -104,7 +110,8 @@ ref <folder> POP3Store::getFolder(const folder::path& path)
 	if (!isConnected())
 		throw exceptions::illegal_state("Not connected");
 
-	return vmime::create <POP3Folder>(path, this);
+	return vmime::create <POP3Folder>(path,
+		thisRef().dynamicCast <POP3Store>());
 }
 
 
@@ -130,7 +137,7 @@ void POP3Store::connect()
 	m_socket = getSocketFactory()->create();
 
 #if VMIME_HAVE_TLS_SUPPORT
-	if (m_secured)  // dedicated port/POP3S
+	if (m_isPOP3S)  // dedicated port/POP3S
 	{
 		ref <tls::TLSSession> tlsSession =
 			vmime::create <tls::TLSSession>(getCertificateVerifier());
@@ -139,8 +146,15 @@ void POP3Store::connect()
 			tlsSession->getSocket(m_socket);
 
 		m_socket = tlsSocket;
+
+		m_secured = true;
+		m_cntInfos = vmime::create <tls::TLSSecuredConnectionInfos>(address, port, tlsSession, tlsSocket);
 	}
+	else
 #endif // VMIME_HAVE_TLS_SUPPORT
+	{
+		m_cntInfos = vmime::create <defaultConnectionInfos>(address, port);
+	}
 
 	m_socket->connect(address, port);
 
@@ -165,7 +179,7 @@ void POP3Store::connect()
 	const bool tlsRequired = HAS_PROPERTY(PROPERTY_CONNECTION_TLS_REQUIRED)
 		&& GET_PROPERTY(bool, PROPERTY_CONNECTION_TLS_REQUIRED);
 
-	if (!m_secured && tls)  // only if not POP3S
+	if (!m_isPOP3S && tls)  // only if not POP3S
 	{
 		try
 		{
@@ -440,10 +454,10 @@ void POP3Store::authenticateSASL()
 			}
 			case RESPONSE_READY:
 			{
-				byte* challenge = 0;
+				byte_t* challenge = 0;
 				int challengeLen = 0;
 
-				byte* resp = 0;
+				byte_t* resp = 0;
 				int respLen = 0;
 
 				try
@@ -533,6 +547,10 @@ void POP3Store::startTLS()
 		tlsSocket->handshake(m_timeoutHandler);
 
 		m_socket = tlsSocket;
+
+		m_secured = true;
+		m_cntInfos = vmime::create <tls::TLSSecuredConnectionInfos>
+			(m_cntInfos->getHost(), m_cntInfos->getPort(), tlsSession, tlsSocket);
 	}
 	catch (exceptions::command_error&)
 	{
@@ -553,6 +571,18 @@ void POP3Store::startTLS()
 const bool POP3Store::isConnected() const
 {
 	return (m_socket && m_socket->isConnected() && m_authentified);
+}
+
+
+const bool POP3Store::isSecuredConnection() const
+{
+	return m_secured;
+}
+
+
+ref <connectionInfos> POP3Store::getConnectionInfos() const
+{
+	return m_cntInfos;
 }
 
 
@@ -590,6 +620,9 @@ void POP3Store::internalDisconnect()
 	m_timeoutHandler = NULL;
 
 	m_authentified = false;
+
+	m_secured = false;
+	m_cntInfos = NULL;
 }
 
 

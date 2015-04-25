@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -43,7 +43,7 @@ class maildirPart : public part
 {
 public:
 
-	maildirPart(weak_ref <maildirPart> parent, const int number, const bodyPart& part);
+	maildirPart(ref <maildirPart> parent, const int number, const bodyPart& part);
 	~maildirPart();
 
 
@@ -78,6 +78,8 @@ public:
 	const int getBodyParsedOffset() const { return (m_bodyParsedOffset); }
 	const int getBodyParsedLength() const { return (m_bodyParsedLength); }
 
+	void initStructure(const bodyPart& part);
+
 private:
 
 	ref <maildirStructure> m_structure;
@@ -109,17 +111,23 @@ public:
 	{
 	}
 
-	maildirStructure(weak_ref <maildirPart> parent, const bodyPart& part)
+	maildirStructure(ref <maildirPart> parent, const bodyPart& part)
 	{
-		m_parts.push_back(vmime::create <maildirPart>(parent, 0, part));
+		vmime::ref <maildirPart> mpart = vmime::create <maildirPart>(parent, 0, part);
+		mpart->initStructure(part);
+
+		m_parts.push_back(mpart);
 	}
 
-	maildirStructure(weak_ref <maildirPart> parent, const std::vector <ref <const vmime::bodyPart> >& list)
+	maildirStructure(ref <maildirPart> parent, const std::vector <ref <const vmime::bodyPart> >& list)
 	{
-		int number = 0;
-
 		for (unsigned int i = 0 ; i < list.size() ; ++i)
-			m_parts.push_back(vmime::create <maildirPart>(parent, number, *list[i]));
+		{
+			vmime::ref <maildirPart> mpart = vmime::create <maildirPart>(parent, i, *list[i]);
+			mpart->initStructure(*list[i]);
+
+			m_parts.push_back(mpart);
+		}
 	}
 
 
@@ -156,18 +164,9 @@ ref <maildirStructure> maildirStructure::m_emptyStructure = vmime::create <maild
 
 
 
-maildirPart::maildirPart(weak_ref <maildirPart> parent, const int number, const bodyPart& part)
+maildirPart::maildirPart(ref <maildirPart> parent, const int number, const bodyPart& part)
 	: m_parent(parent), m_header(NULL), m_number(number)
 {
-	if (part.getBody()->getPartList().size() == 0)
-		m_structure = NULL;
-	else
-	{
-		m_structure = vmime::create <maildirStructure>
-			(thisWeakRef().dynamicCast <maildirPart>(),
-			 part.getBody()->getPartList());
-	}
-
 	m_headerParsedOffset = part.getHeader()->getParsedOffset();
 	m_headerParsedLength = part.getHeader()->getParsedLength();
 
@@ -182,6 +181,19 @@ maildirPart::maildirPart(weak_ref <maildirPart> parent, const int number, const 
 
 maildirPart::~maildirPart()
 {
+}
+
+
+void maildirPart::initStructure(const bodyPart& part)
+{
+	if (part.getBody()->getPartList().size() == 0)
+		m_structure = NULL;
+	else
+	{
+		m_structure = vmime::create <maildirStructure>
+			(thisRef().dynamicCast <maildirPart>(),
+			 part.getBody()->getPartList());
+	}
 }
 
 
@@ -208,18 +220,20 @@ ref <structure> maildirPart::getStructure()
 // maildirMessage
 //
 
-maildirMessage::maildirMessage(weak_ref <maildirFolder> folder, const int num)
+maildirMessage::maildirMessage(ref <maildirFolder> folder, const int num)
 	: m_folder(folder), m_num(num), m_size(-1), m_flags(FLAG_UNDEFINED),
 	  m_expunged(false), m_structure(NULL)
 {
-	m_folder->registerMessage(this);
+	folder->registerMessage(this);
 }
 
 
 maildirMessage::~maildirMessage()
 {
-	if (m_folder)
-		m_folder->unregisterMessage(this);
+	ref <maildirFolder> folder = m_folder.acquire();
+
+	if (folder)
+		folder->unregisterMessage(this);
 }
 
 
@@ -294,10 +308,12 @@ const int maildirMessage::getFlags() const
 
 void maildirMessage::setFlags(const int flags, const int mode)
 {
-	if (!m_folder)
+	ref <maildirFolder> folder = m_folder.acquire();
+
+	if (!folder)
 		throw exceptions::folder_not_found();
 
-	m_folder->setMessageFlags(m_num, m_num, flags, mode);
+	folder->setMessageFlags(m_num, m_num, flags, mode);
 }
 
 
@@ -313,9 +329,9 @@ void maildirMessage::extractPart(ref <const part> p, utility::outputStream& os,
 	utility::progressListener* progress, const int start,
 	const int length, const bool peek) const
 {
-	const maildirPart& mp = dynamic_cast <const maildirPart&>(p);
+	ref <const maildirPart> mp = p.dynamicCast <const maildirPart>();
 
-	extractImpl(os, progress, mp.getBodyParsedOffset(), mp.getBodyParsedLength(),
+	extractImpl(os, progress, mp->getBodyParsedOffset(), mp->getBodyParsedLength(),
 		start, length, peek);
 }
 
@@ -324,9 +340,11 @@ void maildirMessage::extractImpl(utility::outputStream& os, utility::progressLis
 	const int start, const int length, const int partialStart, const int partialLength,
 	const bool /* peek */) const
 {
+	ref <const maildirFolder> folder = m_folder.acquire();
+
 	utility::fileSystemFactory* fsf = platformDependant::getHandler()->getFileSystemFactory();
 
-	const utility::file::path path = m_folder->getMessageFSPath(m_num);
+	const utility::file::path path = folder->getMessageFSPath(m_num);
 	ref <utility::file> file = fsf->create(path);
 
 	ref <utility::fileReader> reader = file->getFileReader();
@@ -367,11 +385,13 @@ void maildirMessage::extractImpl(utility::outputStream& os, utility::progressLis
 
 void maildirMessage::fetchPartHeader(ref <part> p)
 {
+	ref <maildirFolder> folder = m_folder.acquire();
+
 	ref <maildirPart> mp = p.dynamicCast <maildirPart>();
 
 	utility::fileSystemFactory* fsf = platformDependant::getHandler()->getFileSystemFactory();
 
-	const utility::file::path path = m_folder->getMessageFSPath(m_num);
+	const utility::file::path path = folder->getMessageFSPath(m_num);
 	ref <utility::file> file = fsf->create(path);
 
 	ref <utility::fileReader> reader = file->getFileReader();
@@ -399,9 +419,11 @@ void maildirMessage::fetchPartHeader(ref <part> p)
 }
 
 
-void maildirMessage::fetch(weak_ref <maildirFolder> folder, const int options)
+void maildirMessage::fetch(ref <maildirFolder> msgFolder, const int options)
 {
-	if (m_folder != folder)
+	ref <maildirFolder> folder = m_folder.acquire();
+
+	if (folder != msgFolder)
 		throw exceptions::folder_not_found();
 
 	utility::fileSystemFactory* fsf = platformDependant::getHandler()->getFileSystemFactory();

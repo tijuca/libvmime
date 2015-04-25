@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -47,7 +47,7 @@ class maildirMessage : public message
 
 private:
 
-	maildirMessage(weak_ref <maildirFolder> folder, const int num);
+	maildirMessage(ref <maildirFolder> folder, const int num);
 	maildirMessage(const maildirMessage&) : message() { }
 
 	~maildirMessage();
@@ -77,7 +77,7 @@ public:
 
 private:
 
-	void fetch(weak_ref <maildirFolder> folder, const int options);
+	void fetch(ref <maildirFolder> folder, const int options);
 
 	void onFolderClosed();
 

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -92,12 +92,12 @@ ref <X509Certificate> X509Certificate::import(utility::inputStream& is)
 
 // static
 ref <X509Certificate> X509Certificate::import
-	(const byte* data, const unsigned int length)
+	(const byte_t* data, const unsigned int length)
 {
 	ref <X509Certificate> cert = vmime::create <X509Certificate>();
 
 	gnutls_datum buffer;
-	buffer.data = const_cast <byte*>(data);
+	buffer.data = const_cast <byte_t*>(data);
 	buffer.size = length;
 
 	// Try DER format
@@ -126,7 +126,7 @@ void X509Certificate::write
 
 	gnutls_x509_crt_export(m_data->cert, fmt, NULL, &dataSize);
 
-	byte* data = new byte[dataSize];
+	byte_t* data = new byte_t[dataSize];
 
 	gnutls_x509_crt_export(m_data->cert, fmt, data, &dataSize);
 
@@ -210,7 +210,7 @@ const byteArray X509Certificate::getFingerprint(const DigestAlgorithm algo) cons
 	gnutls_x509_crt_get_fingerprint
 		(m_data->cert, galgo, NULL, &bufferSize);
 
-	byte* buffer = new byte[bufferSize];
+	byte_t* buffer = new byte_t[bufferSize];
 
 	if (gnutls_x509_crt_get_fingerprint
 		(m_data->cert, galgo, buffer, &bufferSize) == 0)

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -57,11 +57,11 @@ const int plainTextPart::getPartCount() const
 }
 
 
-void plainTextPart::generateIn(bodyPart& /* message */, bodyPart& parent) const
+void plainTextPart::generateIn(ref <bodyPart> /* message */, ref <bodyPart> parent) const
 {
 	// Create a new part
 	ref <bodyPart> part = vmime::create <bodyPart>();
-	parent.getBody()->appendPart(part);
+	parent->getBody()->appendPart(part);
 
 	// Set header fields
 	part->getHeader()->ContentType()->setValue(mediaType(mediaTypes::TEXT, mediaTypes::TEXT_PLAIN));
@@ -73,15 +73,15 @@ void plainTextPart::generateIn(bodyPart& /* message */, bodyPart& parent) const
 }
 
 
-void plainTextPart::parse(const bodyPart& /* message */,
-	const bodyPart& /* parent */, const bodyPart& textPart)
+void plainTextPart::parse(ref <const bodyPart> /* message */,
+	ref <const bodyPart> /* parent */, ref <const bodyPart> textPart)
 {
-	m_text = textPart.getBody()->getContents()->clone().dynamicCast <contentHandler>();
+	m_text = textPart->getBody()->getContents()->clone().dynamicCast <contentHandler>();
 
 	try
 	{
 		const contentTypeField& ctf = dynamic_cast<contentTypeField&>
-			(*textPart.getHeader()->findField(fields::CONTENT_TYPE));
+			(*textPart->getHeader()->findField(fields::CONTENT_TYPE));
 
 		m_charset = ctf.getCharset();
 	}

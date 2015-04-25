@@ -34,6 +34,7 @@ nobase_libvmimeinclude_HEADERS = address.hpp \
 	encoding.hpp \
 	exception.hpp \
 	fileAttachment.hpp \
+	generatedMessageAttachment.hpp \
 	header.hpp \
 	headerFieldFactory.hpp \
 	headerField.hpp \
@@ -44,6 +45,7 @@ nobase_libvmimeinclude_HEADERS = address.hpp \
 	mailboxGroup.hpp \
 	mailboxList.hpp \
 	mediaType.hpp \
+	messageAttachment.hpp \
 	messageBuilder.hpp \
 	message.hpp \
 	messageId.hpp \
@@ -54,6 +56,7 @@ nobase_libvmimeinclude_HEADERS = address.hpp \
 	path.hpp \
 	parameter.hpp \
 	parameterizedHeaderField.hpp \
+	parsedMessageAttachment.hpp \
 	parserHelpers.hpp \
 	plainTextPart.hpp \
 	platformDependant.hpp \
@@ -66,6 +69,7 @@ nobase_libvmimeinclude_HEADERS = address.hpp \
 	textPart.hpp \
 	types.hpp \
 	word.hpp \
+	wordEncoder.hpp \
 	vmime.hpp \
 	utility/childProcess.hpp \
 	utility/file.hpp \
@@ -91,9 +95,12 @@ nobase_libvmimeinclude_HEADERS = address.hpp \
 	security/digest/messageDigestFactory.hpp \
 	security/digest/md5/md5MessageDigest.hpp \
 	security/digest/sha1/sha1MessageDigest.hpp \
+	net/connectionInfos.hpp \
+	net/defaultConnectionInfos.hpp \
 	net/events.hpp \
 	net/folder.hpp \
 	net/message.hpp \
+	net/securedConnectionInfos.hpp \
 	net/service.hpp \
 	net/serviceFactory.hpp \
 	net/serviceInfos.hpp \
@@ -112,6 +119,7 @@ nobase_libvmimeinclude_HEADERS = address.hpp \
 	security/sasl/builtinSASLMechanism.hpp \
 	net/tls/TLSSession.hpp \
 	net/tls/TLSSocket.hpp \
+	net/tls/TLSSecuredConnectionInfos.hpp \
 	security/cert/certificateChain.hpp \
 	security/cert/certificateVerifier.hpp \
 	security/cert/defaultCertificateVerifier.hpp \
@@ -122,6 +130,8 @@ nobase_libvmimeinclude_HEADERS = address.hpp \
 	net/pop3/POP3SStore.hpp \
 	net/pop3/POP3Folder.hpp \
 	net/pop3/POP3Message.hpp \
+	net/pop3/POP3Utils.hpp \
+	net/smtp/SMTPResponse.hpp \
 	net/smtp/SMTPServiceInfos.hpp \
 	net/smtp/SMTPTransport.hpp \
 	net/smtp/SMTPSTransport.hpp \

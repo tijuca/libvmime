@@ -38,6 +38,7 @@ libvmime_la_SOURCES = address.cpp \
 	encoding.cpp \
 	exception.cpp \
 	fileAttachment.cpp \
+	generatedMessageAttachment.cpp \
 	header.cpp \
 	headerFieldFactory.cpp \
 	headerField.cpp \
@@ -57,6 +58,7 @@ libvmime_la_SOURCES = address.cpp \
 	path.cpp \
 	parameter.cpp \
 	parameterizedHeaderField.cpp \
+	parsedMessageAttachment.cpp \
 	plainTextPart.cpp \
 	platformDependant.cpp \
 	propertySet.cpp \
@@ -66,11 +68,13 @@ libvmime_la_SOURCES = address.cpp \
 	text.cpp \
 	textPartFactory.cpp \
 	word.cpp \
+	wordEncoder.cpp \
 	utility_datetimeUtils.cpp \
 	utility_filteredStream.cpp \
 	utility_path.cpp \
 	utility_progressListener.cpp \
 	utility_random.cpp \
+	utility_smartPtr.cpp \
 	utility_stream.cpp \
 	utility_stringProxy.cpp \
 	utility_stringUtils.cpp \
@@ -89,6 +93,7 @@ libvmime_la_SOURCES = address.cpp \
 
 if VMIME_HAVE_MESSAGING_FEATURES
 libvmime_la_SOURCES += net_builtinServices.inl \
+	net_defaultConnectionInfos.cpp \
 	net_events.cpp \
 	net_folder.cpp \
 	net_message.cpp \
@@ -105,11 +110,13 @@ libvmime_la_SOURCES += net_pop3_POP3ServiceInfos.cpp \
 	net_pop3_POP3Store.cpp \
 	net_pop3_POP3SStore.cpp \
 	net_pop3_POP3Folder.cpp \
-	net_pop3_POP3Message.cpp
+	net_pop3_POP3Message.cpp \
+	net_pop3_POP3Utils.cpp
 endif
 
 if VMIME_BUILTIN_MESSAGING_PROTO_SMTP
-libvmime_la_SOURCES += net_smtp_SMTPServiceInfos.cpp \
+libvmime_la_SOURCES += net_smtp_SMTPResponse.cpp \
+	net_smtp_SMTPServiceInfos.cpp \
 	net_smtp_SMTPTransport.cpp \
 	net_smtp_SMTPSTransport.cpp
 endif
@@ -150,6 +157,7 @@ endif
 if VMIME_HAVE_TLS_SUPPORT
 libvmime_la_SOURCES += net_tls_TLSSession.cpp \
 	net_tls_TLSSocket.cpp \
+	net_tls_TLSSecuredConnectionInfos.cpp \
 	security_cert_certificateChain.cpp \
 	security_cert_defaultCertificateVerifier.cpp \
 	security_cert_X509Certificate.cpp
@@ -184,6 +192,9 @@ utility_progressListener.cpp: utility/progressListener.cpp
 	ln -sf $< $@
 
 utility_random.cpp: utility/random.cpp
+	ln -sf $< $@
+
+utility_smartPtr.cpp: utility/smartPtr.cpp
 	ln -sf $< $@
 
 utility_stream.cpp: utility/stream.cpp
@@ -234,6 +245,9 @@ security_digest_sha1_sha1MessageDigest.cpp: security/digest/sha1/sha1MessageDige
 net_builtinServices.inl: net/builtinServices.inl
 	ln -sf $< $@
 
+net_defaultConnectionInfos.cpp: net/defaultConnectionInfos.cpp
+	ln -sf $< $@
+
 net_events.cpp: net/events.cpp
 	ln -sf $< $@
 
@@ -274,6 +288,12 @@ net_pop3_POP3Folder.cpp: net/pop3/POP3Folder.cpp
 	ln -sf $< $@
 
 net_pop3_POP3Message.cpp: net/pop3/POP3Message.cpp
+	ln -sf $< $@
+
+net_pop3_POP3Utils.cpp: net/pop3/POP3Utils.cpp
+	ln -sf $< $@
+
+net_smtp_SMTPResponse.cpp: net/smtp/SMTPResponse.cpp
 	ln -sf $< $@
 
 net_smtp_SMTPServiceInfos.cpp: net/smtp/SMTPServiceInfos.cpp
@@ -352,6 +372,9 @@ net_tls_TLSSession.cpp: net/tls/TLSSession.cpp
 	ln -sf $< $@
 
 net_tls_TLSSocket.cpp: net/tls/TLSSocket.cpp
+	ln -sf $< $@
+
+net_tls_TLSSecuredConnectionInfos.cpp: net/tls/TLSSecuredConnectionInfos.cpp
 	ln -sf $< $@
 
 security_cert_certificateChain.cpp: security/cert/certificateChain.cpp

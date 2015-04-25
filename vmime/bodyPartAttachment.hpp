@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -23,6 +23,9 @@
 
 #ifndef VMIME_BODYPARTATTACHMENT_HPP_INCLUDED
 #define VMIME_BODYPARTATTACHMENT_HPP_INCLUDED
+
+
+#ifndef VMIME_BUILDING_DOC  // implementation detail
 
 
 #include "vmime/attachment.hpp"
@@ -59,7 +62,7 @@ public:
 
 private:
 
-	void generateIn(bodyPart& parent) const;
+	void generateIn(ref <bodyPart> parent) const;
 
 	ref <const contentDispositionField> getContentDisposition() const;
 	ref <const contentTypeField> getContentType() const;
@@ -70,6 +73,9 @@ private:
 
 
 } // vmime
+
+
+#endif // VMIME_BUILDING_DOC
 
 
 #endif // VMIME_BODYPARTATTACHMENT_HPP_INCLUDED

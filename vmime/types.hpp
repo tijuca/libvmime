@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -44,8 +44,8 @@ namespace vmime
 
 	typedef int char_t;
 
-	typedef vmime_uint8 byte;
-	typedef std::vector <byte> byteArray;
+	typedef vmime_uint8 byte_t;
+	typedef std::vector <byte_t> byteArray;
 
 	// Some aliases
 	namespace utils = utility;

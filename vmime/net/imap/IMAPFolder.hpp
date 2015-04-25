@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -55,7 +55,7 @@ private:
 	friend class vmime::creator;  // vmime::create <IMAPFolder>
 
 
-	IMAPFolder(const folder::path& path, IMAPStore* store, const int type = TYPE_UNDEFINED, const int flags = FLAG_UNDEFINED);
+	IMAPFolder(const folder::path& path, ref <IMAPStore> store, const int type = TYPE_UNDEFINED, const int flags = FLAG_UNDEFINED);
 	IMAPFolder(const IMAPFolder&) : folder() { }
 
 	~IMAPFolder();
@@ -76,6 +76,8 @@ public:
 	void create(const int type);
 
 	const bool exists();
+
+	void destroy();
 
 	const bool isOpen() const;
 
@@ -109,8 +111,8 @@ public:
 
 	ref <folder> getParent();
 
-	weak_ref <const store> getStore() const;
-	weak_ref <store> getStore();
+	ref <const store> getStore() const;
+	ref <store> getStore();
 
 
 	void fetchMessages(std::vector <ref <message> >& msg, const int options, utility::progressListener* progress = NULL);
@@ -134,7 +136,7 @@ private:
 	void copyMessages(const string& set, const folder::path& dest);
 
 
-	IMAPStore* m_store;
+	weak_ref <IMAPStore> m_store;
 	ref <IMAPConnection> m_connection;
 
 	folder::path m_path;

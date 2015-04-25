@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -25,6 +25,8 @@
 
 #include "vmime/exception.hpp"
 #include "vmime/platformDependant.hpp"
+
+#include "vmime/net/defaultConnectionInfos.hpp"
 
 
 // Helpers for service properties
@@ -73,7 +75,7 @@ ref <folder> maildirStore::getRootFolder()
 		throw exceptions::illegal_state("Not connected");
 
 	return vmime::create <maildirFolder>(folder::path(),
-		thisWeakRef().dynamicCast <maildirStore>());
+		thisRef().dynamicCast <maildirStore>());
 }
 
 
@@ -83,7 +85,7 @@ ref <folder> maildirStore::getDefaultFolder()
 		throw exceptions::illegal_state("Not connected");
 
 	return vmime::create <maildirFolder>(folder::path::component("inbox"),
-		thisWeakRef().dynamicCast <maildirStore>());
+		thisRef().dynamicCast <maildirStore>());
 }
 
 
@@ -93,7 +95,7 @@ ref <folder> maildirStore::getFolder(const folder::path& path)
 		throw exceptions::illegal_state("Not connected");
 
 	return vmime::create <maildirFolder>(path,
-		thisWeakRef().dynamicCast <maildirStore>());
+		thisRef().dynamicCast <maildirStore>());
 }
 
 
@@ -151,6 +153,18 @@ void maildirStore::connect()
 const bool maildirStore::isConnected() const
 {
 	return (m_connected);
+}
+
+
+const bool maildirStore::isSecuredConnection() const
+{
+	return false;
+}
+
+
+ref <connectionInfos> maildirStore::getConnectionInfos() const
+{
+	return vmime::create <defaultConnectionInfos>("localhost", 0);
 }
 
 

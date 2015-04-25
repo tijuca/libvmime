@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -38,9 +38,12 @@ VMIME_TEST_SUITE_BEGIN
 		VMIME_TEST(testParse2)
 		VMIME_TEST(testParse3)
 		VMIME_TEST(testParse4)
+		VMIME_TEST(testParse5)
 		VMIME_TEST(testGenerate)
 		VMIME_TEST(testUtilsEncode)
 		VMIME_TEST(testUtilsDecode)
+		VMIME_TEST(testUtilsEncodeReservedChars)
+		VMIME_TEST(testUtilsEncodeUnsafeChars)
 	VMIME_TEST_LIST_END
 
 
@@ -190,6 +193,17 @@ VMIME_TEST_SUITE_BEGIN
 		VASSERT_EQ("4.4", "/path", u4.getPath());
 	}
 
+	// '@' symbol in the username part
+	void testParse5()
+	{
+		vmime::utility::url u1("", "");
+
+		VASSERT_EQ("1", true, parseHelper(u1, "imap://account@myserver.com:password@myserver.com"));
+		VASSERT_EQ("2", "account@myserver.com", u1.getUsername());
+		VASSERT_EQ("3", "password", u1.getPassword());
+		VASSERT_EQ("4", "myserver.com", u1.getHost());
+	}
+
 	void testGenerate()
 	{
 		vmime::utility::url u1("proto", "host", 12345, "path", "user", "password");
@@ -237,6 +251,39 @@ VMIME_TEST_SUITE_BEGIN
 				vmime::utility::urlUtils::decode(ossTest.str()));
 		}
 
+	}
+
+	void testUtilsEncodeReservedChars()
+	{
+		VASSERT_EQ("1",  "%24", vmime::utility::urlUtils::encode("$"));
+		VASSERT_EQ("2",  "%26", vmime::utility::urlUtils::encode("&"));
+		VASSERT_EQ("3",  "%2B", vmime::utility::urlUtils::encode("+"));
+		VASSERT_EQ("4",  "%2C", vmime::utility::urlUtils::encode(","));
+		VASSERT_EQ("5",  "%2F", vmime::utility::urlUtils::encode("/"));
+		VASSERT_EQ("6",  "%3A", vmime::utility::urlUtils::encode(":"));
+		VASSERT_EQ("7",  "%3B", vmime::utility::urlUtils::encode(";"));
+		VASSERT_EQ("8",  "%3D", vmime::utility::urlUtils::encode("="));
+		VASSERT_EQ("9",  "%3F", vmime::utility::urlUtils::encode("?"));
+		VASSERT_EQ("10", "%40", vmime::utility::urlUtils::encode("@"));
+	}
+
+	void testUtilsEncodeUnsafeChars()
+	{
+		VASSERT_EQ("1",  "%20", vmime::utility::urlUtils::encode(" "));
+		VASSERT_EQ("2",  "%22", vmime::utility::urlUtils::encode("\""));
+		VASSERT_EQ("3",  "%3C", vmime::utility::urlUtils::encode("<"));
+		VASSERT_EQ("4",  "%3E", vmime::utility::urlUtils::encode(">"));
+		VASSERT_EQ("5",  "%23", vmime::utility::urlUtils::encode("#"));
+		VASSERT_EQ("6",  "%25", vmime::utility::urlUtils::encode("%"));
+		VASSERT_EQ("7",  "%7B", vmime::utility::urlUtils::encode("{"));
+		VASSERT_EQ("8",  "%7D", vmime::utility::urlUtils::encode("}"));
+		VASSERT_EQ("9",  "%7C", vmime::utility::urlUtils::encode("|"));
+		VASSERT_EQ("10", "%5C", vmime::utility::urlUtils::encode("\\"));
+		VASSERT_EQ("11", "%5E", vmime::utility::urlUtils::encode("^"));
+		VASSERT_EQ("12", "%7E", vmime::utility::urlUtils::encode("~"));
+		VASSERT_EQ("13", "%5B", vmime::utility::urlUtils::encode("["));
+		VASSERT_EQ("14", "%5D", vmime::utility::urlUtils::encode("]"));
+		VASSERT_EQ("15", "%60", vmime::utility::urlUtils::encode("`"));
 	}
 
 VMIME_TEST_SUITE_END

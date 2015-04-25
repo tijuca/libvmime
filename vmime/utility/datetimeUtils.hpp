@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -55,20 +55,20 @@ public:
 	  */
 	static const int getDaysInMonth(const int year, const int month);
 
-	/** Convert the specified local time and date to UT (GMT).
+	/** Convert the specified date/time to UT (GMT).
 	  *
-	  * @param date local date/time
+	  * @param date date/time to convert
 	  * @return GMT date/time
 	  */
-	static const datetime localTimeToUniversalTime(const datetime& date);
+	static const datetime toUniversalTime(const datetime& date);
 
-	/** Convert the specified UT to local time and date.
+	/** Convert the specified date/time to the specified time zone.
 	  *
-	  * @param date GMT date/time
+	  * @param date date/time to convert
 	  * @param zone local zone to convert to (see datetime::TimeZones enum)
 	  * @return local time and date
 	  */
-	static const datetime universalTimeToLocalTime(const datetime& date, const int zone);
+	static const datetime toLocalTime(const datetime& date, const int zone);
 
 	/** Return the day of the week from the specified date.
 	  *
@@ -78,6 +78,15 @@ public:
 	  * @return the day of the week, Sunday is 0, Monday is 1 (see datetime::DaysOfWeek enum)
 	  */
 	static const int getDayOfWeek(const int year, const int month, const int day);
+
+	/** Return the week number in the year (ISO 8601).
+	  *
+	  * @param year year in 4-digit format
+	  * @param month month (1-12), January is 1, December is 12 (see datetime::Months enum)
+	  * @param day month day (1-31)
+	  * @return the week number (1 is the first week of the year)
+	  */
+	static const int getWeekOfYear(const int year, const int month, const int day);
 };
 
 

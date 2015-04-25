@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -51,6 +51,8 @@ private:
 public:
 
 	exception(const string& what, const exception& other = NO_EXCEPTION);
+	exception(const exception& e);
+
 	virtual ~exception() throw();
 
 	/** Return a description of the error.
@@ -127,7 +129,7 @@ class no_encoder_available : public vmime::exception
 {
 public:
 
-	no_encoder_available(const exception& other = NO_EXCEPTION);
+	no_encoder_available(const string& name, const exception& other = NO_EXCEPTION);
 	~no_encoder_available() throw();
 
 	exception* clone() const;

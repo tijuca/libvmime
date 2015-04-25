@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -24,6 +24,7 @@
 #include "vmime/defaultAttachment.hpp"
 
 #include "vmime/contentDisposition.hpp"
+#include "vmime/contentDispositionField.hpp"
 #include "vmime/encoding.hpp"
 
 
@@ -76,56 +77,57 @@ defaultAttachment& defaultAttachment::operator=(const defaultAttachment& attach)
 }
 
 
-void defaultAttachment::generateIn(bodyPart& parent) const
+void defaultAttachment::generateIn(ref <bodyPart> parent) const
 {
 	// Create and append a new part for this attachment
 	ref <bodyPart> part = vmime::create <bodyPart>();
-	parent.getBody()->appendPart(part);
+	parent->getBody()->appendPart(part);
 
-	generatePart(*part);
+	generatePart(part);
 }
 
 
-void defaultAttachment::generatePart(bodyPart& part) const
+void defaultAttachment::generatePart(ref <bodyPart> part) const
 {
 	// Set header fields
-	part.getHeader()->ContentType()->setValue(m_type);
-	if (!m_desc.isEmpty()) part.getHeader()->ContentDescription()->setValue(m_desc);
-	part.getHeader()->ContentTransferEncoding()->setValue(m_encoding);
-	part.getHeader()->ContentDisposition()->setValue(contentDisposition(contentDispositionTypes::ATTACHMENT));
+	part->getHeader()->ContentType()->setValue(m_type);
+	if (!m_desc.isEmpty()) part->getHeader()->ContentDescription()->setValue(m_desc);
+	part->getHeader()->ContentTransferEncoding()->setValue(m_encoding);
+	part->getHeader()->ContentDisposition()->setValue(contentDisposition(contentDispositionTypes::ATTACHMENT));
+	part->getHeader()->ContentDisposition().dynamicCast <contentDispositionField>()->setFilename(m_name);
 
 	// Set contents
-	part.getBody()->setContents(m_data);
+	part->getBody()->setContents(m_data);
 }
 
 
 const mediaType defaultAttachment::getType() const
 {
-	return (m_type);
+	return m_type;
 }
 
 
 const text defaultAttachment::getDescription() const
 {
-	return (m_desc);
+	return m_desc;
 }
 
 
 const word defaultAttachment::getName() const
 {
-	return (m_name);
+	return m_name;
 }
 
 
 const ref <const contentHandler> defaultAttachment::getData() const
 {
-	return (m_data);
+	return m_data;
 }
 
 
 const encoding defaultAttachment::getEncoding() const
 {
-	return (m_encoding);
+	return m_encoding;
 }
 
 

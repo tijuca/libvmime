@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -18,6 +18,8 @@
 //
 
 #include "vmime/utility/datetimeUtils.hpp"
+
+#include <stdexcept>
 
 
 namespace vmime {
@@ -157,10 +159,10 @@ static inline void substractHoursAndMinutes(datetime& d, const int h, const int 
 #endif // VMIME_BUILDING_DOC
 
 
-const datetime datetimeUtils::localTimeToUniversalTime(const datetime& date)
+const datetime datetimeUtils::toUniversalTime(const datetime& date)
 {
 	if (date.getZone() == datetime::GMT)
-		return (date);
+		return date; // no conversion needed
 
 	datetime nd(date);
 	nd.setZone(datetime::GMT);
@@ -178,19 +180,20 @@ const datetime datetimeUtils::localTimeToUniversalTime(const datetime& date)
 }
 
 
-const datetime datetimeUtils::universalTimeToLocalTime(const datetime& date, const int zone)
+const datetime datetimeUtils::toLocalTime(const datetime& date, const int zone)
 {
-	if (zone == 0)
-		return (date);
+	datetime utcDate(date);
 
-	datetime nd(date);
+	if (utcDate.getZone() != datetime::GMT)
+		utcDate = toUniversalTime(date); // convert to UT before
+
+	datetime nd(utcDate);
 	nd.setZone(zone);
 
-	const int z = zone;
-	const int h = (z < 0) ? (-z / 60) : (z / 60);
-	const int m = (z < 0) ? (-z - h * 60) : (z - h * 60);
+	const int h = (zone < 0) ? (-zone / 60) : (zone / 60);
+	const int m = (zone < 0) ? (-zone - h * 60) : (zone - h * 60);
 
-	if (z < 0)  // GMT+hhmm: substract hours and minutes from date
+	if (zone < 0)  // GMT+hhmm: substract hours and minutes from date
 		substractHoursAndMinutes(nd, h, m);
 	else        // GMT-hhmm: add hours and minutes to date
 		addHoursAndMinutes(nd, h, m);
@@ -213,6 +216,9 @@ const int datetimeUtils::getDaysInMonth(const int year, const int month)
 	static const int daysInMonthLeapYear[12] =
 		{ 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
+	if (month < 1 || month > 12)
+		throw std::out_of_range("Invalid month number");
+
 	return (isLeapYear(year) ? daysInMonthLeapYear[month - 1] : daysInMonth[month - 1]);
 }
 
@@ -221,6 +227,11 @@ const int datetimeUtils::getDayOfWeek(const int year, const int month, const int
 {
 	int y = year;
 	int m = month;
+
+	if (month < 1 || month > 12)
+		throw std::out_of_range("Invalid month number");
+	else if (day < 1 || day > getDaysInMonth(year, month))
+		throw std::out_of_range("Invalid day number");
 
 	// From RFC-3339 - Appendix B. Day of the Week
 
@@ -238,6 +249,76 @@ const int datetimeUtils::getDayOfWeek(const int year, const int month, const int
 	y %= 100;
 
 	return (((26 * m - 2) / 10 + day + y + (y >> 2) + (cent >> 2) + 5 * cent) % 7);
+}
+
+
+const int datetimeUtils::getWeekOfYear(const int year, const int month, const int day)
+{
+	// Algorithm from http://personal.ecu.edu/mccartyr/ISOwdALG.txt
+
+	const bool leapYear = ((year % 4) == 0 && (year % 100) != 0) || (year % 400) == 0;
+	const bool leapYear_1 = (((year - 1) % 4) == 0 && ((year - 1) % 100) != 0) || ((year - 1) % 400) == 0;
+
+	// 4. Find the DayOfYearNumber for Y M D
+	static const int DAY_OF_YEAR_NUMBER_MAP[12] =
+		{ 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
+
+	int DayOfYearNumber = day + DAY_OF_YEAR_NUMBER_MAP[month - 1];
+
+	if (leapYear && month > 2)
+		DayOfYearNumber += 1;
+
+	// 5. Find the Jan1Weekday for Y (Monday=1, Sunday=7)
+	const int YY = (year - 1) % 100;
+	const int C = (year - 1) - YY;
+	const int G = YY + YY / 4;
+	const int Jan1Weekday = 1 + (((((C / 100) % 4) * 5) + G) % 7);
+
+	// 6. Find the Weekday for Y M D
+	const int H = DayOfYearNumber + (Jan1Weekday - 1);
+	const int Weekday = 1 + ((H - 1) % 7);
+
+	// 7. Find if Y M D falls in YearNumber Y-1, WeekNumber 52 or 53
+	int YearNumber = 0, WeekNumber = 0;
+
+	if (DayOfYearNumber <= (8 - Jan1Weekday) && Jan1Weekday > 4)
+	{
+		YearNumber = year - 1;
+
+		if (Jan1Weekday == 5 || (Jan1Weekday == 6 && leapYear_1))
+			WeekNumber = 53;
+		else
+			WeekNumber = 52;
+	}
+	else
+	{
+		YearNumber = year;
+	}
+
+	// 8. Find if Y M D falls in YearNumber Y+1, WeekNumber 1
+	if (YearNumber == year)
+	{
+		const int I = (leapYear ? 366 : 365);
+
+		if ((I - DayOfYearNumber) < (4 - Weekday))
+		{
+			YearNumber = year + 1;
+			WeekNumber = 1;
+		}
+	}
+
+	// 9. Find if Y M D falls in YearNumber Y, WeekNumber 1 through 53
+	if (YearNumber == year)
+	{
+		const int J = DayOfYearNumber + (7 - Weekday) + (Jan1Weekday - 1);
+
+		WeekNumber = J / 7;
+
+		if (Jan1Weekday > 4)
+			WeekNumber -= 1;
+	}
+
+	return WeekNumber;
 }
 
 

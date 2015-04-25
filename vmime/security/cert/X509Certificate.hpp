@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -83,7 +83,7 @@ public:
 	  * @return a X.509 certificate, or NULL if the given data does not
 	  * represent a valid certificate
 	  */
-	static ref <X509Certificate> import(const byte* data, const unsigned int length);
+	static ref <X509Certificate> import(const byte_t* data, const unsigned int length);
 
 	/** Exports this X.509 certificate to the specified format.
 	  *

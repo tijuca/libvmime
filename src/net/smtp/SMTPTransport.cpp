@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2006 Vincent Richard <vincent@vincent-richard.net>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -18,6 +18,7 @@
 //
 
 #include "vmime/net/smtp/SMTPTransport.hpp"
+#include "vmime/net/smtp/SMTPResponse.hpp"
 
 #include "vmime/exception.hpp"
 #include "vmime/platformDependant.hpp"
@@ -27,12 +28,15 @@
 #include "vmime/utility/filteredStream.hpp"
 #include "vmime/utility/stringUtils.hpp"
 
+#include "vmime/net/defaultConnectionInfos.hpp"
+
 #if VMIME_HAVE_SASL_SUPPORT
 	#include "vmime/security/sasl/SASLContext.hpp"
 #endif // VMIME_HAVE_SASL_SUPPORT
 
 #if VMIME_HAVE_TLS_SUPPORT
 	#include "vmime/net/tls/TLSSession.hpp"
+	#include "vmime/net/tls/TLSSecuredConnectionInfos.hpp"
 #endif // VMIME_HAVE_TLS_SUPPORT
 
 
@@ -53,7 +57,7 @@ namespace smtp {
 SMTPTransport::SMTPTransport(ref <session> sess, ref <security::authenticator> auth, const bool secured)
 	: transport(sess, getInfosInstance(), auth), m_socket(NULL),
 	  m_authentified(false), m_extendedSMTP(false), m_timeoutHandler(NULL),
-	  m_secured(secured)
+	  m_isSMTPS(secured), m_secured(false)
 {
 }
 
@@ -96,7 +100,7 @@ void SMTPTransport::connect()
 	m_socket = getSocketFactory()->create();
 
 #if VMIME_HAVE_TLS_SUPPORT
-	if (m_secured)  // dedicated port/SMTPS
+	if (m_isSMTPS)  // dedicated port/SMTPS
 	{
 		ref <tls::TLSSession> tlsSession =
 			vmime::create <tls::TLSSession>(getCertificateVerifier());
@@ -105,57 +109,33 @@ void SMTPTransport::connect()
 			tlsSession->getSocket(m_socket);
 
 		m_socket = tlsSocket;
+
+		m_secured = true;
+		m_cntInfos = vmime::create <tls::TLSSecuredConnectionInfos>(address, port, tlsSession, tlsSocket);
 	}
+	else
 #endif // VMIME_HAVE_TLS_SUPPORT
+	{
+		m_cntInfos = vmime::create <defaultConnectionInfos>(address, port);
+	}
 
 	m_socket->connect(address, port);
-
-	m_responseBuffer.clear();
 
 	// Connection
 	//
 	// eg:  C: <connection to server>
 	// ---  S: 220 smtp.domain.com Service ready
 
-	string response;
+	ref <SMTPResponse> resp;
 
-	if (readAllResponses(response) != 220)
+	if ((resp = readResponse())->getCode() != 220)
 	{
 		internalDisconnect();
-		throw exceptions::connection_greeting_error(response);
+		throw exceptions::connection_greeting_error(resp->getText());
 	}
 
 	// Identification
-	// First, try Extended SMTP (ESMTP)
-	//
-	// eg:  C: EHLO thismachine.ourdomain.com
-	//      S: 250-smtp.theserver.com
-	//      S: 250 AUTH CRAM-MD5 DIGEST-MD5
-
-	sendRequest("EHLO " + platformDependant::getHandler()->getHostName());
-
-	if (readAllResponses(response, true) != 250)
-	{
-		// Next, try "Basic" SMTP
-		//
-		// eg:  C: HELO thismachine.ourdomain.com
-		//      S: 250 OK
-
-		sendRequest("HELO " + platformDependant::getHandler()->getHostName());
-
-		if (readAllResponses(response) != 250)
-		{
-			internalDisconnect();
-			throw exceptions::connection_greeting_error(response);
-		}
-
-		m_extendedSMTP = false;
-	}
-	else
-	{
-		m_extendedSMTP = true;
-		m_extendedSMTPResponse = response;
-	}
+	helo();
 
 #if VMIME_HAVE_TLS_SUPPORT
 	// Setup secured connection, if requested
@@ -164,7 +144,7 @@ void SMTPTransport::connect()
 	const bool tlsRequired = HAS_PROPERTY(PROPERTY_CONNECTION_TLS_REQUIRED)
 		&& GET_PROPERTY(bool, PROPERTY_CONNECTION_TLS_REQUIRED);
 
-	if (!m_secured && tls)  // only if not POP3S
+	if (!m_isSMTPS && tls)  // only if not SMTPS
 	{
 		try
 		{
@@ -187,12 +167,55 @@ void SMTPTransport::connect()
 		{
 			throw;
 		}
+
+		// Must reissue a EHLO command [RFC-2487, 5.2]
+		helo();
 	}
 #endif // VMIME_HAVE_TLS_SUPPORT
 
 	// Authentication
 	if (GET_PROPERTY(bool, PROPERTY_OPTIONS_NEEDAUTH))
 		authenticate();
+	else
+		m_authentified = true;
+}
+
+
+void SMTPTransport::helo()
+{
+	// First, try Extended SMTP (ESMTP)
+	//
+	// eg:  C: EHLO thismachine.ourdomain.com
+	//      S: 250-smtp.theserver.com
+	//      S: 250 AUTH CRAM-MD5 DIGEST-MD5
+
+	sendRequest("EHLO " + platformDependant::getHandler()->getHostName());
+
+	ref <SMTPResponse> resp;
+
+	if ((resp = readResponse())->getCode() != 250)
+	{
+		// Next, try "Basic" SMTP
+		//
+		// eg:  C: HELO thismachine.ourdomain.com
+		//      S: 250 OK
+
+		sendRequest("HELO " + platformDependant::getHandler()->getHostName());
+
+		if ((resp = readResponse())->getCode() != 250)
+		{
+			internalDisconnect();
+			throw exceptions::connection_greeting_error(resp->getLastLine().getText());
+		}
+
+		m_extendedSMTP = false;
+		m_extendedSMTPResponse.clear();
+	}
+	else
+	{
+		m_extendedSMTP = true;
+		m_extendedSMTPResponse = resp->getText();
+	}
 }
 
 
@@ -267,10 +290,10 @@ void SMTPTransport::authenticateSASL()
 		while (liss >> word)
 		{
 			if (word.length() == 4 &&
-			    (word[0] == 'A' || word[0] == 'a') ||
-			    (word[0] == 'U' || word[0] == 'u') ||
-			    (word[0] == 'T' || word[0] == 't') ||
-			    (word[0] == 'H' || word[0] == 'h'))
+			    (word[0] == 'A' || word[0] == 'a') &&
+			    (word[1] == 'U' || word[1] == 'u') &&
+			    (word[2] == 'T' || word[2] == 't') &&
+			    (word[3] == 'H' || word[3] == 'h'))
 			{
 				inAuth = true;
 			}
@@ -333,9 +356,9 @@ void SMTPTransport::authenticateSASL()
 
 		for (bool cont = true ; cont ; )
 		{
-			string response;
+			ref <SMTPResponse> response = readResponse();
 
-			switch (readAllResponses(response))
+			switch (response->getCode())
 			{
 			case 235:
 			{
@@ -344,16 +367,16 @@ void SMTPTransport::authenticateSASL()
 			}
 			case 334:
 			{
-				byte* challenge = 0;
+				byte_t* challenge = 0;
 				int challengeLen = 0;
 
-				byte* resp = 0;
+				byte_t* resp = 0;
 				int respLen = 0;
 
 				try
 				{
 					// Extract challenge
-					saslContext->decodeB64(response, &challenge, &challengeLen);
+					saslContext->decodeB64(response->getText(), &challenge, &challengeLen);
 
 					// Prepare response
 					saslSession->evaluateChallenge
@@ -421,10 +444,10 @@ void SMTPTransport::startTLS()
 	{
 		sendRequest("STARTTLS");
 
-		string response;
+		ref <SMTPResponse> resp = readResponse();
 
-		if (readAllResponses(response) != 220)
-			throw exceptions::command_error("STARTTLS", response);
+		if (resp->getCode() != 220)
+			throw exceptions::command_error("STARTTLS", resp->getText());
 
 		ref <tls::TLSSession> tlsSession =
 			vmime::create <tls::TLSSession>(getCertificateVerifier());
@@ -435,6 +458,10 @@ void SMTPTransport::startTLS()
 		tlsSocket->handshake(m_timeoutHandler);
 
 		m_socket = tlsSocket;
+
+		m_secured = true;
+		m_cntInfos = vmime::create <tls::TLSSecuredConnectionInfos>
+			(m_cntInfos->getHost(), m_cntInfos->getPort(), tlsSession, tlsSocket);
 	}
 	catch (exceptions::command_error&)
 	{
@@ -458,6 +485,18 @@ const bool SMTPTransport::isConnected() const
 }
 
 
+const bool SMTPTransport::isSecuredConnection() const
+{
+	return m_secured;
+}
+
+
+ref <connectionInfos> SMTPTransport::getConnectionInfos() const
+{
+	return m_cntInfos;
+}
+
+
 void SMTPTransport::disconnect()
 {
 	if (!isConnected())
@@ -469,7 +508,14 @@ void SMTPTransport::disconnect()
 
 void SMTPTransport::internalDisconnect()
 {
-	sendRequest("QUIT");
+	try
+	{
+		sendRequest("QUIT");
+	}
+	catch (exception&)
+	{
+		// Not important
+	}
 
 	m_socket->disconnect();
 	m_socket = NULL;
@@ -478,17 +524,23 @@ void SMTPTransport::internalDisconnect()
 
 	m_authentified = false;
 	m_extendedSMTP = false;
+
+	m_secured = false;
+	m_cntInfos = NULL;
 }
 
 
 void SMTPTransport::noop()
 {
+	if (!isConnected())
+		throw exceptions::not_connected();
+
 	sendRequest("NOOP");
 
-	string response;
+	ref <SMTPResponse> resp = readResponse();
 
-	if (readAllResponses(response) != 250)
-		throw exceptions::command_error("NOOP", response);
+	if (resp->getCode() != 250)
+		throw exceptions::command_error("NOOP", resp->getText());
 }
 
 
@@ -496,6 +548,9 @@ void SMTPTransport::send(const mailbox& expeditor, const mailboxList& recipients
                          utility::inputStream& is, const utility::stream::size_type size,
                          utility::progressListener* progress)
 {
+	if (!isConnected())
+		throw exceptions::not_connected();
+
 	// If no recipient/expeditor was found, throw an exception
 	if (recipients.isEmpty())
 		throw exceptions::no_recipient();
@@ -503,14 +558,14 @@ void SMTPTransport::send(const mailbox& expeditor, const mailboxList& recipients
 		throw exceptions::no_expeditor();
 
 	// Emit the "MAIL" command
-	string response;
+	ref <SMTPResponse> resp;
 
 	sendRequest("MAIL FROM: <" + expeditor.getEmail() + ">");
 
-	if (readAllResponses(response) != 250)
+	if ((resp = readResponse())->getCode() != 250)
 	{
 		internalDisconnect();
-		throw exceptions::command_error("MAIL", response);
+		throw exceptions::command_error("MAIL", resp->getText());
 	}
 
 	// Emit a "RCPT TO" command for each recipient
@@ -520,20 +575,20 @@ void SMTPTransport::send(const mailbox& expeditor, const mailboxList& recipients
 
 		sendRequest("RCPT TO: <" + mbox.getEmail() + ">");
 
-		if (readAllResponses(response) != 250)
+		if ((resp = readResponse())->getCode() != 250)
 		{
 			internalDisconnect();
-			throw exceptions::command_error("RCPT TO", response);
+			throw exceptions::command_error("RCPT TO", resp->getText());
 		}
 	}
 
 	// Send the message data
 	sendRequest("DATA");
 
-	if (readAllResponses(response) != 354)
+	if ((resp = readResponse())->getCode() != 354)
 	{
 		internalDisconnect();
-		throw exceptions::command_error("DATA", response);
+		throw exceptions::command_error("DATA", resp->getText());
 	}
 
 	// Stream copy with "\n." to "\n.." transformation
@@ -547,10 +602,10 @@ void SMTPTransport::send(const mailbox& expeditor, const mailboxList& recipients
 	// Send end-of-data delimiter
 	m_socket->sendRaw("\r\n.\r\n", 5);
 
-	if (readAllResponses(response) != 250)
+	if ((resp = readResponse())->getCode() != 250)
 	{
 		internalDisconnect();
-		throw exceptions::command_error("DATA", response);
+		throw exceptions::command_error("DATA", resp->getText());
 	}
 }
 
@@ -562,114 +617,9 @@ void SMTPTransport::sendRequest(const string& buffer, const bool end)
 }
 
 
-const int SMTPTransport::getResponseCode(const string& response)
+ref <SMTPResponse> SMTPTransport::readResponse()
 {
-	int code = 0;
-
-	if (response.length() >= 3)
-	{
-		code = (response[0] - '0') * 100
-		     + (response[1] - '0') * 10
-		     + (response[2] - '0');
-	}
-
-	return (code);
-}
-
-
-const string SMTPTransport::readResponseLine()
-{
-	string currentBuffer = m_responseBuffer;
-
-	while (true)
-	{
-		// Get a line from the response buffer
-		string::size_type lineEnd = currentBuffer.find_first_of('\n');
-
-		if (lineEnd != string::npos)
-		{
-			const string line(currentBuffer.begin(), currentBuffer.begin() + lineEnd);
-
-			currentBuffer.erase(currentBuffer.begin(), currentBuffer.begin() + lineEnd + 1);
-			m_responseBuffer = currentBuffer;
-
-			return line;
-		}
-
-		// Check whether the time-out delay is elapsed
-		if (m_timeoutHandler && m_timeoutHandler->isTimeOut())
-		{
-			if (!m_timeoutHandler->handleTimeOut())
-				throw exceptions::operation_timed_out();
-
-			m_timeoutHandler->resetTimeOut();
-		}
-
-		// Receive data from the socket
-		string receiveBuffer;
-		m_socket->receive(receiveBuffer);
-
-		if (receiveBuffer.empty())   // buffer is empty
-		{
-			platformDependant::getHandler()->wait();
-			continue;
-		}
-
-		currentBuffer += receiveBuffer;
-	}
-}
-
-
-const int SMTPTransport::readResponse(string& text)
-{
-	string line = readResponseLine();
-
-	// Special case where CRLF occurs after response code
-	if (line.length() < 4)
-		line = line + '\n' + readResponseLine();
-
-	const int code = getResponseCode(line);
-
-	m_responseContinues = (line.length() >= 4 && line[3] == '-');
-
-	if (line.length() > 4)
-		text = utility::stringUtils::trim(line.substr(4));
-	else
-		text = utility::stringUtils::trim(line);
-
-	return code;
-}
-
-
-const int SMTPTransport::readAllResponses(string& outText, const bool allText)
-{
-	string text;
-
-	const int firstCode = readResponse(outText);
-
-	if (allText)
-		text = outText;
-
-	while (m_responseContinues)
-	{
-		const int code = readResponse(outText);
-
-		if (allText)
-			text += '\n' + outText;
-
-		if (code != firstCode)
-		{
-			if (allText)
-				outText = text;
-
-			return 0;
-		}
-	}
-
-	if (allText)
-		outText = text;
-
-	return firstCode;
+	return SMTPResponse::readResponse(m_socket, m_timeoutHandler);
 }
 
 
