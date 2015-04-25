@@ -23,7 +23,7 @@
 
 #include "vmime/messageId.hpp"
 #include "vmime/utility/random.hpp"
-#include "vmime/platformDependant.hpp"
+#include "vmime/platform.hpp"
 #include "vmime/parserHelpers.hpp"
 
 
@@ -210,6 +210,7 @@ messageId& messageId::operator=(const string& id)
 messageId messageId::generateId()
 {
 	std::ostringstream left;
+	left.imbue(std::locale::classic());
 
 	left << "vmime";
 	left << '.';
@@ -220,7 +221,7 @@ messageId messageId::generateId()
 	left << std::hex << utility::random::getNext();
 	left << std::hex << utility::random::getNext();
 
-	return (messageId(left.str(), platformDependant::getHandler()->getHostName()));
+	return (messageId(left.str(), platform::getHandler()->getHostName()));
 }
 
 

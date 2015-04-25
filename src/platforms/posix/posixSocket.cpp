@@ -78,6 +78,8 @@ void posixSocket::connect(const vmime::string& address, const vmime::port_t port
 	hints.ai_socktype = SOCK_STREAM;
 
 	std::ostringstream portStr;
+	portStr.imbue(std::locale::classic());
+
 	portStr << port;
 
 	struct ::addrinfo* res0;
@@ -259,7 +261,7 @@ void posixSocket::sendRaw(const char* buffer, const int count)
 			if (errno != EAGAIN)
 				throwSocketError(errno);
 
-			platformDependant::getHandler()->wait();
+			platform::getHandler()->wait();
 		}
 		else
 		{

@@ -60,7 +60,7 @@ libvmime_la_SOURCES = address.cpp \
 	parameterizedHeaderField.cpp \
 	parsedMessageAttachment.cpp \
 	plainTextPart.cpp \
-	platformDependant.cpp \
+	platform.cpp \
 	propertySet.cpp \
 	relay.cpp \
 	stringContentHandler.cpp \

@@ -71,6 +71,13 @@ public:
 	/** Type used for lengths in streams.
 	  */
 	typedef string::size_type size_type;
+
+	/** Return the preferred maximum block size when reading
+	  * from or writing to this stream.
+	  *
+	  * @return block size, in bytes
+	  */
+	virtual const size_type getBlockSize() const;
 };
 
 
@@ -164,6 +171,8 @@ template <typename T>
 outputStream& operator<<(outputStream& os, const T& t)
 {
 	std::ostringstream oss;
+	oss.imbue(std::locale::classic());  // no formatting
+
 	oss << t;
 
 	os << oss.str();
@@ -250,7 +259,7 @@ public:
 
 private:
 
-	byteArray m_array;
+	byteArray& m_array;
 };
 
 
@@ -393,6 +402,8 @@ public:
 	void write(const value_type* const data, const size_type count);
 	void flush();
 
+	const size_type getBlockSize() const;
+
 private:
 
 	outputStreamSocketAdapter(const outputStreamSocketAdapter&);
@@ -414,6 +425,8 @@ public:
 	void reset();
 	const size_type read(value_type* const data, const size_type count);
 	const size_type skip(const size_type count);
+
+	const size_type getBlockSize() const;
 
 private:
 
