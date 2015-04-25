@@ -21,7 +21,6 @@ Description: C++ mail library (development files)
  from message, getting and setting message flags, and a lot more.
 
 Package: libvmime0
-Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: C++ mail library (runtime library)
