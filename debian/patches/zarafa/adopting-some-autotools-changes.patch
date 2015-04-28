@@ -1,0 +1,24 @@
+From: Carsten Schoenert <c.schoenert@t-online.de>
+Date: Sat, 25 Apr 2015 13:29:15 +0200
+Subject: adopting some autotools changes
+
+---
+ configure.in | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/configure.in b/configure.in
+index a90db00..33c7f81 100644
+--- a/configure.in
++++ b/configure.in
+@@ -36,9 +36,9 @@ AC_SUBST(LIBRARY_RELEASE)
+ AC_CANONICAL_HOST
+ AC_CANONICAL_TARGET
+ 
+-AM_INIT_AUTOMAKE(vmime, 0.9.1)
++AM_INIT_AUTOMAKE([no-dist])
+ AC_CONFIG_SRCDIR([src/base.cpp])
+-AM_CONFIG_HEADER([config.h])
++AM_CONFIG_HEADERS([config.h])
+ 
+ AM_MAINTAINER_MODE
+ 

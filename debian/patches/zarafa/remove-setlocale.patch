@@ -1,0 +1,25 @@
+From: Carsten Schoenert <c.schoenert@t-online.de>
+Date: Sat, 25 Apr 2015 13:37:37 +0200
+Subject: remove setlocale
+
+---
+ src/platforms/posix/posixHandler.cpp | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/src/platforms/posix/posixHandler.cpp b/src/platforms/posix/posixHandler.cpp
+index 2c11307..699a83e 100644
+--- a/src/platforms/posix/posixHandler.cpp
++++ b/src/platforms/posix/posixHandler.cpp
+@@ -153,11 +153,7 @@ const vmime::charset posixHandler::getLocaleCharset() const
+ {
+ 	const PLockHelper lock;
+ 
+-	const char* prevLocale = ::setlocale(LC_ALL, "");
+-	vmime::charset ch(::nl_langinfo(CODESET));
+-	::setlocale(LC_ALL, prevLocale);
+-
+-	return (ch);
++	return vmime::charset(::nl_langinfo(CODESET));
+ }
+ 
+ 

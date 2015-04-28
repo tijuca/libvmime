@@ -1,0 +1,32 @@
+From: Carsten Schoenert <c.schoenert@t-online.de>
+Date: Sat, 25 Apr 2015 13:30:38 +0200
+Subject: fix out whitespace error
+
+---
+ src/parameterizedHeaderField.cpp | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/parameterizedHeaderField.cpp b/src/parameterizedHeaderField.cpp
+index 464990e..8f7d491 100644
+--- a/src/parameterizedHeaderField.cpp
++++ b/src/parameterizedHeaderField.cpp
+@@ -97,7 +97,7 @@ void parameterizedHeaderField::parse(const string& buffer, const string::size_ty
+ 	// Advance up to ';', if any
+ 	string::size_type valueLength = 0;
+ 
+-	while (p < pend && *p != ';')  // FIXME: support ";" inside quoted or RFC-2047-encoded text
++	while (p < pend && *p != ';' && (!parserHelpers::isSpace(*p)))  // FIXME: support ";" inside quoted or RFC-2047-encoded text
+ 	{
+ 		++p;
+ 		++valueLength;
+@@ -118,6 +118,10 @@ void parameterizedHeaderField::parse(const string& buffer, const string::size_ty
+ 	{
+ 		std::map <string, paramInfo> params;
+ 
++		if (*p != ';')
++			while (p < pend && *p != ';')  // FIXME: support ";" inside quoted or RFC-2047-encoded text
++				++p;
++
+ 		while (*p == ';')
+ 		{
+ 			// Skip ';'

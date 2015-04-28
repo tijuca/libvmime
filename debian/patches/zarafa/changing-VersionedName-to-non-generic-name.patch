@@ -1,0 +1,24 @@
+From: Carsten Schoenert <c.schoenert@t-online.de>
+Date: Sat, 25 Apr 2015 13:01:13 +0200
+Subject: changing VersionedName* to non generic name
+
+ToDo: That is currently wrong, we are don't Zarafa. ;)
+---
+ SConstruct | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/SConstruct b/SConstruct
+index fb01edf..e63a7de 100644
+--- a/SConstruct
++++ b/SConstruct
+@@ -63,8 +63,8 @@ packageAPI = '%d:%d:%d' % (packageAPICurrent, packageAPIRevision, packageAPIAge)
+ #else:
+ #	packageVersionedGenericName = packageGenericName
+ #	packageVersionedName = packageName
+-packageVersionedGenericName = packageGenericName
+-packageVersionedName = packageName
++packageVersionedGenericName = "vmime_zarafa7"
++packageVersionedName = "libvmime_zarafa7"
+ 
+ 
+ ##################

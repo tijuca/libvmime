@@ -1,0 +1,198 @@
+From: Carsten Schoenert <c.schoenert@t-online.de>
+Date: Sat, 25 Apr 2015 13:57:25 +0200
+Subject: wrongly padded B64 words
+
+---
+ src/word.cpp   | 59 +++++++++++++++++++++++++++++++++++++++++++---------------
+ vmime/word.hpp | 23 ++++++++++++++++++++++-
+ 2 files changed, 66 insertions(+), 16 deletions(-)
+
+diff --git a/src/word.cpp b/src/word.cpp
+index 5fb506f..b0ded15 100644
+--- a/src/word.cpp
++++ b/src/word.cpp
+@@ -64,8 +64,7 @@ word::word(const string& buffer, const charset& charset)
+ 
+ 
+ ref <word> word::parseNext(const string& buffer, const string::size_type position,
+-	const string::size_type end, string::size_type* newPosition,
+-	bool prevIsEncoded, bool* isEncoded, bool isFirst)
++	const string::size_type end, string::size_type* newPosition, parserState* state)
+ {
+ 	string::size_type pos = position;
+ 
+@@ -119,7 +118,7 @@ ref <word> word::parseNext(const string& buffer, const string::size_type positio
+ 
+ 			if (!unencoded.empty())
+ 			{
+-				if (prevIsEncoded)
++				if (state->prevIsEncoded && !state->isFirst)
+ 					unencoded = whiteSpaces + unencoded;
+ 
+ 				ref <word> w = vmime::create <word>(unencoded, charset(charsets::US_ASCII));
+@@ -128,8 +127,8 @@ ref <word> word::parseNext(const string& buffer, const string::size_type positio
+ 				if (newPosition)
+ 					*newPosition = pos;
+ 
+-				if (isEncoded)
+-					*isEncoded = false;
++				state->prevIsEncoded = false;
++				state->isFirst = false;
+ 
+ 				return (w);
+ 			}
+@@ -180,13 +179,13 @@ ref <word> word::parseNext(const string& buffer, const string::size_type positio
+ 			pos += 2; // ?=
+ 
+ 			ref <word> w = vmime::create <word>();
+-			w->parse(buffer, wordStart, pos, NULL);
++			w->parseWithState(buffer, wordStart, pos, NULL, state);
+ 
+ 			if (newPosition)
+ 				*newPosition = pos;
+ 
+-			if (isEncoded)
+-				*isEncoded = true;
++			state->prevIsEncoded = true;
++			state->isFirst = false;
+ 
+ 			return (w);
+ 		}
+@@ -197,7 +196,7 @@ ref <word> word::parseNext(const string& buffer, const string::size_type positio
+ 	// Treat unencoded text at the end of the buffer
+ 	if (end != startPos)
+ 	{
+-		if (startPos != pos && !isFirst && prevIsEncoded)
++		if (startPos != end && !state->isFirst && state->prevIsEncoded)
+ 			unencoded += whiteSpaces;
+ 
+ 		unencoded += buffer.substr(startPos, end - startPos);
+@@ -208,8 +207,8 @@ ref <word> word::parseNext(const string& buffer, const string::size_type positio
+ 		if (newPosition)
+ 			*newPosition = end;
+ 
+-		if (isEncoded)
+-			*isEncoded = false;
++		state->prevIsEncoded = false;
++		state->isFirst = false;
+ 
+ 		return (w);
+ 	}
+@@ -226,9 +225,9 @@ const std::vector <ref <word> > word::parseMultiple(const string& buffer, const
+ 
+ 	string::size_type pos = position;
+ 
+-	bool prevIsEncoded = false;
++	parserState state;
+ 
+-	while ((w = word::parseNext(buffer, pos, end, &pos, prevIsEncoded, &prevIsEncoded, (w == NULL))) != NULL)
++	while ((w = word::parseNext(buffer, pos, end, &pos, &state)) != NULL)
+ 		res.push_back(w);
+ 
+ 	if (newPosition)
+@@ -241,6 +240,14 @@ const std::vector <ref <word> > word::parseMultiple(const string& buffer, const
+ void word::parse(const string& buffer, const string::size_type position,
+ 	const string::size_type end, string::size_type* newPosition)
+ {
++	parseWithState(buffer, position, end, newPosition, NULL);
++}
++
++
++void word::parseWithState
++	(const string& buffer, const size_t position,
++	 const size_t end, size_t* newPosition, parserState* state)
++{
+ 	if (position + 6 < end && // 6 = "=?(.+)?(.*)?="
+ 	    buffer[position] == '=' && buffer[position + 1] == '?')
+ 	{
+@@ -287,12 +294,19 @@ void word::parse(const string& buffer, const string::size_type position,
+ 					if (theEncoder)
+ 					{
+ 						// Decode text
++						string encodedBuffer(dataPos, dataEnd);
+ 						string decodedBuffer;
+ 
+-						utility::inputStreamStringAdapter ein(string(dataPos, dataEnd));
++						if (state && !state->undecodedBytes.empty())
++						{
++							encodedBuffer = state->undecodedBytes + encodedBuffer;
++							state->undecodedBytes.clear();
++						}
++
++						utility::inputStreamStringAdapter ein(encodedBuffer);
+ 						utility::outputStreamStringAdapter eout(decodedBuffer);
+ 
+-						theEncoder->decode(ein, eout);
++						const size_t decodedLen = theEncoder->decode(ein, eout);
+ 						delete (theEncoder);
+ 
+ 						m_buffer = decodedBuffer;
+@@ -303,6 +317,21 @@ void word::parse(const string& buffer, const string::size_type position,
+ 						if (newPosition)
+ 							*newPosition = (p - buffer.begin());
+ 
++						// For Base64 encoding, ensure all bytes have been decoded.
++						// If there are remaining bytes, keep them for the next run.
++						//
++						// This allows decoding some insanities like:
++						//     =?utf-8?B?5Lit5?= =?utf-8?B?paH?=
++						if (*encPos == 'B' || *encPos == 'b')
++						{
++							const size_t actualEncodedLen = encodedBuffer.length();
++							const size_t theoricalEncodedLen =
++								((decodedLen + ((decodedLen % 3) ? (3 - (decodedLen % 3)) : 0) ) / 3) * 4;
++
++							if (state && actualEncodedLen != theoricalEncodedLen)
++								state->undecodedBytes.assign(dataPos + theoricalEncodedLen, dataEnd);
++						}
++
+ 						return;
+ 					}
+ 				}
+diff --git a/vmime/word.hpp b/vmime/word.hpp
+index ad848ec..80c15dd 100644
+--- a/vmime/word.hpp
++++ b/vmime/word.hpp
+@@ -125,6 +125,20 @@ public:
+ 		bool prevWordIsEncoded;
+ 		bool lastCharIsSpace;
+ 	};
++
++	class parserState
++	{
++	public:
++
++		parserState()
++			: prevIsEncoded(false), isFirst(true)
++		{
++		}
++
++		bool prevIsEncoded;
++		bool isFirst;
++		std::string undecodedBytes;
++	};
+ #endif
+ 
+ 
+@@ -134,13 +148,20 @@ public:
+ 	void parse(const string& buffer, const string::size_type position, const string::size_type end, string::size_type* newPosition = NULL);
+ 	void generate(utility::outputStream& os, const string::size_type maxLineLength = lineLengthLimits::infinite, const string::size_type curLinePos = 0, string::size_type* newLinePos = NULL) const;
+ 
++       void parseWithState
++               (const string& buffer,
++                const size_t position,
++                const size_t end,
++                size_t* newPosition,
++                parserState* state);
++
+ 	void generate(utility::outputStream& os, const string::size_type maxLineLength, const string::size_type curLinePos, string::size_type* newLinePos, const int flags, generatorState* state) const;
+ 
+ 	const std::vector <ref <const component> > getChildComponents() const;
+ 
+ private:
+ 
+-	static ref <word> parseNext(const string& buffer, const string::size_type position, const string::size_type end, string::size_type* newPosition, bool prevIsEncoded, bool* isEncoded, bool isFirst);
++	static ref <word> parseNext(const string& buffer, const string::size_type position, const string::size_type end, string::size_type* newPosition, parserState* state);
+ 
+ 	static const std::vector <ref <word> > parseMultiple(const string& buffer, const string::size_type position, const string::size_type end, string::size_type* newPosition);
+ 

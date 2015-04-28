@@ -1,0 +1,33 @@
+From: Carsten Schoenert <c.schoenert@t-online.de>
+Date: Sat, 25 Apr 2015 13:59:09 +0200
+Subject: x uuencode
+
+---
+ src/constants.cpp                      | 1 +
+ src/utility/encoder/encoderFactory.cpp | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/src/constants.cpp b/src/constants.cpp
+index b3f51a2..f2eea72 100644
+--- a/src/constants.cpp
++++ b/src/constants.cpp
+@@ -80,6 +80,7 @@ namespace encodingTypes
+ 	const string::value_type* const QUOTED_PRINTABLE = "quoted-printable";
+ 	const string::value_type* const BINARY = "binary";
+ 	const string::value_type* const UUENCODE = "uuencode";
++	const string::value_type* const X_UUENCODE = "x-uuencode";
+ }
+ 
+ 
+diff --git a/src/utility/encoder/encoderFactory.cpp b/src/utility/encoder/encoderFactory.cpp
+index 2237178..e8b7048 100644
+--- a/src/utility/encoder/encoderFactory.cpp
++++ b/src/utility/encoder/encoderFactory.cpp
+@@ -43,6 +43,7 @@ encoderFactory::encoderFactory()
+ 	registerName <b64Encoder>("base64");
+ 	registerName <qpEncoder>("quoted-printable");
+ 	registerName <uuEncoder>("uuencode");
++	registerName <uuEncoder>("x-uuencode");
+ 	registerName <sevenBitEncoder>("7bit");
+ 	registerName <eightBitEncoder>("8bit");
+ 	registerName <binaryEncoder>("binary");

@@ -1,0 +1,21 @@
+From: Carsten Schoenert <c.schoenert@t-online.de>
+Date: Sat, 25 Apr 2015 12:57:41 +0200
+Subject: remove __TIME__ from libversion()
+
+---
+ src/base.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/base.cpp b/src/base.cpp
+index b895985..ae808fa 100644
+--- a/src/base.cpp
++++ b/src/base.cpp
+@@ -74,7 +74,7 @@ const string libname() { return (VMIME_PACKAGE); }
+   *
+   * @return library version
+   */
+-const string libversion() { return (VMIME_VERSION " (" __DATE__ " " __TIME__ ")"); }
++const string libversion() { return (VMIME_VERSION " (_""_DATE_""_ causes unnecessary rebuilds - avoid)"); }
+ 
+ /** Return the library API version (eg: "6:1:6").
+   *

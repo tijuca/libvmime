@@ -1,0 +1,23 @@
+From: Carsten Schoenert <c.schoenert@t-online.de>
+Date: Sat, 25 Apr 2015 13:34:09 +0200
+Subject: disable rfc2231
+
+---
+ src/parameter.cpp | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/parameter.cpp b/src/parameter.cpp
+index fb94e29..b38663d 100644
+--- a/src/parameter.cpp
++++ b/src/parameter.cpp
+@@ -375,7 +375,9 @@ void parameter::generate(utility::outputStream& os, const string::size_type maxL
+ 
+ 	// Also generate an extended parameter if the value contains 8-bit characters
+ 	// or is too long for a single line
+-	if (extended || cutValue)
++
++	// Disable RFC-2231 header generation. Some email clients have bad reactions to it.
++	if ((extended || cutValue) && false)
+ 	{
+ 
+ #if VMIME_ALWAYS_GENERATE_7BIT_PARAMETER

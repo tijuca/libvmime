@@ -1,0 +1,27 @@
+From: Carsten Schoenert <c.schoenert@t-online.de>
+Date: Sat, 25 Apr 2015 13:35:44 +0200
+Subject: ignore newlines
+
+---
+ src/word.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/word.cpp b/src/word.cpp
+index 6526042..5fb506f 100644
+--- a/src/word.cpp
++++ b/src/word.cpp
+@@ -73,11 +73,14 @@ ref <word> word::parseNext(const string& buffer, const string::size_type positio
+ 	//   - before the first word
+ 	//   - between two encoded words
+ 	//   - after the last word
++	// Always ignore newlines
+ 	string whiteSpaces;
+ 
+ 	while (pos < end && parserHelpers::isSpace(buffer[pos]))
+ 	{
+ 		whiteSpaces += buffer[pos];
++		if(buffer[pos] != '\r' && buffer[pos] != '\n') // do not include newlines
++			whiteSpaces += buffer[pos];
+ 		++pos;
+ 	}
+ 
