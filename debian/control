@@ -1,6 +1,7 @@
 Source: libvmime
 Priority: optional
-Maintainer: Mattias Nordstrom <mnordstr@debian.org>
+Maintainer: Giraffe Maintainers <pkg-giraffe-maintainers@lists.alioth.debian.org>
+Uploaders: Guido Guenther <agx@sigxcpu.org>
 Build-Depends: autotools-dev,
   debhelper (>= 7.0.50~),
   libgnutls28-dev (>= 1.2.0),
