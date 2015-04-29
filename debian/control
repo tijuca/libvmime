@@ -8,6 +8,8 @@ Build-Depends: autotools-dev,
   libgsasl7-dev
 Standards-Version: 3.9.6
 Section: libs
+Vcs-Git: git://anonscm.debian.org/pkg-giraffe/libvmime.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-giraffe/libvmime.git;a=summary
 Homepage: http://www.vmime.org/
 
 Package: libvmime-dev
