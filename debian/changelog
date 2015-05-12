@@ -1,3 +1,27 @@
+libvmime (0.9.1-2) unstable; urgency=medium
+
+  [ Carsten Schoenert ]
+  * re import old versions from dsc files (closes: #783603)
+  * [74b0dcf] adding a gbp.conf for debian/experimental
+  * [b90e53e] rebuild patch queue from patch-queue branch
+  * [fae8648] lintian: fix binary-control-field-duplicates-source
+  * [94acb31] lintian: fix duplicate-long-description
+  * [60bb666] debian/control: bumping standard-version and b-d on debhelper
+  * [87b35c1] debian/control: reorder Depends fields
+  * [4103962] debian/control: change Maintainer, adding Uploaders
+  * [3c3742d] lintian: fixing hardening-no-fortify-functions
+  * [2d21a68] debian/control: change Maintainer, adding myself as Uploader
+  * [e9d2a23] debian/control: adding Vcs-Git and Vcs-Browser field
+  * [b5fe641] debian/copyright: update to DEP-5 format
+  * [fcee2c5] debian/gbp.conf: addopt to debian/sid branch
+
+  [ Matthias Geerdsen ]
+  * [60aef36] Update for gnutls28-dev
+  * [e55ce7a] Switch to 3.0(quilt) format
+  * [5e10a59] debian/control: remove b-d on libgcrypt20-dev
+
+ -- Carsten Schoenert <c.schoenert@t-online.de>  Tue, 12 May 2015 22:05:36 +0200
+
 libvmime (0.9.1-1) unstable; urgency=low
 
   * New upstream release.
