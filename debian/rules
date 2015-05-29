@@ -37,6 +37,7 @@ major=0
 
 config.status: configure
 	dh_testdir
+	dh_autotools-dev_updateconfig
 
 ifneq "$(wildcard /usr/share/misc/config.sub)" ""
 	cp -f /usr/share/misc/config.sub config.sub
@@ -65,12 +66,11 @@ build-stamp:  config.status
 clean:
 	dh_testdir
 	dh_testroot
-
 	# Add here commands to clean up after the build process.
 	[ ! -f Makefile ] || $(MAKE) clean
 	rm -f Makefile src/Makefile vmime/Makefile vmime/config.hpp build-stamp libtool config.guess config.log config.sub config.status config.h vmime.pc stamp-h1
 	cd src ; rm -f `find . -type l`
-
+	dh_autotools-dev_restoreconfig
 	dh_clean 
 
 install: build
