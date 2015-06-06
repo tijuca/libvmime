@@ -1,3 +1,15 @@
+libvmime (0.9.1-3) unstable; urgency=medium
+
+  [ Edmund Grimley Evans ]
+  * [64ad534] FTBFS: fix broken build on arm64 (Closes: #787212)
+
+  [ Carsten Schoenert ]
+  * [7c3637a] debian/rules: small reformating and whitespace cleanup
+  * [a3c75e9] debian/libvmime0.symbols: adding a symbol file
+  * [8e9d301] debian/watch: correct watching url
+
+ -- Carsten Schoenert <c.schoenert@t-online.de>  Mon, 10 Aug 2015 22:31:59 +0200
+
 libvmime (0.9.1-2) unstable; urgency=medium
 
   [ Carsten Schoenert ]
