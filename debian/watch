@@ -1,2 +1,6 @@
 version=3
-http://qa.debian.org/watch/sf.php/vmime libvmime-(.*).tar.bz2 debian uupdate
+http://qa.debian.org/watch/sf.php/vmime vmime/libvmime-(\d.\d.\d)\.tar\.bz2
+
+# one day far away on GitHub
+#opts=filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/<project>-$1\.tar\.gz/ \
+#  https://github.com/kisli/vmime/tags .*/v?(\d.\d.\d)\.tar\.gz
