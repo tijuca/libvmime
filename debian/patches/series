@@ -16,3 +16,4 @@ zarafa/wrongly-padded-B64-words.patch
 zarafa/x-uuencode.patch
 debian/Adopt-changes-required-on-update-by-gnutls28-dev.patch
 debian/remove-reference-to-gcrypt.h-related-on-update-to-gn.patch
+adjust-configure.in-and-Makefile.am-to-recent-autoto.patch

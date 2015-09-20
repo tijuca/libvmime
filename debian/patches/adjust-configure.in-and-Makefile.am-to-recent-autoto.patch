@@ -1,0 +1,57 @@
+From: Carsten Schoenert <c.schoenert@t-online.de>
+Date: Sun, 20 Sep 2015 09:06:52 +0200
+Subject: adjust configure.in and Makefile.am to recent autotools
+
+---
+ Makefile.am     | 2 ++
+ configure.in    | 3 ++-
+ src/Makefile.am | 2 +-
+ 3 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index 7672c88..2807a4d 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -10,6 +10,8 @@ SUBDIRS = src $(INCLUDE) $(BINDING)
+ 
+ DIST_SUBDIRS = $(SUBDIRS) autotools
+ 
++ACLOCAL_AMFLAGS = -I m4
++
+ #AUTOMAKE_OPTIONS = dist-bzip2
+ AUTOMAKE_OPTIONS = no-dist
+ 
+diff --git a/configure.in b/configure.in
+index 33c7f81..1a474bd 100644
+--- a/configure.in
++++ b/configure.in
+@@ -10,6 +10,7 @@ AC_INIT([VMime Library], [0.9.1], [vincent@vincent-richard.net], [vmime])
+ AC_PREREQ([2.53])
+ 
+ AC_CONFIG_AUX_DIR(autotools)
++AC_CONFIG_MACRO_DIR([m4])
+ 
+ # Library name
+ GENERIC_LIBRARY_NAME="vmime"
+@@ -38,7 +39,7 @@ AC_CANONICAL_TARGET
+ 
+ AM_INIT_AUTOMAKE([no-dist])
+ AC_CONFIG_SRCDIR([src/base.cpp])
+-AM_CONFIG_HEADERS([config.h])
++AC_CONFIG_HEADERS([config.h])
+ 
+ AM_MAINTAINER_MODE
+ 
+diff --git a/src/Makefile.am b/src/Makefile.am
+index ffa9147..35fec7b 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -4,7 +4,7 @@
+ 
+ AUTOMAKE_OPTIONS = no-dependencies foreign
+ INTERNALS =
+-INCLUDES = -I$(prefix)/include -I$(top_srcdir) @PKGCONFIG_CFLAGS@ @EXTRA_CFLAGS@
++AM_CPPFLAGS = -I$(prefix)/include -I$(top_srcdir) @PKGCONFIG_CFLAGS@ @EXTRA_CFLAGS@
+ lib_LTLIBRARIES = libvmime.la
+ libvmime_la_LDFLAGS = -export-dynamic -version-info @LIBRARY_VERSION@ @PKGCONFIG_LIBS@ @EXTRA_LIBS@
+ libvmime_la_SOURCES = address.cpp \
