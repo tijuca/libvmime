@@ -1,9 +1,27 @@
+libvmime (0.9.1-4) unstable; urgency=medium
+
+  [ Carsten Schoenert ]
+  * [b393a9e] Revert "debian/libvmime0.symbols: adding a symbol file"
+    - Remove the libvmime0.symbol file again.
+  * [966e4e3] debian/control: adjust Vcs-field from gitweb to cgit
+  * [c2ae90e] debian/compat: bump to debhelper 8
+  * [dfeb8b7] debian/rules: adopting changes after dh8 bump
+    - Switching to dh-sequenzer within the rules file.
+  * [f31b9d1] rebuild patch queue from patch-queue branch
+    - Adjusting small changes to configure.in and Makefile.am to get the
+      bootstap script working again.
+  * [c1d3af2] rebuild 'configure' by the 'bootstrap' script
+    - After switching to dh8 sequenzed handling we have to ensure that we
+      have a re created configure and autotools scripts to build on newer
+      platforms as well.
+
+ -- Carsten Schoenert <c.schoenert@t-online.de>  Mon, 21 Sep 2015 22:02:59 +0200
+
 libvmime (0.9.1-3) unstable; urgency=medium
 
   [ Edmund Grimley Evans ]
   * [64ad534] FTBFS: fix broken build on arm64 (Closes: #787212)
 
-  [ Carsten Schoenert ]
   * [7c3637a] debian/rules: small reformating and whitespace cleanup
   * [a3c75e9] debian/libvmime0.symbols: adding a symbol file
   * [8e9d301] debian/watch: correct watching url
