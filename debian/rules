@@ -13,6 +13,8 @@ else
     CFLAGS += -O2
 endif
 
+CONFFLAG = "--enable-debug"
+
 CFLAGS = "-Wall -g -Wl,-z,defs"
 
 DEB_CONFIGURE_EXTRA_ARGS :=      \
@@ -21,7 +23,7 @@ DEB_CONFIGURE_EXTRA_ARGS :=      \
     --build=$(DEB_BUILD_GNU_TYPE) \
     --prefix=/usr \
     --mandir=\$${prefix}/share/man \
-    --infodir=\$${prefix}/share/info
+    --infodir=\$${prefix}/share/info \
     $(CONFFLAG) \
     $(NULL)
 
