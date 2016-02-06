@@ -1,3 +1,16 @@
+libvmime (0.9.1-5) unstable; urgency=medium
+
+  [ Carsten Schoenert ]
+  * [7b58f1d] rebuild patch queue from patch-queue branch
+    - Adding patch to fix FTBFS after new gnutls28-dev version
+      (Closes: #812969)
+  * [57b4d94] lintian: fixing vcs-field-uses-insecure-uri
+  * [30fedae] debian/rules: enable build with debug symbols
+  * [cadb89e] debian/control: increase B-D on libgnutls28-dev
+  * [198924f] debian/copyright: update copyright information
+
+ -- Carsten Schoenert <c.schoenert@t-online.de>  Sat, 06 Feb 2016 21:06:03 +0100
+
 libvmime (0.9.1-4) unstable; urgency=medium
 
   [ Carsten Schoenert ]
