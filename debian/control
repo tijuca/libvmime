@@ -7,7 +7,7 @@ Build-Depends: autotools-dev,
   dh-autoreconf,
   libgnutls28-dev (>= 3.4.0),
   libgsasl7-dev
-Standards-Version: 3.9.6
+Standards-Version: 3.9.8
 Section: libs
 Vcs-Git: https://anonscm.debian.org/cgit/pkg-giraffe/libvmime.git
 Vcs-Browser: https://anonscm.debian.org/cgit/pkg-giraffe/libvmime.git/
