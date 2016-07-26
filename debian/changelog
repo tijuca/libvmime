@@ -1,3 +1,15 @@
+libvmime (0.9.1-6) unstable; urgency=medium
+
+  [ Carsten Schoenert ]
+  * [d8329e8] debian/control: fixup https URI for Git cloning
+  * [a1d9a5d] update Standard-Versions to 3.9.8
+  * [797ac38] rebuild patch queue from patch-queue branch
+    - Fixing FTBFS with GCC-6 (Thanks Jan Engelhard from Zarafa)
+      (Closes: #831162)
+  * [64ba751] libvmime-dev: increase dependency on libgnutls28-dev to 3.4.0
+
+ -- Carsten Schoenert <c.schoenert@t-online.de>  Tue, 26 Jul 2016 19:44:24 +0200
+
 libvmime (0.9.1-5) unstable; urgency=medium
 
   [ Carsten Schoenert ]
