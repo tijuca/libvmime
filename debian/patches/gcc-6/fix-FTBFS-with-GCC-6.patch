@@ -1,0 +1,26 @@
+From: Jan Engelhardt <j.engelhardt@zarafa.com>
+Date: Tue, 26 Jul 2016 18:26:50 +0200
+Subject: fix FTBFS with GCC-6
+
+GCC 6.0.0 20160324 [trunk revision 234449] changed something in its
+parser and now chokes on a template-dependent specifier. (GCC6
+appears to read "<X>" as a less-than X greater-than instead of a
+template argument. Hence we need to explicitly state the "template"
+keyword, similar to how "typename" is used.)
+---
+ vmime/base.hpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/vmime/base.hpp b/vmime/base.hpp
+index 60e637d..e2bdee2 100644
+--- a/vmime/base.hpp
++++ b/vmime/base.hpp
+@@ -252,7 +252,7 @@ namespace vmime
+ 	template <class X, class Y>
+ 	ref <X> dynamicCast(ref <Y> y)
+ 	{
+-		return y.dynamicCast <X>();
++		return y.template dynamicCast <X>();
+ 	}
+ 
+ } // vmime

@@ -18,3 +18,4 @@ debian/Adopt-changes-required-on-update-by-gnutls28-dev.patch
 debian/remove-reference-to-gcrypt.h-related-on-update-to-gn.patch
 debian/remove-calls-to-deprecated-gnutls_-_set_priority.patch
 adjust-configure.in-and-Makefile.am-to-recent-autoto.patch
+gcc-6/fix-FTBFS-with-GCC-6.patch
