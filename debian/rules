@@ -30,7 +30,7 @@ DEB_CONFIGURE_EXTRA_ARGS :=      \
 %:
 	dh $@ --parallel
 
-override_dh_autoclean:
+override_dh_auto_clean:
 	[ ! -f Makefile ] || $(MAKE) clean
 	rm -f Makefile src/Makefile vmime/Makefile vmime/config.hpp build-stamp libtool config.guess config.log config.sub config.status config.h vmime.pc stamp-h1
 	cd src ; rm -f `find . -type l`
