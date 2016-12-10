@@ -5,6 +5,7 @@ Uploaders: Carsten Schoenert <c.schoenert@t-online.de>
 Build-Depends: autotools-dev,
   debhelper (>= 10.2.2~),
   dh-autoreconf,
+  dh-exec (>= 0.3),
   libgnutls28-dev (>= 3.4.0),
   libgsasl7-dev
 Standards-Version: 3.9.8
