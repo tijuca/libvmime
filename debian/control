@@ -3,7 +3,7 @@ Priority: optional
 Maintainer: Giraffe Maintainers <pkg-giraffe-maintainers@lists.alioth.debian.org>
 Uploaders: Carsten Schoenert <c.schoenert@t-online.de>
 Build-Depends: autotools-dev,
-  debhelper (>= 9.20160115),
+  debhelper (>= 10.2.2~),
   dh-autoreconf,
   libgnutls28-dev (>= 3.4.0),
   libgsasl7-dev
