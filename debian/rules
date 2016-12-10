@@ -36,8 +36,11 @@ override_dh_auto_clean:
 	cd src ; rm -f `find . -type l`
 	dh_auto_clean
 
+override_dh_autoreconf:
+	touch autotools/config.rpath
+	dh_autoreconf
+
 override_dh_auto_configure:
-	[ -f ./bootstrap ] && ./bootstrap
 	dh_auto_configure -- $(DEB_CONFIGURE_EXTRA_ARGS)
 
 override_dh_install:
