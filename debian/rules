@@ -15,10 +15,10 @@ endif
 
 CONFFLAG = "--enable-debug"
 
-CFLAGS = "-Wall -g -Wl,-z,defs"
+CFLAGS += -Wall -g -Wl,-z,defs
 
 DEB_CONFIGURE_EXTRA_ARGS :=      \
-    CFLAGS=$(CFLAGS) \
+    CFLAGS="$(CFLAGS)" \
     --host=$(DEB_HOST_GNU_TYPE) \
     --build=$(DEB_BUILD_GNU_TYPE) \
     --prefix=/usr \
