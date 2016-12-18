@@ -1,3 +1,17 @@
+libvmime (0.9.1-7) unstable; urgency=medium
+
+  [ Chris Lamb ]
+  * [4169a99] debian/rules: fix miss spelled override_dh_auto_clean
+
+  [ Carsten Schoenert ]
+  * [b7f552d] debhelper: moving to version 10
+  * [27d5159] adjusting *.install files to multiarch behaviour
+  * [e6ff552] debian/rules: adjust the targets after dh version change
+  * [9793799] debian/rules: fixing the usage of CFLAGS
+  * [b4c2a1c] Multi-Arch: Adding suggested MA related control fields
+
+ -- Carsten Schoenert <c.schoenert@t-online.de>  Sun, 18 Dec 2016 19:20:46 +0100
+
 libvmime (0.9.1-6) unstable; urgency=medium
 
   [ Carsten Schoenert ]
