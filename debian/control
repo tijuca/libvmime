@@ -17,7 +17,6 @@ Homepage: http://www.vmime.org/
 Package: libvmime-dev
 Section: libdevel
 Architecture: any
-Multi-Arch: same
 Depends: ${misc:Depends}, libvmime0 (= ${binary:Version}),
   libgnutls28-dev (>= 3.4.0~),
   libgsasl7-dev
