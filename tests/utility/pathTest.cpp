@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -26,11 +26,7 @@
 #include "vmime/utility/path.hpp"
 
 
-#define VMIME_TEST_SUITE         pathTest
-#define VMIME_TEST_SUITE_MODULE  "Utility"
-
-
-VMIME_TEST_SUITE_BEGIN
+VMIME_TEST_SUITE_BEGIN(utilityPathTest)
 
 	VMIME_TEST_LIST_BEGIN
 		VMIME_TEST(testConstruct1)
@@ -54,8 +50,13 @@ VMIME_TEST_SUITE_BEGIN
 
 		VMIME_TEST(testIsDirectParentOf)
 		VMIME_TEST(testIsParentOf)
+		VMIME_TEST(testIsParentOf_EquivalentCharset)
 
 		VMIME_TEST(testRenameParent)
+
+		VMIME_TEST(testFromString)
+		VMIME_TEST(testFromString_IgnoreLeadingOrTrailingSep)
+		VMIME_TEST(testToString)
 	VMIME_TEST_LIST_END
 
 
@@ -275,6 +276,19 @@ VMIME_TEST_SUITE_BEGIN
 		VASSERT_EQ("4", false, p2.isParentOf(p1));
 	}
 
+	void testIsParentOf_EquivalentCharset()
+	{
+		path p1;
+		p1.appendComponent(comp("foo", "us-ascii"));
+
+		path p2;
+		p2.appendComponent(comp("foo", "utf-8"));
+		p2.appendComponent(comp("bar"));
+		p2.appendComponent(comp("baz"));
+
+		VASSERT_EQ("1", true, p1.isParentOf(p2));
+	}
+
 	void testRenameParent()
 	{
 		path p1;
@@ -301,6 +315,42 @@ VMIME_TEST_SUITE_BEGIN
 		VASSERT_EQ("4", "z", p.getComponentAt(2).getBuffer());
 		VASSERT_EQ("5", "c", p.getComponentAt(3).getBuffer());
 		VASSERT_EQ("6", "d", p.getComponentAt(4).getBuffer());
+	}
+
+	void testFromString()
+	{
+		path p = path::fromString("ab/cde/f", "/", vmime::charset("my-charset"));
+
+		VASSERT_EQ("count", 3, p.getSize());
+		VASSERT_EQ("buffer1", "ab", p.getComponentAt(0).getBuffer());
+		VASSERT_EQ("charset1", "my-charset", p.getComponentAt(0).getCharset().getName());
+		VASSERT_EQ("buffer2", "cde", p.getComponentAt(1).getBuffer());
+		VASSERT_EQ("charset2", "my-charset", p.getComponentAt(1).getCharset().getName());
+		VASSERT_EQ("buffer3", "f", p.getComponentAt(2).getBuffer());
+		VASSERT_EQ("charset3", "my-charset", p.getComponentAt(2).getCharset().getName());
+	}
+
+	void testFromString_IgnoreLeadingOrTrailingSep()
+	{
+		path p = path::fromString("//ab/cde/f////", "/", vmime::charset("my-charset"));
+
+		VASSERT_EQ("count", 3, p.getSize());
+		VASSERT_EQ("buffer1", "ab", p.getComponentAt(0).getBuffer());
+		VASSERT_EQ("charset1", "my-charset", p.getComponentAt(0).getCharset().getName());
+		VASSERT_EQ("buffer2", "cde", p.getComponentAt(1).getBuffer());
+		VASSERT_EQ("charset2", "my-charset", p.getComponentAt(1).getCharset().getName());
+		VASSERT_EQ("buffer3", "f", p.getComponentAt(2).getBuffer());
+		VASSERT_EQ("charset3", "my-charset", p.getComponentAt(2).getCharset().getName());
+	}
+
+	void testToString()
+	{
+		path p;
+		p.appendComponent(comp("ab"));
+		p.appendComponent(comp("cde"));
+		p.appendComponent(comp("f"));
+
+		VASSERT_EQ("string", "ab/cde/f", p.toString("/", vmime::charset("us-ascii")));
 	}
 
 VMIME_TEST_SUITE_END

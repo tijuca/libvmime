@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -32,6 +32,8 @@
 //
 
 #include <iostream>
+#include <locale>
+#include <clocale>
 
 #include "vmime/vmime.hpp"
 #include "vmime/platforms/posix/posixHandler.hpp"
@@ -41,8 +43,16 @@ int main()
 {
 	std::cout << std::endl;
 
-	// VMime initialization
-	vmime::platform::setHandler<vmime::platforms::posix::posixHandler>();
+	// Set the global C and C++ locale to the user-configured locale.
+	// The locale should use UTF-8 encoding for these tests to run successfully.
+	try
+	{
+		std::locale::global(std::locale(""));
+	}
+	catch (std::exception &)
+	{
+		std::setlocale(LC_ALL, "");
+	}
 
 	try
 	{
@@ -52,26 +62,26 @@ int main()
 		mb.setExpeditor(vmime::mailbox("me@somewhere.com"));
 
 		vmime::addressList to;
-		to.appendAddress(vmime::create <vmime::mailbox>("you@elsewhere.com"));
+		to.appendAddress(vmime::make_shared <vmime::mailbox>("you@elsewhere.com"));
 
 		mb.setRecipients(to);
 
 		vmime::addressList bcc;
-		bcc.appendAddress(vmime::create <vmime::mailbox>("you-bcc@nowhere.com"));
+		bcc.appendAddress(vmime::make_shared <vmime::mailbox>("you-bcc@nowhere.com"));
 
 		mb.setBlindCopyRecipients(bcc);
 
 		mb.setSubject(vmime::text("My first message generated with vmime::messageBuilder"));
 
 		// Message body
-		mb.getTextPart()->setText(vmime::create <vmime::stringContentHandler>(
+		mb.getTextPart()->setText(vmime::make_shared <vmime::stringContentHandler>(
 			"I'm writing this short text to test message construction " \
 			"with attachment, using the vmime::messageBuilder component."));
 
 		// Adding an attachment
-		vmime::ref <vmime::fileAttachment> a = vmime::create <vmime::fileAttachment>
+		vmime::shared_ptr <vmime::fileAttachment> a = vmime::make_shared <vmime::fileAttachment>
 		(
-			"./example2.cpp",                               // full path to file
+			__FILE__,                                       // full path to file
 			vmime::mediaType("application/octet-stream"),   // content type
 			vmime::text("My first attachment")              // description
 		);
@@ -82,7 +92,7 @@ int main()
 		mb.attach(a);
 
 		// Construction
-		vmime::ref <vmime::message> msg = mb.construct();
+		vmime::shared_ptr <vmime::message> msg = mb.construct();
 
 		// Raw text generation
 		vmime::string dataToSend = msg->generate();

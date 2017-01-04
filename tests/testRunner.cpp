@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -192,11 +192,60 @@ void registerTestModule(const char* name_)
 }
 
 
+const std::string getNormalizedPath(const std::string& path)
+{
+	std::string res = path;
+
+	for (std::size_t i = 0, n = res.length() ; i < n ; ++i)
+	{
+		if (res[i] == '\\')
+			res[i] = '/';
+	}
+
+	return res;
+}
+
+
+const std::string getFileNameFromPath(const std::string& path)
+{
+	const std::size_t pos = path.find_last_of('/');
+
+	if (pos == std::string::npos)
+		return "";
+
+	return path.substr(pos + 1);
+}
+
+
+static char g_moduleNameBuffer[2048];
+
+
+const char* getTestModuleNameFromSourceFile(const char *path_)
+{
+	static const std::string testRunnerPath(getNormalizedPath(__FILE__));
+	static const std::string testRunnerFileName(getFileNameFromPath(testRunnerPath));
+
+	const std::string path = getNormalizedPath(path_);
+
+	// "/path/to/testRunner.cpp" --> "/path/to/"
+	const std::string basePath
+		(testRunnerPath.begin(), testRunnerPath.end() - testRunnerFileName.length());
+
+	// "/path/to/module/testFile.cpp" --> "module/testFile.cpp"
+	const std::string testFileName(getFileNameFromPath(path));
+	const std::string testPath(path.begin() + basePath.length(), path.end());
+
+	// "module/testFile.cpp" --> "module"
+	const std::string moduleName(testPath.substr(0, testPath.length() - testFileName.length() - 1));
+	std::copy(moduleName.begin(), moduleName.end(), g_moduleNameBuffer);
+	g_moduleNameBuffer[moduleName.length()] = 0;
+
+	return g_moduleNameBuffer;
+}
+
+
 int main(int argc, char* argv[])
 {
-	// VMime initialization
-	vmime::platform::setHandler<vmime::platforms::posix::posixHandler>();
-
 	// Parse arguments
 	bool xmlOutput = false;
 
@@ -220,17 +269,17 @@ int main(int argc, char* argv[])
 				getRegistry(getTestModules()[i]).makeTest());
 		}
 
-		std::auto_ptr <XmlTestListener> xmlListener(new XmlTestListener);
+		XmlTestListener xmlListener;
 
 		CppUnit::TestResult controller;
-		controller.addListener(xmlListener.get());
+		controller.addListener(&xmlListener);
 
 		CppUnit::TestResultCollector result;
 		controller.addListener(&result);
 
 		runner.run(controller);
 
-		xmlListener->output(std::cout);
+		xmlListener.output(std::cout);
 
 		// Return error code 1 if a test failed
 		return result.wasSuccessful() ? 0 : 1;

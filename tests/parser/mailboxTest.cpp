@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -24,14 +24,12 @@
 #include "tests/testUtils.hpp"
 
 
-#define VMIME_TEST_SUITE         mailboxTest
-#define VMIME_TEST_SUITE_MODULE  "Parser"
-
-
-VMIME_TEST_SUITE_BEGIN
+VMIME_TEST_SUITE_BEGIN(mailboxTest)
 
 	VMIME_TEST_LIST_BEGIN
 		VMIME_TEST(testParse)
+		VMIME_TEST(testEmptyEmailAddress)
+		VMIME_TEST(testSeparatorInComment)
 	VMIME_TEST_LIST_END
 
 
@@ -60,7 +58,7 @@ VMIME_TEST_SUITE_BEGIN
 			"[address-list: [[mailbox: name=[text: []], email=john.doe@acme.com]]]",
 
 			// Test 5
-			"John.Doe (ignore) @acme.com (John Doe)",
+			"John.Doe(ignore)@acme.com (John Doe)",
 
 			"[address-list: [[mailbox: name=[text: []], email=John.Doe@acme.com]]]",
 
@@ -111,6 +109,40 @@ VMIME_TEST_SUITE_BEGIN
 
 			VASSERT_EQ(oss.str(), out, cmp.str());
 		}
+	}
+
+	void testEmptyEmailAddress()
+	{
+		vmime::addressList addrList;
+		addrList.parse("\"Full Name\" <>");
+
+		VASSERT_EQ("count", 1, addrList.getAddressCount());
+		VASSERT_EQ("!group", false, addrList.getAddressAt(0)->isGroup());
+
+		vmime::shared_ptr <vmime::mailbox> mbox =
+			vmime::dynamicCast <vmime::mailbox>(addrList.getAddressAt(0));
+
+		VASSERT_EQ("name", "Full Name", mbox->getName());
+		VASSERT_EQ("email", "", mbox->getEmail());
+	}
+
+	void testSeparatorInComment()
+	{
+		vmime::addressList addrList;
+		addrList.parse("aaa(comment,comment)@vmime.org, bbb@vmime.org");
+
+		VASSERT_EQ("count", 2, addrList.getAddressCount());
+
+		vmime::shared_ptr <vmime::mailbox> mbox1 =
+			vmime::dynamicCast <vmime::mailbox>(addrList.getAddressAt(0));
+		vmime::shared_ptr <vmime::mailbox> mbox2 =
+			vmime::dynamicCast <vmime::mailbox>(addrList.getAddressAt(1));
+
+		VASSERT_EQ("name1", vmime::text(), mbox1->getName());
+		VASSERT_EQ("email1", "aaa@vmime.org", mbox1->getEmail());
+
+		VASSERT_EQ("name2", vmime::text(), mbox2->getName());
+		VASSERT_EQ("email2", "bbb@vmime.org", mbox2->getEmail());
 	}
 
 VMIME_TEST_SUITE_END

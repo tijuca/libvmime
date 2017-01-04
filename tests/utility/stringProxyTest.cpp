@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -24,11 +24,7 @@
 #include "tests/testUtils.hpp"
 
 
-#define VMIME_TEST_SUITE         stringProxyTest
-#define VMIME_TEST_SUITE_MODULE  "Utility"
-
-
-VMIME_TEST_SUITE_BEGIN
+VMIME_TEST_SUITE_BEGIN(stringProxyTest)
 
 	VMIME_TEST_LIST_BEGIN
 		VMIME_TEST(testConstruct)
@@ -49,9 +45,9 @@ VMIME_TEST_SUITE_BEGIN
 	{
 		vmime::utility::stringProxy s;
 
-		VASSERT_EQ("1", static_cast <vmime::utility::stringProxy::size_type>(0), s.length());
-		VASSERT_EQ("2", static_cast <vmime::utility::stringProxy::size_type>(0), s.start());
-		VASSERT_EQ("3", static_cast <vmime::utility::stringProxy::size_type>(0), s.end());
+		VASSERT_EQ("1", static_cast <vmime::size_t>(0), s.length());
+		VASSERT_EQ("2", static_cast <vmime::size_t>(0), s.start());
+		VASSERT_EQ("3", static_cast <vmime::size_t>(0), s.end());
 	}
 
 	void testConstruct2()
@@ -61,20 +57,20 @@ VMIME_TEST_SUITE_BEGIN
 		vmime::utility::stringProxy s1(str);
 
 		VASSERT_EQ("1", str.length(), s1.length());
-		VASSERT_EQ("2", static_cast <vmime::utility::stringProxy::size_type>(0), s1.start());
+		VASSERT_EQ("2", static_cast <vmime::size_t>(0), s1.start());
 		VASSERT_EQ("3", str.length(), s1.end());
 
 		vmime::utility::stringProxy s2(str, 10);
 
 		VASSERT_EQ("4", str.length() - 10, s2.length());
-		VASSERT_EQ("5", static_cast <vmime::utility::stringProxy::size_type>(10), s2.start());
+		VASSERT_EQ("5", static_cast <vmime::size_t>(10), s2.start());
 		VASSERT_EQ("6", str.length(), s2.end());
 
 		vmime::utility::stringProxy s3(str, 10, 14);
 
-		VASSERT_EQ("7", static_cast <vmime::utility::stringProxy::size_type>(4), s3.length());
-		VASSERT_EQ("8", static_cast <vmime::utility::stringProxy::size_type>(10), s3.start());
-		VASSERT_EQ("9", static_cast <vmime::utility::stringProxy::size_type>(14), s3.end());
+		VASSERT_EQ("7", static_cast <vmime::size_t>(4), s3.length());
+		VASSERT_EQ("8", static_cast <vmime::size_t>(10), s3.start());
+		VASSERT_EQ("9", static_cast <vmime::size_t>(14), s3.end());
 
 		VASSERT_EQ("10", 't', *s3.it_begin());
 		VASSERT_EQ("11", 'e', *(s3.it_begin() + 1));
@@ -89,9 +85,9 @@ VMIME_TEST_SUITE_BEGIN
 
 		s.detach();
 
-		VASSERT_EQ("1", static_cast <vmime::utility::stringProxy::size_type>(0), s.length());
-		VASSERT_EQ("2", static_cast <vmime::utility::stringProxy::size_type>(0), s.start());
-		VASSERT_EQ("3", static_cast <vmime::utility::stringProxy::size_type>(0), s.end());
+		VASSERT_EQ("1", static_cast <vmime::size_t>(0), s.length());
+		VASSERT_EQ("2", static_cast <vmime::size_t>(0), s.start());
+		VASSERT_EQ("3", static_cast <vmime::size_t>(0), s.end());
 	}
 
 	void testSet()
@@ -102,22 +98,22 @@ VMIME_TEST_SUITE_BEGIN
 		s1.set(str);
 
 		VASSERT_EQ("1", str.length(), s1.length());
-		VASSERT_EQ("2", static_cast <vmime::utility::stringProxy::size_type>(0), s1.start());
+		VASSERT_EQ("2", static_cast <vmime::size_t>(0), s1.start());
 		VASSERT_EQ("3", str.length(), s1.end());
 
 		vmime::utility::stringProxy s2;
 		s2.set(str, 10);
 
 		VASSERT_EQ("4", str.length() - 10, s2.length());
-		VASSERT_EQ("5", static_cast <vmime::utility::stringProxy::size_type>(10), s2.start());
+		VASSERT_EQ("5", static_cast <vmime::size_t>(10), s2.start());
 		VASSERT_EQ("6", str.length(), s2.end());
 
 		vmime::utility::stringProxy s3;
 		s3.set(str, 10, 14);
 
-		VASSERT_EQ("7", static_cast <vmime::utility::stringProxy::size_type>(4), s3.length());
-		VASSERT_EQ("8", static_cast <vmime::utility::stringProxy::size_type>(10), s3.start());
-		VASSERT_EQ("9", static_cast <vmime::utility::stringProxy::size_type>(14), s3.end());
+		VASSERT_EQ("7", static_cast <vmime::size_t>(4), s3.length());
+		VASSERT_EQ("8", static_cast <vmime::size_t>(10), s3.start());
+		VASSERT_EQ("9", static_cast <vmime::size_t>(14), s3.end());
 
 		VASSERT_EQ("10", 't', *s3.it_begin());
 		VASSERT_EQ("11", 'e', *(s3.it_begin() + 1));

@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -32,6 +32,8 @@
 //
 
 #include <iostream>
+#include <locale>
+#include <clocale>
 
 #include "vmime/vmime.hpp"
 #include "vmime/platforms/posix/posixHandler.hpp"
@@ -39,22 +41,21 @@
 
 int main()
 {
-	// VMime initialization
-	vmime::platform::setHandler<vmime::platforms::posix::posixHandler>();
-
 	// Enumerate encoders
-	vmime::encoderFactory* ef = vmime::encoderFactory::getInstance();
+	vmime::shared_ptr <vmime::utility::encoder::encoderFactory> ef =
+		vmime::utility::encoder::encoderFactory::getInstance();
 
 	std::cout << "Available encoders:" << std::endl;
 
-	for (int i = 0 ; i < ef->getEncoderCount() ; ++i)
+	for (size_t i = 0 ; i < ef->getEncoderCount() ; ++i)
 	{
-		vmime::ref <const vmime::encoderFactory::registeredEncoder>
+		vmime::shared_ptr <const vmime::utility::encoder::encoderFactory::registeredEncoder>
 			enc = ef->getEncoderAt(i);
 
 		std::cout << "  * " << enc->getName() << std::endl;
 
-		vmime::ref <vmime::encoder> e = enc->create();
+		vmime::shared_ptr <vmime::utility::encoder::encoder> e =
+			vmime::utility::encoder::encoderFactory::getInstance()->create(enc->getName());
 
 		std::vector <vmime::string> props = e->getAvailableProperties();
 
@@ -65,11 +66,12 @@ int main()
 	std::cout << std::endl;
 
 	// Enumerate messaging services and their properties
-	vmime::net::serviceFactory* sf = vmime::net::serviceFactory::getInstance();
+	vmime::shared_ptr <vmime::net::serviceFactory> sf =
+		vmime::net::serviceFactory::getInstance();
 
 	std::cout << "Available messaging services:" << std::endl;
 
-	for (int i = 0 ; i < sf->getServiceCount() ; ++i)
+	for (size_t i = 0 ; i < sf->getServiceCount() ; ++i)
 	{
 		const vmime::net::serviceFactory::registeredService& serv = *sf->getServiceAt(i);
 
@@ -91,7 +93,7 @@ int main()
 			{
 			case vmime::net::serviceInfos::property::TYPE_INTEGER: type = "TYPE_INTEGER"; break;
 			case vmime::net::serviceInfos::property::TYPE_STRING: type = "TYPE_STRING"; break;
-			case vmime::net::serviceInfos::property::TYPE_BOOL: type = "TYPE_BOOL"; break;
+			case vmime::net::serviceInfos::property::TYPE_BOOLEAN: type = "TYPE_BOOLEAN"; break;
 			default: type = "(unknown)"; break;
 			}
 

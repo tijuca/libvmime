@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -26,17 +26,13 @@
 #include "vmime/security/digest/messageDigestFactory.hpp"
 
 
-#define VMIME_TEST_SUITE         md5Test
-#define VMIME_TEST_SUITE_MODULE  "Security/Digest"
-
-
 #define INIT_DIGEST(var, algo) \
-	vmime::ref <vmime::security::digest::messageDigest> var = \
+	vmime::shared_ptr <vmime::security::digest::messageDigest> var = \
 		vmime::security::digest::messageDigestFactory::getInstance()->create(algo)
 
 
 
-VMIME_TEST_SUITE_BEGIN
+VMIME_TEST_SUITE_BEGIN(md5Test)
 
 	VMIME_TEST_LIST_BEGIN
 		VMIME_TEST(testRFC1321_1)

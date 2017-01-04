@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -33,8 +33,10 @@
 
 
 // CppUnit
+#pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <cppunit/TestAssert.h>
 #include <cppunit/extensions/HelperMacros.h>
+#pragma GCC diagnostic warning "-Wold-style-cast"
 
 #define VASSERT(msg, cond) \
 	CPPUNIT_ASSERT_MESSAGE(std::string(msg), cond)
@@ -42,34 +44,47 @@
 #define VASSERT_TRUE(msg, cond) \
 	VASSERT(msg, cond)
 #define VASSERT_FALSE(msg, cond) \
-	VASSERT(!(msg, cond))
+	VASSERT(msg, !(cond))
+
+#define VASSERT_NOT_NULL(msg, cond) \
+	VASSERT(msg, cond != NULL)
+#define VASSERT_NULL(msg, cond) \
+	VASSERT(msg, cond == NULL)
 
 #define VASSERT_EQ(msg, expected, actual) \
 	CPPUNIT_ASSERT_EQUAL_MESSAGE(std::string(msg), expected, actual)
+#define VASSERT_NEQ(msg, expected, actual) \
+	CPPUNIT_ASSERT_MESSAGE(std::string(msg), (expected) != (actual))
 
 #define VASSERT_THROW(msg, expression, exceptionType) \
 	CPPUNIT_ASSERT_THROW(expression, exceptionType)
 #define VASSERT_NO_THROW(msg, expression) \
 	CPPUNIT_ASSERT_NO_THROW(expression)
 
-#define VMIME_TEST_SUITE_BEGIN \
-	class VMIME_TEST_SUITE : public CppUnit::TestFixture { public:
+#define VMIME_TEST_SUITE_BEGIN(testSuiteName) \
+	class testSuiteName; \
+	typedef testSuiteName VMIME_TEST_SUITE; \
+	class testSuiteName : public CppUnit::TestFixture { public:
 #define VMIME_TEST_SUITE_END \
 	}; \
 	\
-	static CppUnit::AutoRegisterSuite <VMIME_TEST_SUITE>(autoRegisterRegistry1); \
-	static CppUnit::AutoRegisterSuite <VMIME_TEST_SUITE>(autoRegisterRegistry2)(VMIME_TEST_SUITE_MODULE); \
+	/*static CppUnit::AutoRegisterSuite <VMIME_TEST_SUITE>(autoRegisterRegistry1);*/ \
+	/*static CppUnit::AutoRegisterSuite <VMIME_TEST_SUITE>(autoRegisterRegistry2)(VMIME_TEST_SUITE_MODULE);*/ \
 	extern void registerTestModule(const char* name); \
+	extern const char* getTestModuleNameFromSourceFile(const char *path); \
 	template <typename T> \
 	struct AutoRegisterModule { \
 		AutoRegisterModule() { \
-			registerTestModule(VMIME_TEST_SUITE_MODULE); \
+			static const char* moduleName = getTestModuleNameFromSourceFile(__FILE__); \
+			static CppUnit::AutoRegisterSuite <VMIME_TEST_SUITE>(autoRegisterRegistry1); \
+			static CppUnit::AutoRegisterSuite <VMIME_TEST_SUITE>(autoRegisterRegistry2)(moduleName); \
+			registerTestModule(moduleName); \
 		} \
 	}; \
 	static AutoRegisterModule <VMIME_TEST_SUITE> autoRegisterModule;
 
 #define VMIME_TEST_LIST_BEGIN       CPPUNIT_TEST_SUITE(VMIME_TEST_SUITE);
-#define VMIME_TEST_LIST_END         CPPUNIT_TEST_SUITE_END();
+#define VMIME_TEST_LIST_END         CPPUNIT_TEST_SUITE_END(); public:
 #define VMIME_TEST(name)            CPPUNIT_TEST(name);
 
 
@@ -102,21 +117,43 @@ inline std::ostream& operator<<(std::ostream& os, const vmime::charset& ch)
 }
 
 
+inline std::ostream& operator<<(std::ostream& os, const vmime::word& w)
+{
+	os << "[word: charset=" << w.getCharset().getName()
+	   << ", buffer=" << w.getBuffer();
+
+	if (!w.getLanguage().empty())
+		os << ", lang=" << w.getLanguage();
+
+	os << "]";
+
+	return (os);
+}
+
+
 inline std::ostream& operator<<(std::ostream& os, const vmime::text& txt)
 {
 	os << "[text: [";
 
-	for (int i = 0 ; i < txt.getWordCount() ; ++i)
+	for (size_t i = 0 ; i < txt.getWordCount() ; ++i)
 	{
 		const vmime::word& w = *txt.getWordAt(i);
 
 		if (i != 0)
 			os << ",";
 
-		os << "[word: charset=" << w.getCharset().getName() << ", buffer=" << w.getBuffer() << "]";
+		os << w;
 	}
 
 	os << "]]";
+
+	return (os);
+}
+
+
+inline std::ostream& operator<<(std::ostream& os, const vmime::emailAddress& email)
+{
+	os << email.generate();
 
 	return (os);
 }
@@ -134,7 +171,7 @@ inline std::ostream& operator<<(std::ostream& os, const vmime::mailboxGroup& gro
 {
 	os << "[mailbox-group: name=" << group.getName() << ", list=[";
 
-	for (int i = 0 ; i < group.getMailboxCount() ; ++i)
+	for (size_t i = 0 ; i < group.getMailboxCount() ; ++i)
 	{
 		if (i != 0)
 			os << ",";
@@ -152,7 +189,7 @@ inline std::ostream& operator<<(std::ostream& os, const vmime::addressList& list
 {
 	os << "[address-list: [";
 
-	for (int i = 0 ; i < list.getAddressCount() ; ++i)
+	for (size_t i = 0 ; i < list.getAddressCount() ; ++i)
 	{
 		const vmime::address& addr = *list.getAddressAt(i);
 
@@ -191,6 +228,14 @@ inline std::ostream& operator<<(std::ostream& os, const vmime::datetime& d)
 }
 
 
+inline std::ostream& operator<<(std::ostream& os, const vmime::encoding& enc)
+{
+	os << enc.generate();
+
+	return (os);
+}
+
+
 }
 
 
@@ -210,25 +255,55 @@ public:
 
 	bool isConnected() const;
 
+	bool waitForWrite(const int msecs = 30000);
+	bool waitForRead(const int msecs = 30000);
+
 	void receive(vmime::string& buffer);
 	void send(const vmime::string& buffer);
+	void send(const char* str);
 
-	int receiveRaw(char* buffer, const int count);
-	void sendRaw(const char* buffer, const int count);
+	size_t receiveRaw(vmime::byte_t* buffer, const size_t count);
+	void sendRaw(const vmime::byte_t* buffer, const size_t count);
+	size_t sendRawNonBlocking(const vmime::byte_t* buffer, const size_t count);
 
-	size_type getBlockSize() const;
+	size_t getBlockSize() const;
+
+	unsigned int getStatus() const;
+
+	const vmime::string getPeerName() const;
+	const vmime::string getPeerAddress() const;
+
+	vmime::shared_ptr <vmime::net::timeoutHandler> getTimeoutHandler();
+
+	void setTracer(vmime::shared_ptr <vmime::net::tracer> tracer);
+	vmime::shared_ptr <vmime::net::tracer> getTracer();
 
 	/** Send data to client.
 	  *
-	  * @buffer data to send
+	  * @param buffer data to send
 	  */
 	void localSend(const vmime::string& buffer);
 
 	/** Receive data from client.
 	  *
-	  * @buffer buffer in which to store received data
+	  * @param buffer buffer in which to store received data
 	  */
 	void localReceive(vmime::string& buffer);
+
+	/** Receive a line from client.
+	  *
+	  * @param buffer buffer in which to store received line
+	  * @return true if a line has been read, or false otherwise
+	  */
+	bool localReceiveLine(vmime::string& buffer);
+
+	/** Receive data from client.
+	  *
+	  * @param buffer buffer in which to store received data
+	  * @param count number of bytes to receive
+	  * @return number of bytes received
+	  */
+	vmime::size_t localReceiveRaw(vmime::byte_t* buffer, const size_t count);
 
 protected:
 
@@ -256,14 +331,14 @@ class testSocketFactory : public vmime::net::socketFactory
 {
 public:
 
-	vmime::ref <vmime::net::socket> create()
+	vmime::shared_ptr <vmime::net::socket> create()
 	{
-		return vmime::create <T>();
+		return vmime::make_shared <T>();
 	}
 
-	vmime::ref <vmime::net::socket> create(vmime::ref <vmime::net::timeoutHandler> /* th */)
+	vmime::shared_ptr <vmime::net::socket> create(vmime::shared_ptr <vmime::net::timeoutHandler> /* th */)
 	{
-		return vmime::create <T>();
+		return vmime::make_shared <T>();
 	}
 };
 
@@ -290,7 +365,7 @@ class testTimeoutHandler : public vmime::net::timeoutHandler
 {
 public:
 
-	testTimeoutHandler(const unsigned int delay = 3);
+	testTimeoutHandler(const unsigned long delay = 3);
 
 	bool isTimeOut();
 	void resetTimeOut();
@@ -298,8 +373,8 @@ public:
 
 private:
 
-	unsigned int m_delay;
-	unsigned int m_start;
+	unsigned long m_delay;
+	unsigned long m_start;
 };
 
 
@@ -307,10 +382,13 @@ class testTimeoutHandlerFactory : public vmime::net::timeoutHandlerFactory
 {
 public:
 
-	vmime::ref <vmime::net::timeoutHandler> create();
+	vmime::shared_ptr <vmime::net::timeoutHandler> create();
 };
 
 
 // Exception helper
 std::ostream& operator<<(std::ostream& os, const vmime::exception& e);
 
+
+// Conversion to hexadecimal for easier debugging
+const vmime::string toHex(const vmime::string str);

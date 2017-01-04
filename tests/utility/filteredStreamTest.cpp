@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -24,13 +24,10 @@
 #include "tests/testUtils.hpp"
 
 #include "vmime/utility/filteredStream.hpp"
+#include "vmime/utility/stringUtils.hpp"
 
 
-#define VMIME_TEST_SUITE         filteredStreamTest
-#define VMIME_TEST_SUITE_MODULE  "Utility"
-
-
-VMIME_TEST_SUITE_BEGIN
+VMIME_TEST_SUITE_BEGIN(filteredStreamTest)
 
 	VMIME_TEST_LIST_BEGIN
 		VMIME_TEST(testDotFilteredInputStream)
@@ -39,6 +36,8 @@ VMIME_TEST_SUITE_BEGIN
 		VMIME_TEST(testStopSequenceFilteredInputStream1)
 		VMIME_TEST(testStopSequenceFilteredInputStreamN_2)
 		VMIME_TEST(testStopSequenceFilteredInputStreamN_3)
+		VMIME_TEST(testLFToCRLFFilteredOutputStream_Global)
+		VMIME_TEST(testLFToCRLFFilteredOutputStream_Edge)
 	VMIME_TEST_LIST_END
 
 
@@ -47,7 +46,7 @@ VMIME_TEST_SUITE_BEGIN
 	private:
 
 		std::vector <std::string> m_chunks;
-		std::vector <std::string>::size_type m_index;
+		size_t m_index;
 
 	public:
 
@@ -58,7 +57,7 @@ VMIME_TEST_SUITE_BEGIN
 		bool eof() const { return (m_index >= m_chunks.size()); }
 		void reset() { m_index = 0; }
 
-		size_type read(value_type* const data, const size_type /* count */)
+		vmime::size_t read(vmime::byte_t* const data, const vmime::size_t /* count */)
 		{
 			if (eof())
 				return 0;
@@ -74,7 +73,7 @@ VMIME_TEST_SUITE_BEGIN
 			return chunk.length();
 		}
 
-		size_type skip(const size_type /* count */)
+		vmime::size_t skip(const vmime::size_t /* count */)
 		{
 			// Not supported
 			return 0;
@@ -84,15 +83,14 @@ VMIME_TEST_SUITE_BEGIN
 
 	const std::string readWhole(vmime::utility::inputStream& is)
 	{
-		vmime::utility::stream::value_type buffer[256];
+		vmime::byte_t buffer[256];
 		std::string whole;
 
 		while (!is.eof())
 		{
-			const vmime::utility::stream::size_type read =
-				is.read(buffer, sizeof(buffer));
+			const vmime::size_t read = is.read(buffer, sizeof(buffer));
 
-			whole += std::string(buffer, read);
+			whole += vmime::utility::stringUtils::makeStringFromBytes(buffer, read);
 		}
 
 		return (whole);
@@ -163,6 +161,12 @@ VMIME_TEST_SUITE_BEGIN
 		testFilteredOutputStreamHelper<FILTER>("3", "foo\n..bar", "foo", "\n.bar");
 		testFilteredOutputStreamHelper<FILTER>("4", "foo\n..bar", "foo", "\n", ".bar");
 		testFilteredOutputStreamHelper<FILTER>("5", "foo\n..bar", "foo", "\n", ".", "bar");
+
+		testFilteredOutputStreamHelper<FILTER>("6", "..\nfoobar", ".\nfoobar");
+		testFilteredOutputStreamHelper<FILTER>("7", "..\r\nfoobar", ".\r\nfoobar");
+		testFilteredOutputStreamHelper<FILTER>("8", "..\r\nfoobar", ".\r", "\nfoobar");
+		testFilteredOutputStreamHelper<FILTER>("9", ".foobar", ".foobar");
+		testFilteredOutputStreamHelper<FILTER>("10", ".foobar", ".", "foobar");
 	}
 
 	void testCRLFToLFFilteredOutputStream()
@@ -272,6 +276,44 @@ VMIME_TEST_SUITE_BEGIN
 		testStopSequenceFISHelper <3>("22", "xyz", "", "xyz");
 		testStopSequenceFISHelper <3>("23", "xyz", "", "x", "yz");
 		testStopSequenceFISHelper <3>("24", "xyz", "", "x", "y", "z");
+	}
+
+
+	// LFToCRLFFilteredOutputStream
+
+	void testLFToCRLFFilteredOutputStream_Global()
+	{
+		typedef vmime::utility::LFToCRLFFilteredOutputStream FILTER;
+
+		testFilteredOutputStreamHelper<FILTER>("1",  "ABC\r\nDEF",       "ABC\nDEF");
+		testFilteredOutputStreamHelper<FILTER>("2",  "ABC\r\nDEF",       "ABC\rDEF");
+		testFilteredOutputStreamHelper<FILTER>("3",  "\r\n\r\nAB\r\n\r\nA\r\nB\r\n", "\n\nAB\n\nA\nB\n");
+		testFilteredOutputStreamHelper<FILTER>("4",  "ABCDE\r\nF",       "ABCDE\nF");
+		testFilteredOutputStreamHelper<FILTER>("5",  "ABCDE\r\nF",       "ABCDE\r\nF");
+		testFilteredOutputStreamHelper<FILTER>("6",  "\r\n\r\n\r\n",     "\n\n\n");
+		testFilteredOutputStreamHelper<FILTER>("7",  "\r\n\r\n\r\n",     "\r\r\n\n");
+		testFilteredOutputStreamHelper<FILTER>("8",  "\r\n\r\n\r\n\r\n", "\r\r\r\r");
+		testFilteredOutputStreamHelper<FILTER>("9",  "\r\n\r\n\r\n\r\n", "\n\n\n\n");
+		testFilteredOutputStreamHelper<FILTER>("10", "\r\n\r\n\r\n",     "\r\n\n\n");
+		testFilteredOutputStreamHelper<FILTER>("11", "\r\n\r\n\r\n\r\n", "\n\n\n\r\n");
+	}
+
+	void testLFToCRLFFilteredOutputStream_Edge()
+	{
+		typedef vmime::utility::LFToCRLFFilteredOutputStream FILTER;
+
+		testFilteredOutputStreamHelper<FILTER>("1",  "\r\n\r\n",         "\r", "\r");
+		testFilteredOutputStreamHelper<FILTER>("2",  "\r\n\r\n",         "\r", "\n\r");
+		testFilteredOutputStreamHelper<FILTER>("3",  "ABC\r\n\r\n",      "ABC\r", "\n\r");
+		testFilteredOutputStreamHelper<FILTER>("4",  "ABC\r\n\r\n\r\n",  "ABC\r", "\n\r", "\n\n");
+		testFilteredOutputStreamHelper<FILTER>("5",  "\r\n\r\n",         "\n", "\n");
+		testFilteredOutputStreamHelper<FILTER>("6",  "\r\n\r\n",         "\r\n\r\n");
+		testFilteredOutputStreamHelper<FILTER>("7",  "\r\n\r\n",         "\r\n\r", "\n");
+
+		testFilteredOutputStreamHelper<FILTER>("8",  "A\r\nB\r\nC\r\nD",         "A\rB", "\nC\r\nD");
+		testFilteredOutputStreamHelper<FILTER>("9",  "\r\nA\r\nB\r\nC\r\nD",     "\rA\r", "B\nC\r\nD");
+		testFilteredOutputStreamHelper<FILTER>("10", "\r\nA\r\nB\r\nC\r\nD",     "\nA\r", "B\nC\r\nD");
+		testFilteredOutputStreamHelper<FILTER>("11", "\r\nA\r\nB\r\nC\r\nD\r\n", "\nA\rB", "\nC\r\nD\r");
 	}
 
 VMIME_TEST_SUITE_END

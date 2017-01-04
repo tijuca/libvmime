@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -27,11 +27,7 @@
 #include "vmime/utility/datetimeUtils.hpp"
 
 
-#define VMIME_TEST_SUITE         datetimeUtilsTest
-#define VMIME_TEST_SUITE_MODULE  "Utility"
-
-
-VMIME_TEST_SUITE_BEGIN
+VMIME_TEST_SUITE_BEGIN(datetimeUtilsTest)
 
 	VMIME_TEST_LIST_BEGIN
 		VMIME_TEST(testIsLeapYear)

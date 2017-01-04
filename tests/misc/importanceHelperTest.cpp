@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -26,11 +26,7 @@
 #include "vmime/misc/importanceHelper.hpp"
 
 
-#define VMIME_TEST_SUITE         importanceHelperTest
-#define VMIME_TEST_SUITE_MODULE  "Misc"
-
-
-VMIME_TEST_SUITE_BEGIN
+VMIME_TEST_SUITE_BEGIN(importanceHelperTest)
 
 	VMIME_TEST_LIST_BEGIN
 		VMIME_TEST(testResetImportance)
@@ -53,7 +49,7 @@ VMIME_TEST_SUITE_BEGIN
 
 	void testResetImportance()
 	{
-		vmime::ref <vmime::header> hdr = vmime::create <vmime::header>();
+		vmime::shared_ptr <vmime::header> hdr = vmime::make_shared <vmime::header>();
 
 		hdr->getField("Importance")->setValue("xxx");
 		hdr->getField("X-Priority")->setValue("yyy");
@@ -63,8 +59,8 @@ VMIME_TEST_SUITE_BEGIN
 
 		vmime::misc::importanceHelper::resetImportanceHeader(hdr);
 
-		VASSERT_THROW("3", hdr->findField("Importance"), vmime::exceptions::no_such_field);
-		VASSERT_THROW("4", hdr->findField("X-Priority"), vmime::exceptions::no_such_field);
+		VASSERT_NULL("3", hdr->findField("Importance"));
+		VASSERT_NULL("4", hdr->findField("X-Priority"));
 	}
 
 
@@ -73,7 +69,7 @@ VMIME_TEST_SUITE_BEGIN
 	void testSetImportanceImpl(const vmime::misc::importanceHelper::Importance i,
 		const std::string& ImportanceValue, const std::string& XPriorityValue)
 	{
-		vmime::ref <vmime::header> hdr = vmime::create <vmime::header>();
+		vmime::shared_ptr <vmime::header> hdr = vmime::make_shared <vmime::header>();
 
 		vmime::misc::importanceHelper::setImportanceHeader(hdr, i);
 
@@ -121,12 +117,12 @@ VMIME_TEST_SUITE_BEGIN
 		const vmime::misc::importanceHelper::Importance i2,
 		const std::string& ImportanceValue, const std::string& XPriorityValue)
 	{
-		vmime::ref <vmime::header> hdr1 = vmime::create <vmime::header>();
+		vmime::shared_ptr <vmime::header> hdr1 = vmime::make_shared <vmime::header>();
 
 		hdr1->getField("Importance")->setValue(ImportanceValue);
 		VASSERT_EQ("1", i1, vmime::misc::importanceHelper::getImportanceHeader(hdr1));
 
-		vmime::ref <vmime::header> hdr2 = vmime::create <vmime::header>();
+		vmime::shared_ptr <vmime::header> hdr2 = vmime::make_shared <vmime::header>();
 
 		hdr2->getField("X-Priority")->setValue(XPriorityValue);
 		VASSERT_EQ("2", i2, vmime::misc::importanceHelper::getImportanceHeader(hdr2));

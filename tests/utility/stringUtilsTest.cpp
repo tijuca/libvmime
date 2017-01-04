@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -26,13 +26,12 @@
 #include "vmime/utility/stringUtils.hpp"
 
 
-#define VMIME_TEST_SUITE         stringUtilsTest
-#define VMIME_TEST_SUITE_MODULE  "Utility"
-
-
-VMIME_TEST_SUITE_BEGIN
+VMIME_TEST_SUITE_BEGIN(stringUtilsTest)
 
 	VMIME_TEST_LIST_BEGIN
+		VMIME_TEST(testMakeStringFromBytes)
+		VMIME_TEST(testAppendBytesToString)
+
 		VMIME_TEST(testIsStringEqualNoCase1)
 		VMIME_TEST(testIsStringEqualNoCase2)
 		VMIME_TEST(testIsStringEqualNoCase3)
@@ -49,6 +48,38 @@ VMIME_TEST_SUITE_BEGIN
 
 	typedef vmime::utility::stringUtils stringUtils;
 
+
+	void testMakeStringFromBytes()
+	{
+		vmime::byte_t bytes[] = { 0x12, 0x34, 0x56, 0x78 };
+		vmime::string str = vmime::utility::stringUtils::makeStringFromBytes(bytes, 3);
+
+		VASSERT_EQ("length", 3, str.length());
+		VASSERT_EQ("byte1", '\x12', str[0]);
+		VASSERT_EQ("byte2", '\x34', str[1]);
+		VASSERT_EQ("byte3", '\x56', str[2]);
+	}
+
+	void testAppendBytesToString()
+	{
+		vmime::byte_t bytes[] = { 0x42, 0x56, 0x12, 0x00, 'f', 'o', 'o' };
+
+		vmime::string str = "test";
+		vmime::utility::stringUtils::appendBytesToString(str, bytes, 7);
+
+		VASSERT_EQ("length", 4 + 7, str.length());
+		VASSERT_EQ("byte1", 't', str[0]);
+		VASSERT_EQ("byte2", 'e', str[1]);
+		VASSERT_EQ("byte3", 's', str[2]);
+		VASSERT_EQ("byte4", 't', str[3]);
+		VASSERT_EQ("byte5", '\x42', str[4]);
+		VASSERT_EQ("byte6", '\x56', str[5]);
+		VASSERT_EQ("byte7", '\x12', str[6]);
+		VASSERT_EQ("byte8", '\0', str[7]);
+		VASSERT_EQ("byte9", 'f', str[8]);
+		VASSERT_EQ("byte10", 'o', str[9]);
+		VASSERT_EQ("byte11", 'o', str[10]);
+	}
 
 	void testIsStringEqualNoCase1()
 	{
@@ -105,19 +136,19 @@ VMIME_TEST_SUITE_BEGIN
 	void testCountASCIIChars()
 	{
 		vmime::string str1("foo");
-		VASSERT_EQ("1", static_cast <vmime::string::size_type>(3),
+		VASSERT_EQ("1", static_cast <vmime::size_t>(3),
 			stringUtils::countASCIIchars(str1.begin(), str1.end()));
 
 		vmime::string str2("f=?oo");
-		VASSERT_EQ("2", static_cast <vmime::string::size_type>(3 + 1),
+		VASSERT_EQ("2", static_cast <vmime::size_t>(3 + 1),
 			stringUtils::countASCIIchars(str2.begin(), str2.end()));
 
 		vmime::string str3("foo\x7f");
-		VASSERT_EQ("3", static_cast <vmime::string::size_type>(4),
+		VASSERT_EQ("3", static_cast <vmime::size_t>(4),
 			stringUtils::countASCIIchars(str3.begin(), str3.end()));
 
 		vmime::string str4("foo\x80");
-		VASSERT_EQ("4", static_cast <vmime::string::size_type>(3),
+		VASSERT_EQ("4", static_cast <vmime::size_t>(3),
 			stringUtils::countASCIIchars(str4.begin(), str4.end()));
 	}
 
