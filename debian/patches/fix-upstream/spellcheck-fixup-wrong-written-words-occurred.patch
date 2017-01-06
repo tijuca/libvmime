@@ -1,0 +1,182 @@
+From: Carsten Schoenert <c.schoenert@t-online.de>
+Date: Fri, 6 Jan 2017 13:08:42 +0100
+Subject: spellcheck: fixup wrong written words 'occurred'
+
+This commit fixes the misspelled word 'occurred' in various files.
+---
+ doc/book/basics.tex                              | 2 +-
+ src/vmime/charset.hpp                            | 4 ++--
+ src/vmime/charsetConverter.hpp                   | 6 +++---
+ src/vmime/charsetConverter_icu.cpp               | 2 +-
+ src/vmime/net/events.hpp                         | 4 ++--
+ src/vmime/platforms/posix/posixSocket.cpp        | 2 +-
+ src/vmime/security/cert/certificateException.cpp | 2 +-
+ src/vmime/security/sasl/SASLMechanism.hpp        | 6 +++---
+ src/vmime/security/sasl/SASLSession.hpp          | 2 +-
+ 9 files changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/doc/book/basics.tex b/doc/book/basics.tex
+index fefd051..6dbbff0 100644
+--- a/doc/book/basics.tex
++++ b/doc/book/basics.tex
+@@ -166,7 +166,7 @@ In VMime, error handling is exclusively based on exceptions, there is no error
+ codes, or things like that.
+ 
+ VMime code may throw exceptions in many different situations: an unexpected
+-error occured, an operation is not supported, etc. You should catch them if
++error occurred, an operation is not supported, etc. You should catch them if
+ you want to report failures to the user. This is also useful when debugging
+ your program.
+ 
+diff --git a/src/vmime/charset.hpp b/src/vmime/charset.hpp
+index 1ea6289..2b8d610 100644
+--- a/src/vmime/charset.hpp
++++ b/src/vmime/charset.hpp
+@@ -99,7 +99,7 @@ public:
+ 	  * byte sequence was found in the input bytes, and the
+ 	  * 'silentlyReplaceInvalidSequences' flag is set to false in
+ 	  * the charsetConverterOptions
+-	  * @throws exceptions::charset_conv_error if an unexpected error occured
++	  * @throws exceptions::charset_conv_error if an unexpected error occurred
+ 	  * during the conversion
+ 	  */
+ 	static void convert(const string& in, string& out,
+@@ -118,7 +118,7 @@ public:
+ 	  * byte sequence was found in the input bytes, and the
+ 	  * 'silentlyReplaceInvalidSequences' flag is set to false in
+ 	  * the charsetConverterOptions
+-	  * @throws exceptions::charset_conv_error if an unexpected error occured
++	  * @throws exceptions::charset_conv_error if an unexpected error occurred
+ 	  * during the conversion
+ 	  */
+ 	static void convert(utility::inputStream& in, utility::outputStream& out,
+diff --git a/src/vmime/charsetConverter.hpp b/src/vmime/charsetConverter.hpp
+index 98c6440..182cc87 100644
+--- a/src/vmime/charsetConverter.hpp
++++ b/src/vmime/charsetConverter.hpp
+@@ -45,7 +45,7 @@ namespace utility
+   * to input bytes.
+   *
+   * May throw a exceptions::charset_conv_error if an unexpected error
+-  * occured when initializing convert, or during charset conversion.
++  * occurred when initializing convert, or during charset conversion.
+   *
+   * May also throw a exceptions::illegal_byte_sequence_for_charset
+   * if an illegal byte sequence was found in the input bytes, and the
+@@ -109,7 +109,7 @@ public:
+ 	  * byte sequence was found in the input bytes, and the
+ 	  * 'silentlyReplaceInvalidSequences' flag is set to false in
+ 	  * the charsetConverterOptions
+-	  * @throws exceptions::charset_conv_error if an unexpected error occured
++	  * @throws exceptions::charset_conv_error if an unexpected error occurred
+ 	  * during the conversion
+ 	  */
+ 	virtual void convert(const string& in, string& out, status* st = NULL) = 0;
+@@ -125,7 +125,7 @@ public:
+ 	  * byte sequence was found in the input bytes, and the
+ 	  * 'silentlyReplaceInvalidSequences' flag is set to false in
+ 	  * the charsetConverterOptions
+-	  * @throws exceptions::charset_conv_error if an unexpected error occured
++	  * @throws exceptions::charset_conv_error if an unexpected error occurred
+ 	  * during the conversion
+ 	  */
+ 	virtual void convert(utility::inputStream& in, utility::outputStream& out, status* st = NULL) = 0;
+diff --git a/src/vmime/charsetConverter_icu.cpp b/src/vmime/charsetConverter_icu.cpp
+index fa96581..a41a084 100644
+--- a/src/vmime/charsetConverter_icu.cpp
++++ b/src/vmime/charsetConverter_icu.cpp
+@@ -211,7 +211,7 @@ void charsetConverter_icu::convert
+ 					st->outputBytesWritten += cpTarget - &cpOutBuffer[0];
+ 				}
+ 
+-				// (*) If an error occured while converting from input charset, throw it now
++				// (*) If an error occurred while converting from input charset, throw it now
+ 				if (toErr == U_INVALID_CHAR_FOUND ||
+ 				    toErr == U_TRUNCATED_CHAR_FOUND ||
+ 				    toErr == U_ILLEGAL_CHAR_FOUND)
+diff --git a/src/vmime/net/events.hpp b/src/vmime/net/events.hpp
+index 18bc0e5..60d15bd 100644
+--- a/src/vmime/net/events.hpp
++++ b/src/vmime/net/events.hpp
+@@ -216,9 +216,9 @@ public:
+ 
+ 	folderEvent(shared_ptr <folder> folder, const Types type, const utility::path& oldPath, const utility::path& newPath);
+ 
+-	/** Return the folder on which the event occured.
++	/** Return the folder on which the event occurred.
+ 	  *
+-	  * @return folder on which the event occured
++	  * @return folder on which the event occurred
+ 	  */
+ 	shared_ptr <folder> getFolder() const;
+ 
+diff --git a/src/vmime/platforms/posix/posixSocket.cpp b/src/vmime/platforms/posix/posixSocket.cpp
+index d657d4d..ea0b345 100644
+--- a/src/vmime/platforms/posix/posixSocket.cpp
++++ b/src/vmime/platforms/posix/posixSocket.cpp
+@@ -850,7 +850,7 @@ void posixSocket::throwSocketError(const int err)
+ 	case EBADF:           msg = "EBADF: invalid descriptor"; break;
+ 	case ECONNRESET:      msg = "ECONNRESET: connection reset by peer"; break;
+ 	case EFAULT:          msg = "EFAULT: bad user space address"; break;
+-	case EINTR:           msg = "EINTR: signal occured before transmission"; break;
++	case EINTR:           msg = "EINTR: signal occurred before transmission"; break;
+ 	case EINVAL:          msg = "EINVAL: invalid argument"; break;
+ 	case EMSGSIZE:        msg = "EMSGSIZE: message cannot be sent atomically"; break;
+ 	case ENOBUFS:         msg = "ENOBUFS: output queue is full"; break;
+diff --git a/src/vmime/security/cert/certificateException.cpp b/src/vmime/security/cert/certificateException.cpp
+index bf21fae..9cd8105 100644
+--- a/src/vmime/security/cert/certificateException.cpp
++++ b/src/vmime/security/cert/certificateException.cpp
+@@ -36,7 +36,7 @@ namespace cert {
+ 
+ 
+ certificateException::certificateException()
+-	: exception("A problem occured with a certificate.")
++	: exception("A problem occurred with a certificate.")
+ {
+ }
+ 
+diff --git a/src/vmime/security/sasl/SASLMechanism.hpp b/src/vmime/security/sasl/SASLMechanism.hpp
+index 8756471..03749b5 100644
+--- a/src/vmime/security/sasl/SASLMechanism.hpp
++++ b/src/vmime/security/sasl/SASLMechanism.hpp
+@@ -69,7 +69,7 @@ public:
+ 	  * @param responseLen length of response buffer
+ 	  * @return true if authentication terminated successfully, or
+ 	  * false if the authentication process should continue
+-	  * @throw exceptions::sasl_exception if an error occured during
++	  * @throw exceptions::sasl_exception if an error occurred during
+ 	  * authentication (in this case, the values in 'response' and
+ 	  * 'responseLen' are undetermined)
+ 	  */
+@@ -105,7 +105,7 @@ public:
+ 	  * @param output output buffer (allocated bu the function,
+ 	  * free with delete[])
+ 	  * @param outputLen length of output buffer
+-	  * @throw exceptions::sasl_exception if an error occured during
++	  * @throw exceptions::sasl_exception if an error occurred during
+ 	  * the encoding of data (in this case, the values in 'output' and
+ 	  * 'outputLen' are undetermined)
+ 	  */
+@@ -122,7 +122,7 @@ public:
+ 	  * @param output output buffer (allocated bu the function,
+ 	  * free with delete[])
+ 	  * @param outputLen length of output buffer
+-	  * @throw exceptions::sasl_exception if an error occured during
++	  * @throw exceptions::sasl_exception if an error occurred during
+ 	  * the encoding of data (in this case, the values in 'output' and
+ 	  * 'outputLen' are undetermined)
+ 	  */
+diff --git a/src/vmime/security/sasl/SASLSession.hpp b/src/vmime/security/sasl/SASLSession.hpp
+index 96c43f5..a915a90 100644
+--- a/src/vmime/security/sasl/SASLSession.hpp
++++ b/src/vmime/security/sasl/SASLSession.hpp
+@@ -108,7 +108,7 @@ public:
+ 	  * @param responseLen length of response buffer
+ 	  * @return true if authentication terminated successfully, or
+ 	  * false if the authentication process should continue
+-	  * @throw exceptions::sasl_exception if an error occured during
++	  * @throw exceptions::sasl_exception if an error occurred during
+ 	  * authentication (in this case, the values in 'response' and
+ 	  * 'responseLen' are undetermined)
+ 	  */
