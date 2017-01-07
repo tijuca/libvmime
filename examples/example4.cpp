@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -32,6 +32,8 @@
 //
 
 #include <iostream>
+#include <locale>
+#include <clocale>
 
 #include "vmime/vmime.hpp"
 #include "vmime/platforms/posix/posixHandler.hpp"
@@ -41,15 +43,23 @@ int main()
 {
 	std::cout << std::endl;
 
-	// VMime initialization
-	vmime::platform::setHandler<vmime::platforms::posix::posixHandler>();
+	// Set the global C and C++ locale to the user-configured locale.
+	// The locale should use UTF-8 encoding for these tests to run successfully.
+	try
+	{
+		std::locale::global(std::locale(""));
+	}
+	catch (std::exception &)
+	{
+		std::setlocale(LC_ALL, "");
+	}
 
 	try
 	{
 		vmime::messageParser mp("<...MIME message content...>");
 
 		// Enumerate text parts
-		for (int i = 0 ; i < mp.getTextPartCount() ; ++i)
+		for (size_t i = 0 ; i < mp.getTextPartCount() ; ++i)
 		{
 			const vmime::textPart& part = *mp.getTextPartAt(i);
 
@@ -65,7 +75,7 @@ int main()
 				// Corresponding plain text is in "hp.getPlainText()"
 
 				// Enumerate embedded objects (eg. images)
-				for (int j = 0 ; j < hp.getObjectCount() ; ++j)
+				for (size_t j = 0 ; j < hp.getObjectCount() ; ++j)
 				{
 					const vmime::htmlTextPart::embeddedObject& obj = *hp.getObjectAt(j);
 

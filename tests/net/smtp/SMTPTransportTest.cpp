@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -23,33 +23,44 @@
 
 #include "tests/testUtils.hpp"
 
+#include "vmime/net/smtp/SMTPTransport.hpp"
+#include "vmime/net/smtp/SMTPChunkingOutputStreamAdapter.hpp"
+#include "vmime/net/smtp/SMTPExceptions.hpp"
 
-#define VMIME_TEST_SUITE         SMTPTransportTest
-#define VMIME_TEST_SUITE_MODULE  "Net/SMTP"
-
-
-class greetingErrorSMTPTestSocket;
-class MAILandRCPTSMTPTestSocket;
+#include "SMTPTransportTestUtils.hpp"
 
 
-VMIME_TEST_SUITE_BEGIN
+VMIME_TEST_SUITE_BEGIN(SMTPTransportTest)
 
 	VMIME_TEST_LIST_BEGIN
+		VMIME_TEST(testConnectToInvalidServer)
 		VMIME_TEST(testGreetingError)
 		VMIME_TEST(testMAILandRCPT)
+		VMIME_TEST(testChunking)
+		VMIME_TEST(testSize_Chunking)
+		VMIME_TEST(testSize_NoChunking)
 	VMIME_TEST_LIST_END
 
 
+	void testConnectToInvalidServer()
+	{
+		vmime::shared_ptr <vmime::net::session> sess = vmime::net::session::create();
+
+		vmime::utility::url url("smtp://invalid-smtp-server");
+		vmime::shared_ptr <vmime::net::transport> store = sess->getTransport(url);
+
+		VASSERT_THROW("connect", store->connect(), vmime::exceptions::connection_error);
+	}
+
 	void testGreetingError()
 	{
-		vmime::ref <vmime::net::session> session =
-			vmime::create <vmime::net::session>();
+		vmime::shared_ptr <vmime::net::session> session = vmime::net::session::create();
 
-		vmime::ref <vmime::net::transport> tr = session->getTransport
+		vmime::shared_ptr <vmime::net::transport> tr = session->getTransport
 			(vmime::utility::url("smtp://localhost"));
 
-		tr->setSocketFactory(vmime::create <testSocketFactory <greetingErrorSMTPTestSocket> >());
-		tr->setTimeoutHandlerFactory(vmime::create <testTimeoutHandlerFactory>());
+		tr->setSocketFactory(vmime::make_shared <testSocketFactory <greetingErrorSMTPTestSocket> >());
+		tr->setTimeoutHandlerFactory(vmime::make_shared <testTimeoutHandlerFactory>());
 
 		VASSERT_THROW("Connection", tr->connect(),
 			vmime::exceptions::connection_greeting_error);
@@ -57,23 +68,22 @@ VMIME_TEST_SUITE_BEGIN
 
 	void testMAILandRCPT()
 	{
-		vmime::ref <vmime::net::session> session =
-			vmime::create <vmime::net::session>();
+		vmime::shared_ptr <vmime::net::session> session = vmime::net::session::create();
 
-		vmime::ref <vmime::net::transport> tr = session->getTransport
+		vmime::shared_ptr <vmime::net::transport> tr = session->getTransport
 			(vmime::utility::url("smtp://localhost"));
 
-		tr->setSocketFactory(vmime::create <testSocketFactory <MAILandRCPTSMTPTestSocket> >());
-		tr->setTimeoutHandlerFactory(vmime::create <testTimeoutHandlerFactory>());
+		tr->setSocketFactory(vmime::make_shared <testSocketFactory <MAILandRCPTSMTPTestSocket> >());
+		tr->setTimeoutHandlerFactory(vmime::make_shared <testTimeoutHandlerFactory>());
 
 		VASSERT_NO_THROW("Connection", tr->connect());
 
 		vmime::mailbox exp("expeditor@test.vmime.org");
 
 		vmime::mailboxList recips;
-		recips.appendMailbox(vmime::create <vmime::mailbox>("recipient1@test.vmime.org"));
-		recips.appendMailbox(vmime::create <vmime::mailbox>("recipient2@test.vmime.org"));
-		recips.appendMailbox(vmime::create <vmime::mailbox>("recipient3@test.vmime.org"));
+		recips.appendMailbox(vmime::make_shared <vmime::mailbox>("recipient1@test.vmime.org"));
+		recips.appendMailbox(vmime::make_shared <vmime::mailbox>("recipient2@test.vmime.org"));
+		recips.appendMailbox(vmime::make_shared <vmime::mailbox>("recipient3@test.vmime.org"));
 
 		vmime::string data("Message data");
 		vmime::utility::inputStreamStringAdapter is(data);
@@ -81,176 +91,82 @@ VMIME_TEST_SUITE_BEGIN
 		tr->send(exp, recips, is, 0);
 	}
 
+	void testChunking()
+	{
+		vmime::shared_ptr <vmime::net::session> session = vmime::net::session::create();
+
+		vmime::shared_ptr <vmime::net::transport> tr = session->getTransport
+			(vmime::utility::url("smtp://localhost"));
+
+		tr->setSocketFactory(vmime::make_shared <testSocketFactory <chunkingSMTPTestSocket> >());
+		tr->setTimeoutHandlerFactory(vmime::make_shared <testTimeoutHandlerFactory>());
+
+		tr->connect();
+
+		VASSERT("Test server should report it supports the CHUNKING extension!",
+			vmime::dynamicCast <vmime::net::smtp::SMTPTransport>(tr)->getConnection()->hasExtension("CHUNKING"));
+
+		vmime::mailbox exp("expeditor@test.vmime.org");
+
+		vmime::mailboxList recips;
+		recips.appendMailbox(vmime::make_shared <vmime::mailbox>("recipient@test.vmime.org"));
+
+		vmime::shared_ptr <vmime::message> msg = vmime::make_shared <SMTPTestMessage>();
+
+		tr->send(msg, exp, recips);
+	}
+
+	void testSize_Chunking()
+	{
+		vmime::shared_ptr <vmime::net::session> session = vmime::net::session::create();
+
+		vmime::shared_ptr <vmime::net::transport> tr = session->getTransport
+			(vmime::utility::url("smtp://localhost"));
+
+		tr->setSocketFactory(vmime::make_shared <testSocketFactory <bigMessageSMTPTestSocket <true> > >());
+		tr->setTimeoutHandlerFactory(vmime::make_shared <testTimeoutHandlerFactory>());
+
+		tr->connect();
+
+		VASSERT("Test server should report it supports the SIZE extension!",
+			vmime::dynamicCast <vmime::net::smtp::SMTPTransport>(tr)->getConnection()->hasExtension("SIZE"));
+
+		vmime::mailbox exp("expeditor@test.vmime.org");
+
+		vmime::mailboxList recips;
+		recips.appendMailbox(vmime::make_shared <vmime::mailbox>("recipient@test.vmime.org"));
+
+		vmime::shared_ptr <vmime::message> msg = vmime::make_shared <SMTPBigTestMessage4MB>();
+
+		VASSERT_THROW("Connection", tr->send(msg, exp, recips),
+			vmime::net::smtp::SMTPMessageSizeExceedsMaxLimitsException);
+	}
+
+	void testSize_NoChunking()
+	{
+		vmime::shared_ptr <vmime::net::session> session = vmime::net::session::create();
+
+		vmime::shared_ptr <vmime::net::transport> tr = session->getTransport
+			(vmime::utility::url("smtp://localhost"));
+
+		tr->setSocketFactory(vmime::make_shared <testSocketFactory <bigMessageSMTPTestSocket <false> > >());
+		tr->setTimeoutHandlerFactory(vmime::make_shared <testTimeoutHandlerFactory>());
+
+		tr->connect();
+
+		VASSERT("Test server should report it supports the SIZE extension!",
+			vmime::dynamicCast <vmime::net::smtp::SMTPTransport>(tr)->getConnection()->hasExtension("SIZE"));
+
+		vmime::mailbox exp("expeditor@test.vmime.org");
+
+		vmime::mailboxList recips;
+		recips.appendMailbox(vmime::make_shared <vmime::mailbox>("recipient@test.vmime.org"));
+
+		vmime::shared_ptr <vmime::message> msg = vmime::make_shared <SMTPBigTestMessage4MB>();
+
+		VASSERT_THROW("Connection", tr->send(msg, exp, recips),
+			vmime::net::smtp::SMTPMessageSizeExceedsMaxLimitsException);
+	}
+
 VMIME_TEST_SUITE_END
-
-
-/** Accepts connection and fails on greeting.
-  */
-class greetingErrorSMTPTestSocket : public lineBasedTestSocket
-{
-public:
-
-	void onConnected()
-	{
-		localSend("421 test.vmime.org Service not available, closing transmission channel\r\n");
-		disconnect();
-	}
-
-	void processCommand()
-	{
-		if (!haveMoreLines())
-			return;
-
-		getNextLine();
-
-		localSend("502 Command not implemented\r\n");
-		processCommand();
-	}
-};
-
-
-/** SMTP test server 1.
-  *
-  * Test send().
-  * Ensure MAIL and RCPT commands are sent correctly.
-  */
-class MAILandRCPTSMTPTestSocket : public lineBasedTestSocket
-{
-public:
-
-	MAILandRCPTSMTPTestSocket()
-	{
-		m_recipients.insert("recipient1@test.vmime.org");
-		m_recipients.insert("recipient2@test.vmime.org");
-		m_recipients.insert("recipient3@test.vmime.org");
-
-		m_state = STATE_NOT_CONNECTED;
-	}
-
-	void onConnected()
-	{
-		localSend("220 test.vmime.org Service ready\r\n");
-		processCommand();
-
-		m_state = STATE_COMMAND;
-	}
-
-	void processCommand()
-	{
-		if (!haveMoreLines())
-			return;
-
-		vmime::string line = getNextLine();
-		std::istringstream iss(line);
-
-		switch (m_state)
-		{
-		case STATE_NOT_CONNECTED:
-
-			localSend("451 Requested action aborted: invalid state\r\n");
-			break;
-
-		case STATE_COMMAND:
-		{
-			std::string cmd;
-			iss >> cmd;
-
-			if (cmd.empty())
-			{
-				localSend("500 Syntax error, command unrecognized\r\n");
-			}
-			else if (cmd == "HELO")
-			{
-				localSend("250 OK\r\n");
-			}
-			else if (cmd == "MAIL")
-			{
-				VASSERT_EQ("MAIL", std::string("MAIL FROM: <expeditor@test.vmime.org>"), line);
-
-				localSend("250 OK\r\n");
-			}
-			else if (cmd == "RCPT")
-			{
-				const vmime::string::size_type lt = line.find('<');
-				const vmime::string::size_type gt = line.find('>');
-
-				VASSERT("RCPT <", lt != vmime::string::npos);
-				VASSERT("RCPT >", gt != vmime::string::npos);
-				VASSERT("RCPT ><", gt >= lt);
-
-				const vmime::string recip = vmime::string
-					(line.begin() + lt + 1, line.begin() + gt);
-
-				std::set <vmime::string>::iterator it =
-					m_recipients.find(recip);
-
-				VASSERT(std::string("Recipient not found: '") + recip + "'",
-					it != m_recipients.end());
-
-				m_recipients.erase(it);
-
-				localSend("250 OK, recipient accepted\r\n");
-			}
-			else if (cmd == "DATA")
-			{
-				VASSERT("All recipients", m_recipients.empty());
-
-				localSend("354 Ready to accept data; end with <CRLF>.<CRLF>\r\n");
-
-				m_state = STATE_DATA;
-				m_msgData.clear();
-			}
-			else if (cmd == "NOOP")
-			{
-				localSend("250 Completed\r\n");
-			}
-			else if (cmd == "QUIT")
-			{
-				localSend("221 test.vmime.org Service closing transmission channel\r\n");
-			}
-			else
-			{
-				localSend("502 Command not implemented\r\n");
-			}
-
-			break;
-		}
-		case STATE_DATA:
-		{
-			if (line == ".")
-			{
-				VASSERT_EQ("Data", "Message data\r\n", m_msgData);
-
-				localSend("250 Message accepted for delivery\r\n");
-				m_state = STATE_COMMAND;
-			}
-			else
-			{
-				m_msgData += line + "\r\n";
-			}
-
-			break;
-		}
-
-		}
-
-		processCommand();
-	}
-
-private:
-
-	enum State
-	{
-		STATE_NOT_CONNECTED,
-		STATE_COMMAND,
-		STATE_DATA
-	};
-
-	int m_state;
-
-	std::set <vmime::string> m_recipients;
-
-	std::string m_msgData;
-};
-
 

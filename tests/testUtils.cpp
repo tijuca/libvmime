@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2005 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -22,6 +22,10 @@
 //
 
 #include "testUtils.hpp"
+
+#include "vmime/utility/stringUtils.hpp"
+
+#include <cstring>
 
 
 
@@ -51,9 +55,56 @@ bool testSocket::isConnected() const
 }
 
 
-testSocket::size_type testSocket::getBlockSize() const
+vmime::size_t testSocket::getBlockSize() const
 {
 	return 16384;
+}
+
+
+unsigned int testSocket::getStatus() const
+{
+	return 0;
+}
+
+
+const vmime::string testSocket::getPeerName() const
+{
+	return "test.vmime.org";
+}
+
+
+const vmime::string testSocket::getPeerAddress() const
+{
+	return "127.0.0.1";
+}
+
+
+vmime::shared_ptr <vmime::net::timeoutHandler> testSocket::getTimeoutHandler()
+{
+	return vmime::null;
+}
+
+
+void testSocket::setTracer(vmime::shared_ptr <vmime::net::tracer> /* tracer */)
+{
+}
+
+
+vmime::shared_ptr <vmime::net::tracer> testSocket::getTracer()
+{
+	return vmime::null;
+}
+
+
+bool testSocket::waitForRead(const int /* msecs */)
+{
+	return true;
+}
+
+
+bool testSocket::waitForWrite(const int /* msecs */)
+{
+	return true;
 }
 
 
@@ -72,9 +123,15 @@ void testSocket::send(const vmime::string& buffer)
 }
 
 
-int testSocket::receiveRaw(char* buffer, const int count)
+void testSocket::send(const char* str)
 {
-	const int n = std::min(count, static_cast <int>(m_inBuffer.size()));
+	sendRaw(reinterpret_cast <const vmime::byte_t*>(str), strlen(str));
+}
+
+
+vmime::size_t testSocket::receiveRaw(vmime::byte_t* buffer, const size_t count)
+{
+	const size_t n = std::min(count, static_cast <size_t>(m_inBuffer.size()));
 
 	std::copy(m_inBuffer.begin(), m_inBuffer.begin() + n, buffer);
 	m_inBuffer.erase(m_inBuffer.begin(), m_inBuffer.begin() + n);
@@ -83,9 +140,16 @@ int testSocket::receiveRaw(char* buffer, const int count)
 }
 
 
-void testSocket::sendRaw(const char* buffer, const int count)
+void testSocket::sendRaw(const vmime::byte_t* buffer, const size_t count)
 {
-	send(vmime::string(buffer, count));
+	send(vmime::utility::stringUtils::makeStringFromBytes(buffer, count));
+}
+
+
+vmime::size_t testSocket::sendRawNonBlocking(const vmime::byte_t* buffer, const size_t count)
+{
+	sendRaw(buffer, count);
+	return count;
 }
 
 
@@ -99,6 +163,42 @@ void testSocket::localReceive(vmime::string& buffer)
 {
 	buffer = m_outBuffer;
 	m_outBuffer.clear();
+}
+
+
+bool testSocket::localReceiveLine(vmime::string& line)
+{
+	vmime::size_t eol;
+
+	if ((eol = m_outBuffer.find('\n')) != vmime::string::npos)
+	{
+		line = vmime::string(m_outBuffer.begin(), m_outBuffer.begin() + eol);
+
+		if (!line.empty() && line[line.length() - 1] == '\r')
+			line.erase(line.end() - 1, line.end());
+
+		m_outBuffer.erase(m_outBuffer.begin(), m_outBuffer.begin() + eol + 1);
+
+		return true;
+	}
+
+	return false;
+}
+
+
+vmime::size_t testSocket::localReceiveRaw(vmime::byte_t* buffer, const size_t count)
+{
+	const size_t received = std::min(count, static_cast <size_t>(m_outBuffer.size()));
+
+	if (received != 0)
+	{
+		if (buffer != NULL)
+			std::copy(m_outBuffer.begin(), m_outBuffer.begin() + received, buffer);
+
+		m_outBuffer.erase(m_outBuffer.begin(), m_outBuffer.begin() + received);
+	}
+
+	return received;
 }
 
 
@@ -123,7 +223,7 @@ void lineBasedTestSocket::onDataReceived()
 
 	m_buffer += chunk;
 
-	vmime::string::size_type eol;
+	vmime::size_t eol;
 
 	while ((eol = m_buffer.find('\n')) != vmime::string::npos)
 	{
@@ -156,7 +256,7 @@ bool lineBasedTestSocket::haveMoreLines() const
 
 // testTimeoutHandler
 
-testTimeoutHandler::testTimeoutHandler(const unsigned int delay)
+testTimeoutHandler::testTimeoutHandler(const unsigned long delay)
 	: m_delay(delay), m_start(0)
 {
 }
@@ -182,9 +282,9 @@ bool testTimeoutHandler::handleTimeOut()
 
 // testTimeoutHandlerFactory : public vmime::net::timeoutHandlerFactory
 
-vmime::ref <vmime::net::timeoutHandler> testTimeoutHandlerFactory::create()
+vmime::shared_ptr <vmime::net::timeoutHandler> testTimeoutHandlerFactory::create()
 {
-	return vmime::create <testTimeoutHandler>();
+	return vmime::make_shared <testTimeoutHandler>();
 }
 
 
@@ -245,3 +345,39 @@ std::ostream& operator<<(std::ostream& os, const vmime::exception& e)
 }
 
 
+const vmime::string toHex(const vmime::string str)
+{
+	static const char hexChars[] = "0123456789abcdef";
+
+	vmime::string res = "\n";
+
+	for (size_t i = 0 ; i < str.length() ; i += 16)
+	{
+		size_t r = std::min
+			(static_cast <size_t>(16), str.length() - i);
+
+		vmime::string hex;
+		vmime::string chr;
+
+		for (size_t j = 0 ; j < r ; ++j)
+		{
+			const unsigned char c = str[i + j];
+
+			hex += hexChars[c / 16];
+			hex += hexChars[c % 16];
+			hex += " ";
+
+			if (c >= 32 && c <= 127)
+				chr += c;
+			else
+				chr += '.';
+		}
+
+		for (size_t j = r ; j < 16 ; ++j)
+			hex += "   ";
+
+		res += hex + "  " + chr + "\n";
+	}
+
+	return res;
+}

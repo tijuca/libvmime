@@ -1,0 +1,41 @@
+*.o
+*.sw?
+*.a
+*.dSYM
+*.vim
+
+# Doxygen-generated
+doc/html/*
+
+# CMake-generated / Build files
+CMakeFiles/
+CMakeCache.txt
+/_CPack_Packages/
+cmake_install.cmake
+/CPackConfig.cmake
+/CPackSourceConfig.cmake
+/Doxyfile
+/Makefile
+/install_manifest*
+/libvmime.a
+/vmime.pc
+/src/vmime/config.hpp
+/src/vmime/export-static.hpp
+/src/vmime/export-shared.hpp
+/COPYING.txt
+build/
+Makefile
+export-shared.hpp
+export-static.hpp
+
+# Outsourced build test
+/_build/
+/_install/
+
+# CTest-generated files
+/CTestTestfile.cmake
+/Testing/
+
+# Mac
+._DS_Store
+

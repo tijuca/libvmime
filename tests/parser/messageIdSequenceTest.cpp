@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -24,11 +24,7 @@
 #include "tests/testUtils.hpp"
 
 
-#define VMIME_TEST_SUITE         messageIdSequenceTest
-#define VMIME_TEST_SUITE_MODULE  "Parser"
-
-
-VMIME_TEST_SUITE_BEGIN
+VMIME_TEST_SUITE_BEGIN(messageIdSequenceTest)
 
 	VMIME_TEST_LIST_BEGIN
 		VMIME_TEST(testParse)
@@ -68,13 +64,13 @@ VMIME_TEST_SUITE_BEGIN
 	void testGenerate()
 	{
 		vmime::messageIdSequence s1;
-		s1.appendMessageId(vmime::create <vmime::messageId>("a", "b"));
+		s1.appendMessageId(vmime::make_shared <vmime::messageId>("a", "b"));
 
 		VASSERT_EQ("1", "<a@b>", s1.generate());
 
 		vmime::messageIdSequence s2;
-		s2.appendMessageId(vmime::create <vmime::messageId>("a", "b"));
-		s2.appendMessageId(vmime::create <vmime::messageId>("c", "d"));
+		s2.appendMessageId(vmime::make_shared <vmime::messageId>("a", "b"));
+		s2.appendMessageId(vmime::make_shared <vmime::messageId>("c", "d"));
 
 		VASSERT_EQ("2", "<a@b> <c@d>", s2.generate());
 	}

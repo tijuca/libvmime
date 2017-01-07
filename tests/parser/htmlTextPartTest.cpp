@@ -1,6 +1,6 @@
 //
 // VMime library (http://www.vmime.org)
-// Copyright (C) 2002-2009 Vincent Richard <vincent@vincent-richard.net>
+// Copyright (C) 2002-2013 Vincent Richard <vincent@vmime.org>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -25,11 +25,7 @@
 #include "vmime/htmlTextPart.hpp"
 
 
-#define VMIME_TEST_SUITE         htmlTextPartTest
-#define VMIME_TEST_SUITE_MODULE  "Parser"
-
-
-VMIME_TEST_SUITE_BEGIN
+VMIME_TEST_SUITE_BEGIN(htmlTextPartTest)
 
 	VMIME_TEST_LIST_BEGIN
 		VMIME_TEST(testParseText)
@@ -39,7 +35,7 @@ VMIME_TEST_SUITE_BEGIN
 
 
 	static const vmime::string extractContent
-		(vmime::ref <const vmime::contentHandler> cth)
+		(vmime::shared_ptr <const vmime::contentHandler> cth)
 	{
 		std::ostringstream oss;
 		vmime::utility::outputStreamAdapter osa(oss);
@@ -78,7 +74,7 @@ VMIME_TEST_SUITE_BEGIN
 "--LEVEL1--\r\n"
 "";
 
-		vmime::ref <vmime::message> msg = vmime::create <vmime::message>();
+		vmime::shared_ptr <vmime::message> msg = vmime::make_shared <vmime::message>();
 		msg->parse(msgString);
 
 		// Sanity checks
@@ -133,7 +129,7 @@ VMIME_TEST_SUITE_BEGIN
 "--LEVEL1--\r\n"
 "";
 
-		vmime::ref <vmime::message> msg = vmime::create <vmime::message>();
+		vmime::shared_ptr <vmime::message> msg = vmime::make_shared <vmime::message>();
 		msg->parse(msgString);
 
 		// Sanity checks
@@ -157,16 +153,18 @@ VMIME_TEST_SUITE_BEGIN
 		VASSERT_EQ("has-obj2-pre", true, htmlPart.hasObject("cid:image2@test"));
 
 		// Check data in objects
-		vmime::ref <const vmime::htmlTextPart::embeddedObject> obj;
+		vmime::shared_ptr <const vmime::htmlTextPart::embeddedObject> obj;
 
 		obj = htmlPart.findObject("image1@test");
 
+		VASSERT_EQ("ref-type1", vmime::htmlTextPart::embeddedObject::REFERENCED_BY_ID, obj->getReferenceType());
 		VASSERT_EQ("id-obj1", "image1@test", obj->getId());
 		VASSERT_EQ("data-obj1", "Image1", extractContent(obj->getData()));
 		VASSERT_EQ("type-obj1", "image/png", obj->getType().generate());
 
 		obj = htmlPart.findObject("image2@test");
 
+		VASSERT_EQ("ref-type2", vmime::htmlTextPart::embeddedObject::REFERENCED_BY_ID, obj->getReferenceType());
 		VASSERT_EQ("id-obj2", "image2@test", obj->getId());
 		VASSERT_EQ("data-obj2", "Image2", extractContent(obj->getData()));
 		VASSERT_EQ("type-obj2", "image/jpeg", obj->getType().generate());
@@ -203,7 +201,7 @@ VMIME_TEST_SUITE_BEGIN
 "--LEVEL1--\r\n"
 "";
 
-		vmime::ref <vmime::message> msg = vmime::create <vmime::message>();
+		vmime::shared_ptr <vmime::message> msg = vmime::make_shared <vmime::message>();
 		msg->parse(msgString);
 
 		// Sanity checks
@@ -223,10 +221,11 @@ VMIME_TEST_SUITE_BEGIN
 		VASSERT_EQ("has-obj-cid", false, htmlPart.hasObject("image1@test"));
 
 		// Check data
-		vmime::ref <const vmime::htmlTextPart::embeddedObject> obj;
+		vmime::shared_ptr <const vmime::htmlTextPart::embeddedObject> obj;
 
 		obj = htmlPart.findObject("http://www.vmime.org/test/image1.png");
 
+		VASSERT_EQ("ref-type", vmime::htmlTextPart::embeddedObject::REFERENCED_BY_LOCATION, obj->getReferenceType());
 		VASSERT_EQ("id-obj", "http://www.vmime.org/test/image1.png", obj->getId());
 		VASSERT_EQ("data-obj", "Image1", extractContent(obj->getData()));
 		VASSERT_EQ("type-obj", "image/png", obj->getType().generate());
