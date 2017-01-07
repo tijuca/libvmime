@@ -1,0 +1,11 @@
+Document: libvmime1-doc
+Title: libcvmime documentation
+Author: Vincent Richard <vincent@vincent-richard.net>
+Abstract: The documentation about the API 1.0 of libvmime
+ The library provides a API documentation created with doxygen which is
+ useful  while developing own applications using the libvmime.
+Section: Programming
+
+Format: HTML
+Index: /usr/share/doc/libvmime1-doc/html/index.html
+Files: /usr/share/doc/libvmime1-doc/html/*

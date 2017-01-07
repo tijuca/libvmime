@@ -50,3 +50,27 @@ Description: C++ mail library (runtime library)
  protocols (POP3, IMAP, SMTP and maildir) with a lot of features supported:
  listing folders, downloading and adding messages to folders, extracting parts
  from message, getting and setting message flags, and a lot more.
+
+Package: libvmime1-doc
+Section: doc
+Architecture: all
+Multi-Arch: foreign
+Depends:
+ libjs-jquery,
+ ${misc:Depends},
+Recommends:
+ libvmime-dev (= ${binary:Version}),
+ www-browser,
+Description: C++ mail library (API documentation)
+ VMime is a powerful C++ class library for parsing, generating, or editing
+ Internet RFC-[2]822 and MIME messages. VMime is designed to provide a fast
+ and an easy way to manipulate Internet mail messages.
+ .
+ The recent releases of VMime also include support for using messaging
+ protocols (POP3, IMAP, SMTP and maildir) with a lot of features supported:
+ listing folders, downloading and adding messages to folders, extracting parts
+ from message, getting and setting message flags, and a lot more.
+ .
+ This package contains the Doxygen generated library API HTML documentation
+ for libvmime.
+ They can be accessed by open /usr/share/doc/libvmime1-doc/html/index.html.
