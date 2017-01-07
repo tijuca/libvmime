@@ -1,0 +1,3 @@
+# We can ignore this hint, Lintian is a bit to noisy about this thing.
+source: dh-exec-useless-usage debian/libvmime-dev.install *
+source: dh-exec-useless-usage debian/libvmime1.install *
