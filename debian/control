@@ -10,6 +10,10 @@ Build-Depends:
   libgnutls28-dev (>= 3.4.0),
   libgsasl7-dev,
   sendmail,
+Build-Depends-Indep:
+  asciidoc-base,
+  doxygen,
+  graphviz,
 Standards-Version: 3.9.8
 Section: libs
 Vcs-Git: https://anonscm.debian.org/cgit/pkg-giraffe/libvmime.git
