@@ -1,3 +1,38 @@
+libvmime (0.9.2-1) experimental; urgency=medium
+
+  * [7bd007d] libvmime-dev: remove Multi-Arch: same declaration
+    - The -dev package don'T really need a Multi-Arch: same flag
+  * [cbd870a] debian/watch: adjust file after a first tag on GitHub
+  * [a4be564] New upstream version 0.9.2
+  * [a937065] rebuild patch queue from patch-queue branch
+    - Removing all the old patches, they not needed anymore
+    - Adding a new typo fixing patch that is also accepted upstream
+  * [1a728f3] debian/control: adjust B-D for vmime 0.9.2
+    - Upstream switched to cmake as build system
+    - Also we need now libgtk3-dev and sendmail as Build-Depends
+  * [a3f86e7] debian/rules: modify override targets to new vmime requirements
+    - Reworking debian/rules so we can use the dh-seqencers with the cmake
+      system from upstream
+  * [a3d78a9] libvmime0 -> libvmime1: API change to v1.0.0
+    - The API version has now chnanged from 0.0.0 to 1.0.0
+  * [feffe05] debian/control: libvmime-dev; adopt needed changes for Depends
+    - The -dev package is requiring the libvmime1 package for using the
+      correct library version
+  * [7d9c37a] libvmime1-doc: adding new package
+    - We can provide a API documention for libvmime1
+  * [8f44c2d] building also doxygen API documentation for -doc package
+    - Split of the build into arch and indep targets so buildds only need to
+      build the binary stuff if documentation is built ance
+  * [6c47a33] debian/copyright: adopt changes since release 0.9.1
+    - By the switch to camke as build environment some files and the copyright
+      holders have changed
+  * [caeacbf] debian/docs: change files to include
+    - There are small chnages on files with addititional informations from
+      upstream
+  * [0350b30] lintian-overrides: add some overrides M-A related
+
+ -- Carsten Schoenert <c.schoenert@t-online.de>  Sun, 09 Apr 2017 00:42:27 +0200
+
 libvmime (0.9.1-7) unstable; urgency=medium
 
   [ Chris Lamb ]
