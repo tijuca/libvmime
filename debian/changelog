@@ -14,12 +14,12 @@ libvmime (0.9.2-1) experimental; urgency=medium
     - Reworking debian/rules so we can use the dh-seqencers with the cmake
       system from upstream
   * [a3d78a9] libvmime0 -> libvmime1: API change to v1.0.0
-    - The API version has now chnanged from 0.0.0 to 1.0.0
+    - The API version has now changed from 0.0.0 to 1.0.0
   * [feffe05] debian/control: libvmime-dev; adopt needed changes for Depends
     - The -dev package is requiring the libvmime1 package for using the
       correct library version
   * [7d9c37a] libvmime1-doc: adding new package
-    - We can provide a API documention for libvmime1
+    - We can provide a API documentation for libvmime1
   * [8f44c2d] building also doxygen API documentation for -doc package
     - Split of the build into arch and indep targets so buildds only need to
       build the binary stuff if documentation is built ance
@@ -27,7 +27,7 @@ libvmime (0.9.2-1) experimental; urgency=medium
     - By the switch to camke as build environment some files and the copyright
       holders have changed
   * [caeacbf] debian/docs: change files to include
-    - There are small chnages on files with addititional informations from
+    - There are small changes on files with addititional information from
       upstream
   * [0350b30] lintian-overrides: add some overrides M-A related
 
