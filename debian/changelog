@@ -1,7 +1,14 @@
+libvmime (0.9.2-2) unstable; urgency=medium
+
+  * upload to unstable
+  * [840506b] debian/gbp.conf: adjust to debian/sid
+
+ -- Carsten Schoenert <c.schoenert@t-online.de>  Sat, 17 Jun 2017 20:38:46 +0200
+
 libvmime (0.9.2-1) experimental; urgency=medium
 
   * [7bd007d] libvmime-dev: remove Multi-Arch: same declaration
-    - The -dev package don'T really need a Multi-Arch: same flag
+    - The -dev package don't really need a Multi-Arch: same flag
   * [cbd870a] debian/watch: adjust file after a first tag on GitHub
   * [a4be564] New upstream version 0.9.2
   * [a937065] rebuild patch queue from patch-queue branch
