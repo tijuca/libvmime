@@ -80,3 +80,6 @@ override_dh_auto_build-indep:
 	cd $(DEB_BUILD_DIR)/doc/html; \
 		find  -type f -name "*.md5" -exec rm {} \;
 
+override_dh_makeshlibs:
+	# For new symbols when compiled with GCC 7
+	dh_makeshlibs -V'libvmime1 (>= 0.9.2-3~)'
