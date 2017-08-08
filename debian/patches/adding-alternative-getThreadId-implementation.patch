@@ -1,0 +1,28 @@
+From: Carsten Schoenert <c.schoenert@t-online.de>
+Date: Tue, 8 Aug 2017 16:56:14 -0400
+Subject: adding alternative getThreadId() implementation
+
+On platforms which doesn't have syscall function and no syscall_getpid
+symbol a own created type needs to be added for using.
+
+Patch is taken from
+http://code.bsd64.org/browse/freebsd/ports/head/mail/libvmime/files/patch-src__vmime__platforms__posix__posixHandler.cpp
+---
+ src/vmime/platforms/posix/posixHandler.cpp | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/vmime/platforms/posix/posixHandler.cpp b/src/vmime/platforms/posix/posixHandler.cpp
+index c0ba6cc..b57399c 100644
+--- a/src/vmime/platforms/posix/posixHandler.cpp
++++ b/src/vmime/platforms/posix/posixHandler.cpp
+@@ -240,7 +240,9 @@ unsigned int posixHandler::getThreadId() const
+ #elif VMIME_HAVE_SYSCALL && VMIME_HAVE_SYSCALL_GETTID
+ 	return static_cast <unsigned int>(::syscall(SYS_gettid));
+ #else
+-	#error We have no implementation of getThreadId() for this platform!
++	long id;
++	::syscall(SYS_thr_self, &id);
++	return static_cast <unsigned int>(id);
+ #endif
+ }
+ 
