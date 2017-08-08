@@ -30,6 +30,11 @@ DEB_LIBVMIME_CMAKE_OPTS := \
  $(CURDIR) \
  $(NULL)
 
+PREPROCESS_FILES := $(wildcard debian/*.in)
+
+$(PREPROCESS_FILES:.in=): %: %.in
+	sed 's,/@DEB_HOST_MULTIARCH@,$(DEB_HOST_MULTIARCH:%=/%),g' $< > $@
+
 %:
 	dh $@ --parallel
 
@@ -53,7 +58,7 @@ override_dh_auto_build-arch:
 	@echo
 	dh_auto_build  --sourcedirectory=$(CURDIR) --builddirectory=$(DEB_BUILD_DIR)
 
-override_dh_auto_install-arch:
+override_dh_auto_install-arch: $(PREPROCESS_FILES:.in=)
 	@echo
 	@echo "#######################"
 	@echo "# installing libvmime #"
