@@ -13,7 +13,7 @@ Build-Depends-Indep:
   asciidoc-base,
   doxygen,
   graphviz,
-Standards-Version: 4.0.0
+Standards-Version: 4.0.1
 Section: libs
 Vcs-Git: https://anonscm.debian.org/cgit/pkg-giraffe/libvmime.git
 Vcs-Browser: https://anonscm.debian.org/cgit/pkg-giraffe/libvmime.git/
