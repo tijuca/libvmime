@@ -1,0 +1,2 @@
+libvmime.so.1 libvmime1 #MINVER#
+ (c++|regex)"(__gnu_cxx|std::|vmime::)" 0.9.2
